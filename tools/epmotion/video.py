@@ -52,7 +52,7 @@ def render_parallel(module_path, fn_name, n_frames, out_dir, fps=30, workers=4, 
         b = min(n_frames, a + per)
         if a >= b:
             continue
-        jobs.append(((module_path, fn_name), a, b, os.path.join(out_dir, f"chunk_{i:02d}.mkv"), fps))
+        jobs.append(((module_path, fn_name), a, b, os.path.join(out_dir, f"chunk_{a:05d}.mkv"), fps))
     ctx = get_context("spawn")
     with ctx.Pool(len(jobs)) as pool:
         outs = pool.map(_encode_chunk, jobs)

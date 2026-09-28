@@ -146,7 +146,8 @@ def draw_spring_hero(c, t, alpha=1.0):
     bottom_gradient(c, 760, 0.6)
     top_gradient(c, 200, 0.5)
     t_m = at("L07", "a mass on a spring")
-    am = fade(t, t_m - 0.1, 44.2, 0.4, 0.4)
+    t_end = S["spring_model"][0] - 0.05
+    am = fade(t, t_m - 0.1, t_end, 0.4, 0.4)
     if am > 0:
         b = pt("spring", fi, "block_top")
         k = ease_out(ramp(t, t_m - 0.1, t_m + 0.4))
@@ -155,7 +156,7 @@ def draw_spring_hero(c, t, alpha=1.0):
         if k > 0.9:
             label_box(c, lp[0] + 6, lp[1], "mass  m = 2 kg", 26, "paper", 0.82, "semibold", alpha=am)
     t_k = at("L07", "a mass on a spring") + 0.75
-    ak = fade(t, t_k, 44.2, 0.4, 0.4)
+    ak = fade(t, t_k, t_end, 0.4, 0.4)
     if ak > 0:
         sp0 = pt("spring", fi, "spring_post")
         sp1 = pt("spring", fi, "spring_block")
@@ -165,7 +166,7 @@ def draw_spring_hero(c, t, alpha=1.0):
         leader(c, mid, (mid[0] + (lp[0] - mid[0]) * k, mid[1] + (lp[1] - mid[1]) * k), alpha=ak)
         if k > 0.9:
             label_box(c, lp[0], lp[1], "spring  k = 79 N/m", 26, "paper", 0.82, "semibold", anchor="right", alpha=ak)
-    a_note = fade(t, t_m + 0.8, 44.0, 0.5, 0.4)
+    a_note = fade(t, t_m + 0.8, t_end, 0.5, 0.4)
     if a_note > 0:
         note(c, "Real scale: a 63 mm steel cube, a spring tuned to exactly 1 Hz.", 96, 1000, 22, "steel", a_note)
 
@@ -214,12 +215,12 @@ def draw_spring_model(c, t):
         x = x_3d(t)
     else:
         x = rig_free(t, t_pluck1, 38.0, 1.0, 1.0) + x_3d(t) * (1 - smooth(ramp(t, t_pluck1, t_pluck1 + 0.35)))
-    fade_out = 1 - smooth(ramp(t, S["spring_model"][1] - 0.6, S["spring_model"][1]))
+    fade_out = 1 - smooth(ramp(t, S["sweep"][0] - 0.6, S["sweep"][0]))
     draw_rig(c, g, x, alpha=1.0, draw=smooth(k_bp) if k_bp < 1 else 1.0, labels=True,
              label_alpha=fade(t, t_in + 2.2, None, 0.4), k_label="k", c_label="c")
     note(c, "1.0 Hz", 1060, G_MODEL["axis_y"] + 10, 30, "paper", fade(t, t_pluck1, None, 0.4) * fade_out, style="semibold")
     # equation
-    a_eq = fade(t, t_two - 0.2, None, 0.5)
+    a_eq = fade(t, t_two - 0.2, None, 0.5) * fade_out
     if a_eq > 0:
         hk = fade(t, t_stiff - 0.1, t_heavy - 0.1, 0.3, 0.3)
         hm = fade(t, t_heavy - 0.1, None, 0.3)

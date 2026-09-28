@@ -37,9 +37,9 @@ SCENES = [
     ("spring_model", S["spring_model"][0], S["sweep"][0], md.draw_spring_model, 0.0),
     ("sweep", S["sweep"][0], S["damping"][0], md.draw_sweep, 0.0),
     ("damping", S["damping"][0], S["damping"][1], md.draw_damping, 0.0),
-    ("bridge", S["bridge"][0], S["bridge"][1], br.draw_bridge, 0.0),
+    ("bridge", S["bridge"][0], S["bridge"][1], br.draw_bridge, 0.5),
     ("taipei", S["taipei"][0], S["taipei"][1], tp.draw_taipei, 0.5),
-    ("takeaway", S["takeaway"][0], S["takeaway"][1] + 0.5, tp.draw_takeaway, 0.0),
+    ("takeaway", S["takeaway"][0], S["takeaway"][1] + 0.5, tp.draw_takeaway, 0.6),
 ]
 
 LOGO_ON = (2.6, S["takeaway"][0])
