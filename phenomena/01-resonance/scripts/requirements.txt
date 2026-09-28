@@ -1,0 +1,14 @@
+# Resonance build (Python 3.11)
+bpy==5.0.1
+skia-python>=144
+uharfbuzz
+svgelements
+numpy<2
+scipy
+pillow
+soundfile
+mido
+pyloudnorm
+# The voice engine needs numpy 2: install it in its own environment
+#   python -m venv ttsenv && ttsenv/bin/pip install kokoro-onnx==0.6.1 soundfile
+# System tools: ffmpeg, TeX Live (latex, dvisvgm), fluidsynth, musescore-general-soundfont
