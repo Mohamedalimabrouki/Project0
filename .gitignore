@@ -1,0 +1,15 @@
+# Blender backup and temporary files
+*.blend[0-9]
+*.blend@
+
+# Rendered frame sequences: only the final video goes to GitHub
+frames/
+
+# Caches
+blendcache_*/
+__pycache__/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini

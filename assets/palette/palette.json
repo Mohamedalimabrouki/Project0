@@ -1,0 +1,16 @@
+{
+  "name": "Engineering Phenomena",
+  "source": "Okabe-Ito colour-blind safe palette, plus three neutrals",
+  "colors": [
+    {"key": "force",    "name": "Vermillion",     "hex": "#D55E00", "meaning": "Force, load, stress"},
+    {"key": "motion",   "name": "Blue",           "hex": "#0072B2", "meaning": "Motion, velocity, displacement"},
+    {"key": "energy",   "name": "Orange",         "hex": "#E69F00", "meaning": "Heat, energy, power"},
+    {"key": "fluid",    "name": "Sky blue",       "hex": "#56B4E9", "meaning": "Fluid, air, flow"},
+    {"key": "field",    "name": "Reddish purple", "hex": "#CC79A7", "meaning": "Electricity, magnetism, fields"},
+    {"key": "balance",  "name": "Bluish green",   "hex": "#009E73", "meaning": "Balance, safe, it works"},
+    {"key": "highlight","name": "Yellow",         "hex": "#F0E442", "meaning": "Look here (dark backgrounds only)"},
+    {"key": "ink",      "name": "Ink",            "hex": "#12161C", "meaning": "House background, text on light backgrounds"},
+    {"key": "steel",    "name": "Steel",          "hex": "#8C96A0", "meaning": "Structures and parts"},
+    {"key": "paper",    "name": "Paper",          "hex": "#F4F3EF", "meaning": "Light background, text on dark backgrounds"}
+  ]
+}
