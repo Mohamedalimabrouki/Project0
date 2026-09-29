@@ -113,7 +113,7 @@ def main():
 
     log("rendering the music")
     music, minfo = mixer.mix_music(S, log)
-    music, scene_report = mixer.level_scenes(music, scenes, log)
+    music, scene_report = mixer.level_contour(music, log)
 
     log("rendering the sound effects")
     cues = mixer.parse_cues(raw_cues, log)

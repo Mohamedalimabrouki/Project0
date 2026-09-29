@@ -42,8 +42,8 @@ const Y_LBL1 = 1404, Y_ARROW = 1430, Y_RULER = 1458, Y_DASH = 1497, Y_LBL2 = 151
 // ----------------------------------------------------------------- the wheel
 const pic = t => Math.max(1, Math.min(N_LAST, Math.floor(t / STEP + 1e-6)));
 
-/** Exact wheel angle (rad, clockwise) at scene time t. */
-function wheelAngle(t) {
+/** Exact wheel angle (rad, clockwise) at scene time t. (Exported for the physics checks.) */
+export function wheelAngle(t) {
   if (t < T_FREEZE) return TAU * HOOK_RATE * (t - T_FREEZE);          // the hook's real motion, on into the cross-fade
   if (t < T_SWITCH) return TURN * (pic(t) - 1) * DEG;                 // pictures, one per second
   return TURN * N_LAST * DEG + TAU * REAL_RATE * (t - T_SWITCH);      // real speed: 66 degrees per video frame
@@ -73,17 +73,54 @@ function bracket(EP, ctx, cx, cy, r, a0, a1, o = {}) {
   ctx.restore();
 }
 
-/** "+66°  Real turn": value (digits do not jitter) and a word, drawn left to right, group aligned at x. */
+/**
+ * Extras on the tyre that never betray the spin: fine sidewall rings (circles look the same at every angle),
+ * the light catching the tyre's shoulder, and the arch's shadow on the top of the tyre.
+ */
+function tyreDetail(EP, ctx, x, y, r) {
+  const { PAL, SHADE, rgba } = EP;
+  ctx.save();
+  ctx.lineWidth = Math.max(1, r * 0.008);
+  ctx.strokeStyle = rgba(PAL.paper, 0.07);
+  ctx.beginPath(); ctx.arc(x, y, r * 0.87, 0, EP.TAU); ctx.stroke();
+  ctx.strokeStyle = rgba(SHADE.inkDeep, 0.45);
+  ctx.beginPath(); ctx.arc(x, y, r * 0.715, 0, EP.TAU); ctx.stroke();
+  const a0 = -165 * EP.DEG, span = 75 * EP.DEG, cg = ctx.createConicGradient(a0, x, y);
+  cg.addColorStop(0, rgba(PAL.paper, 0));
+  cg.addColorStop(span / EP.TAU / 2, rgba(PAL.paper, 0.24));
+  cg.addColorStop(span / EP.TAU, rgba(PAL.paper, 0));
+  cg.addColorStop(1, rgba(PAL.paper, 0));
+  ctx.lineWidth = Math.max(1.5, r * 0.012);
+  ctx.strokeStyle = cg;
+  ctx.beginPath(); ctx.arc(x, y, r * 0.985, a0, a0 + span); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, EP.TAU); ctx.arc(x, y, r * 0.70, 0, EP.TAU, true);
+  ctx.clip('evenodd');
+  const ao = ctx.createLinearGradient(0, y - r, 0, y - 0.2 * r);
+  ao.addColorStop(0, rgba(SHADE.inkDeep, 0.5)); ao.addColorStop(1, rgba(SHADE.inkDeep, 0));
+  ctx.fillStyle = ao;
+  ctx.fillRect(x - r, y - r, 2 * r, 0.9 * r);
+  ctx.restore();
+}
+
+/**
+ * "+66°  Real turn": a value (digits do not jitter), an optional unit and a word, drawn as one group aligned at x.
+ * Visual order left to right: value, unit, word in English and French; unit, value, word in Arabic
+ * (read from the right: word, value, unit). Numbers and degree signs always stay left to right.
+ */
 function tag(EP, ctx, x, y, value, word, o = {}) {
-  const { align = 'center', alpha = 1, vSize = 46, wSize = 30, unit = null } = o;
+  const { align = 'center', alpha = 1, vSize = 46, wSize = 30, unit = null, rtl = false } = o;
   const vW = EP.textTab(ctx, value, { size: vSize, weight: 800, opacity: 0 }).w;
   const uW = unit ? EP.measure(ctx, unit, { size: 27, weight: 600 }).w : 0;
-  const wW = EP.measure(ctx, word, { size: wSize, weight: 600, maxWidth: 330, shrink: true, maxLines: 1 });
-  const gap = 12;
-  const total = vW + (unit ? 8 + uW : 0) + gap + wW.w;
+  const wW = EP.measure(ctx, word, { size: wSize, weight: 600, maxWidth: 330, shrink: true, maxLines: 1 }).w;
+  const gap = 12, g2 = 9;
+  const total = vW + (unit ? g2 + uW : 0) + gap + wW;
   let cx = align === 'right' ? x - total : align === 'left' ? x : x - total / 2;
-  EP.textTab(ctx, value, { x: cx, y, size: vSize, weight: 800, color: EP.PAL.paper, opacity: alpha, align: 'left' }); cx += vW;
-  if (unit) { EP.text(ctx, unit, { x: cx + 8, y, size: 27, weight: 600, color: EP.PAL.steel, opacity: alpha, align: 'left' }); cx += 8 + uW; }
+  const drawValue = () => { EP.textTab(ctx, value, { x: cx, y, size: vSize, weight: 800, color: EP.PAL.paper, opacity: alpha, align: 'left' }); cx += vW; };
+  const drawUnit = () => { EP.text(ctx, unit, { x: cx, y, size: 27, weight: 600, color: EP.PAL.steel, opacity: alpha, align: 'left' }); cx += uW; };
+  if (unit && rtl) { drawUnit(); cx += g2; drawValue(); }
+  else { drawValue(); if (unit) { cx += g2; drawUnit(); } }
   EP.text(ctx, word, { x: cx + gap, y, size: wSize, weight: 600, color: EP.PAL.steel, opacity: alpha, align: 'left', maxWidth: 330, shrink: true, maxLines: 1 });
   return total;
 }
@@ -128,6 +165,7 @@ export default {
     const Y = Y_START + (Y_MAIN - Y_START) * kM;
     const paint = prog(t, 0.8, 1.4, ease.outCubic) * (1 - prog(t, T_SWITCH + 0.4, T_SWITCH + 1.6, ease.inOutSine));
     EP.wheel(ctx, { x: X, y: Y, r: R, angle: theta, highlight: 0, highlightAlpha: paint });
+    tyreDetail(EP, ctx, X, Y, R);
 
     // ---- annotations on the wheel (slowed-down pictures only)
     const env = 1 - prog(t, T_SWITCH, T_SWITCH + 0.3, ease.inOutSine);
@@ -191,7 +229,7 @@ export default {
       dot(ctx, xd(0), Y_ARROW, 7.5, { fill: PAL.motion, alpha: aArrow });
       const cxA = (xd(0) + xd(TURN)) / 2;
       tag(EP, ctx, cxA, Y_LBL1, '+' + num(TURN) + '°', T('s04.real'), { alpha: aArrow * slow });
-      tag(EP, ctx, cxA, Y_LBL1, num(REAL_RATE, 1), T('s04.real'), { alpha: aArrow * real, unit: T('unit.turns') });
+      tag(EP, ctx, cxA, Y_LBL1, num(REAL_RATE, 1), T('s04.real'), { alpha: aArrow * real, unit: T('unit.turns'), rtl });
     }
     if (aRuler > 0) {
       // the ruler line with its markers: old painted spoke (0), new painted spoke (66), old next spoke (72)
@@ -217,7 +255,7 @@ export default {
     }
     if (real > 0) {                                                        // the same picture, per second: 66 -> 5.5 turns, -6 -> -0.5 turns
       EP.arrow(ctx, xd(GAP), Y_DASH, xd(TURN), Y_DASH, { kind: 'motion', width: 8, headSize: 26, dash: [7, 6], alpha: real });
-      tag(EP, ctx, xd(TURN) - 22, Y_LBL2, num(seen * FPS / 360, 1), T('s04.backwards'), { align: 'right', alpha: real, unit: T('unit.turns') });
+      tag(EP, ctx, xd(TURN) - 22, Y_LBL2, num(seen * FPS / 360, 1), T('s04.backwards'), { align: 'right', alpha: real, unit: T('unit.turns'), rtl });
     }
   },
 };

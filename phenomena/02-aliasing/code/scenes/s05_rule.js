@@ -182,6 +182,26 @@ function labelMath(ctx, EP, str, tex, o) {
   return { x: left, w: total };
 }
 
+/**
+ * Reveal from left to right with a soft edge: the picture is drawn in narrow
+ * slices whose opacity falls off towards the moving front (no hard cut).
+ * draw(k) draws the whole thing at opacity factor k. progress 0..1.
+ */
+function softReveal(ctx, x0, x1, progress, draw) {
+  const FEATHER = 90, N = 15;
+  const front = x0 - FEATHER + (x1 - x0 + FEATHER) * progress;   // fully hidden at 0, fully shown at 1
+  const cut = (lo, hi, k) => {
+    lo = Math.max(Math.round(lo), Math.round(x0)); hi = Math.min(Math.round(hi), Math.round(x1) + 2);
+    if (hi <= lo || k <= 0) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(lo, -2000, hi - lo, 4000); ctx.clip();
+    draw(k);
+    ctx.restore();
+  };
+  cut(x0, front, 1);
+  for (let j = 0; j < N; j++) cut(front + (FEATHER * j) / N, front + (FEATHER * (j + 1)) / N, 1 - (j + 0.5) / N);
+}
+
 /** a dotted line (round dots); color may be a gradient */
 function dotted(ctx, x1, y1, x2, y2, color, width = 3, gap = 8) {
   ctx.save();
@@ -289,7 +309,7 @@ function drawGraph(ctx, t, EP) {
     ctx.save();
     ctx.translate(132 - 6 * (1 - aT), (top + bot) / 2);
     ctx.rotate(-Math.PI / 2);
-    labelMath(ctx, EP, EP.T('s05.axis_y'), 'f_a\\,(\\mathrm{Hz})', { x: 0, y: 0, align: 'center', size: 28, weight: 600, color: PAL.steel, opacity: aT, maxWidth: 400 });
+    labelMath(ctx, EP, EP.T('s05.axis_y'), 'f_a\\,(\\mathrm{Hz})', { x: 0, y: 0, align: 'center', size: 28, weight: 600, color: PAL.steel, opacity: aT, maxWidth: 320 });
     ctx.restore();
   }
 
@@ -326,7 +346,7 @@ function drawGraph(ctx, t, EP) {
   // the truth: f_a = f, solid blue. Leaves the chart at the top and fades out.
   const pT = prog(t, TM.truth[0], TM.truth[1], ease.inOutCubic);
   if (pT > 0) {
-    const x15 = gx(NYQ), stubDx = 58, stubDy = stubDx * G.sy / G.sx;
+    const x15 = gx(NYQ), stubDx = 52, stubDy = stubDx * G.sy / G.sx;
     const L1 = Math.hypot(gx(NYQ) - gx(0), gy(NYQ) - gy(0)), L2 = Math.hypot(stubDx, stubDy);
     const drawn = pT * (L1 + L2);
     ctx.save();
@@ -521,14 +541,11 @@ function drawEquations(ctx, t, EP) {
     const t0 = TM.eq[i];
     const a = prog(t, t0, t0 + 0.5, ease.outCubic);
     if (a <= 0) return;
-    const wipe = prog(t, t0, t0 + 0.9, ease.outCubic);
+    const wipe = prog(t, t0, t0 + 0.95, ease.outCubic);
     const rise = 14 * (1 - ease.outCubic(prog(t, t0, t0 + 0.7, ease.linear)));
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(xs[i] - 16, EQ_Y - 120, (boxes[i].w + 32) * wipe, 220);
-    ctx.clip();
-    EP.math(ctx, q, { x: xs[i], y: EQ_Y + rise, size: EQ_SIZE, align: 'left', anchor: 'baseline', opacity: a });
-    ctx.restore();
+    const drawEq = k => EP.math(ctx, q, { x: xs[i], y: EQ_Y + rise, size: EQ_SIZE, align: 'left', anchor: 'baseline', opacity: a * k });
+    if (wipe >= 1) drawEq(1);
+    else softReveal(ctx, xs[i] - 16, xs[i] + boxes[i].w + 16, wipe, drawEq);
   });
 
   // small note under the first equation: N = 5 spokes

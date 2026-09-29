@@ -25,15 +25,25 @@ FILM_S = 180.0
 N_TOTAL = int(round(FILM_S * SR))
 
 # loudness of each layer relative to the pad (LU), measured while it plays
-LAYER_TARGET = {"pad": 0.0, "bass": -4.5, "pluck": -7.5, "bell": -14.0, "keys": -13.0,
-                "kick": -14.0, "hat": -19.5, "rim": -21.5, "swell": -18.0}
+LAYER_TARGET = {"pad": 0.0, "bass": -6.0, "pluck": -7.5, "bell": -14.0, "keys": -13.0,
+                "kick": -15.0, "hat": -18.5, "rim": -21.0, "swell": -18.0}
 # how much of each layer feeds the hall reverb
 REVERB_SEND = {"pad": 0.55, "pluck": 0.38, "bell": 0.85, "keys": 0.42, "hat": 0.10, "rim": 0.32, "swell": 0.35,
                "bass": 0.0, "kick": 0.0}
-# music-only integrated loudness per scene before the master stage (LUFS); text-heavy scenes sit lower
-SCENE_TARGET = {"s01_hook": -16.5, "s02_title": -15.0, "s03_snapshots": -19.0, "s04_trick": -18.5,
-                "s05_rule": -17.0, "s06_helicopter_lathe": -15.5, "s07_sensors_strobe": -15.0,
-                "s08_takeaway": -16.5}
+# The loudness contour of the music: (from s, to s, LU relative to the calm "bed" of scenes 3 and 4).
+# The bed sits at BED_LUFS before the master stage; text-heavy scenes stay on the bed, the others
+# rise above it. Inside each segment the arrangement keeps its own small movements.
+BED_LUFS = -19.0
+CONTOUR = [
+    (4.0, 8.0, -2.0), (8.0, 11.5, -0.2), (11.5, 13.5, -2.8), (13.5, 16.0, 0.8), (16.0, 18.0, 3.2),   # hook
+    (18.0, 21.0, 3.3), (21.0, 24.0, 1.4),                                                          # title
+    (24.0, 36.0, 0.0), (36.0, 48.0, 0.0),                                                          # snapshots
+    (48.0, 70.0, 0.0), (70.0, 78.0, 1.6), (78.0, 80.0, 0.2), (80.0, 86.0, -0.5),                   # the trick
+    (86.0, 100.0, 0.8), (100.0, 112.0, 1.2), (112.0, 115.0, 1.8), (115.0, 118.0, 3.4), (118.0, 126.0, 2.0),   # the rule
+    (126.0, 148.0, 2.4),                                                                           # real world 1
+    (148.0, 168.0, 2.7), (168.0, 170.0, 2.0),                                                      # real world 2
+    (170.0, 174.0, 1.2), (174.0, 177.5, 1.2),                                                      # takeaway
+]
 REF_LUFS = -20.0   # pad reference
 
 DUCK_DEPTH_DB = 3.0
@@ -154,32 +164,28 @@ def mix_music(S, log, layers=None):
     return music, dict(layer_gain_db=gains)
 
 
-def level_scenes(music, scenes, log):
-    """Level every scene to SCENE_TARGET (music alone, before the master gain)."""
+def level_contour(music, log, passes=2):
+    """Ride the level of the music so that its loudness follows CONTOUR (music alone, pre-master)."""
     meter = pyln.Meter(SR)
-    t_end = FILM_S
-    bounds = [(s["id"], float(s["t0"]), (float(scenes[i + 1]["t0"]) if i + 1 < len(scenes) else t_end)) for i, s in enumerate(scenes)]
-    knots_t, knots_g = [], []
-    report = {}
-    for sid, a, b in bounds:
-        seg = music[idx(a): idx(min(b, t_end))]
-        m = loudness(seg, meter)
-        tgt = SCENE_TARGET.get(sid)
-        if m is None or tgt is None:
-            g = 0.0
-        else:
-            g = tgt - m
-        report[sid] = dict(measured=m, target=tgt, gain_db=g)
-        # hold the gain through the scene; glide over one second around the boundary
-        knots_t += [a + 0.5, b - 0.5]
-        knots_g += [g, g]
-    tt = np.array(knots_t)
-    gg = np.array(knots_g)
-    # a scene's first knot is 0.5 s after its start: at the very start of the film take the first gain
-    gcurve = np.interp(np.arange(N_TOTAL) / SR, tt, gg)
-    music = music * db2lin(gcurve)[:, None]
-    log("  scene levelling (dB): " + ", ".join(f"{k.split('_')[0]} {v['gain_db']:+.1f}" for k, v in report.items()))
-    return music, report
+    report = []
+    for p in range(passes):
+        cs, gs, rep = [], [], []
+        for a, b, rel in CONTOUR:
+            seg = music[idx(a): idx(b)]
+            m = loudness(seg, meter)
+            tgt = BED_LUFS + rel
+            g = 0.0 if m is None else float(np.clip(tgt - m, -9.0, 9.0))
+            cs.append(0.5 * (a + b))
+            gs.append(g)
+            rep.append(dict(t0=a, t1=b, measured=m, target=tgt, gain_db=g))
+        t = np.arange(N_TOTAL) / SR
+        # the gain is linear in dB between segment centres; before the first centre (fade-in) and after
+        # the last one (fade-out) it stays where it is
+        gcurve = np.interp(t, cs, gs)
+        music = music * db2lin(gcurve)[:, None]
+        report.append(rep)
+        log(f"  contour pass {p + 1}: gains (dB) " + " ".join(f"{r['gain_db']:+.1f}" for r in rep))
+    return music, report[-1]
 
 
 # --------------------------------------------------------------------------------- SFX stem

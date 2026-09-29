@@ -259,17 +259,25 @@ export default {
       size: 24, weight: 700, tracking: 0.2, latin: true, color: PAL.highlight,
     });
 
-    const title = EP.text(ctx, EP.T('hero.title'), {
+    const titleStr = EP.T('hero.title'), taglineStr = EP.T('hero.tagline');
+    EP.text(ctx, titleStr, {
       x: x0, y: cy + 240, size: 200, weight: 800, tracking: rtl ? 0 : -0.02, color: PAL.paper,
     });
-    // The tagline is set exactly as wide as the title (a justified lockup) in every language:
-    // its size is measured, not typed. Text is always shorter than the title box allows below 28 px.
-    const tagline = EP.T('hero.tagline');
-    const wide = Math.min(760, Math.max(700, title.w));
-    const w100 = EP.measure(ctx, tagline, { size: 100, weight: 500 }).w;
-    EP.text(ctx, tagline, {
-      x: x0, y: cy + 340, size: Math.min(46, Math.max(28, (100 * wide) / w100)), weight: 500, color: PAL.steel,
-    });
+    // The tagline is set exactly as wide as the title (a justified lockup) in every language.
+    // Its size is measured, not typed, and both are compared by ink (glyph edges), not by advance.
+    const ink = (str, size, weight, tracking) => {
+      ctx.save();
+      const k = rtl ? 1.06 : 1;                                   // EP.text enlarges Arabic by 6 %
+      ctx.font = EP.fontStr(size * k, weight);
+      ctx.letterSpacing = rtl ? '0px' : `${tracking * size}px`;
+      ctx.direction = rtl ? 'rtl' : 'ltr';
+      const m = ctx.measureText(str);
+      ctx.restore();
+      return m.actualBoundingBoxLeft + m.actualBoundingBoxRight;
+    };
+    const wide = Math.min(760, Math.max(rtl ? 620 : 700, ink(titleStr, 200, 800, -0.02)));
+    const taglineSize = Math.min(46, Math.max(28, (100 * wide) / ink(taglineStr, 100, 500, 0)));
+    EP.text(ctx, taglineStr, { x: x0, y: cy + 340, size: taglineSize, weight: 500, color: PAL.steel });
 
     ctx.fillStyle = rgba(PAL.steel, 0.55);
     ctx.fillRect(rtl ? x0 - 56 : x0, cy + 368, 56, 2);

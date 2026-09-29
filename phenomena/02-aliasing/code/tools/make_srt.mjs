@@ -119,15 +119,35 @@ function captionText(c, lang, warnings) {
 }
 
 /**
+ * No-break spaces in the strings have two jobs:
+ *   1. typography (French: before : ; ! ? and inside guillemets; a number and its unit;
+ *      "900 Hz" kept together and left-to-right in Arabic). These must never be broken.
+ *   2. layout glue for the big burned-in captions (keeps "le bon sens" on one line).
+ *      In a subtitle file the player wraps the lines, so this glue is turned into a plain
+ *      space and may be broken.
+ * A no-break space is kept when it follows a digit, precedes : ; ! ? » % × =, or follows « × =.
+ */
+const KEEP = '';                       // private marker for a no-break space that must stay
+function relaxGlue(text) {
+  return text.replace(/ /g, (m, i, all) => {
+    const before = all[i - 1] || '', after = all[i + 1] || '';
+    const keep = /\d/.test(before) || /[:;!?»%×=]/.test(after) || /[«×=]/.test(before);
+    return keep ? KEEP : ' ';
+  });
+}
+
+/**
  * Break a text into at most `maxLines` lines of about `width` characters.
- * Words are separated by plain spaces only: a no-break space keeps its neighbours together.
+ * Words are separated by plain spaces only (see relaxGlue for the no-break spaces).
  * An explicit \n in the text is respected.
  */
 function wrap(text, width, maxLines = 2) {
-  if (text.includes('\n')) return text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, maxLines);
+  text = relaxGlue(text);
+  const done = lines => lines.map(l => l.replace(new RegExp(KEEP, 'g'), ' '));
+  if (text.includes('\n')) return done(text.split('\n').map(s => s.trim()).filter(Boolean).slice(0, maxLines));
   const words = text.split(' ').filter(Boolean);
   const whole = words.join(' ');
-  if (visLen(whole) <= width || words.length < 2) return [whole];
+  if (visLen(whole) <= width || words.length < 2) return done([whole]);
   let best = null;
   for (let i = 1; i < words.length; i++) {
     const a = words.slice(0, i).join(' '), b = words.slice(i).join(' ');
@@ -138,7 +158,7 @@ function wrap(text, width, maxLines = 2) {
     if (la < 8 || lb < 8) score += 25;                 // never leave a tiny orphan
     if (!best || score < best.score) best = { score, lines: [a, b] };
   }
-  return best.lines;
+  return done(best.lines);
 }
 
 // ---------------------------------------------------------------- SRT

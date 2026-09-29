@@ -85,6 +85,37 @@ function makeStreaks(EP) {
   return { P, list };
 }
 
+/**
+ * Extras on the tyre that never betray the spin: fine sidewall rings (circles look the same at every angle),
+ * the light catching the tyre's shoulder, and the arch's shadow on the top of the tyre.
+ */
+function tyreDetail(EP, ctx, x, y, r) {
+  const { PAL, SHADE, rgba } = EP;
+  ctx.save();
+  ctx.lineWidth = Math.max(1, r * 0.008);
+  ctx.strokeStyle = rgba(PAL.paper, 0.07);
+  ctx.beginPath(); ctx.arc(x, y, r * 0.87, 0, EP.TAU); ctx.stroke();
+  ctx.strokeStyle = rgba(SHADE.inkDeep, 0.45);
+  ctx.beginPath(); ctx.arc(x, y, r * 0.715, 0, EP.TAU); ctx.stroke();
+  const a0 = -165 * EP.DEG, span = 75 * EP.DEG, cg = ctx.createConicGradient(a0, x, y);
+  cg.addColorStop(0, rgba(PAL.paper, 0));
+  cg.addColorStop(span / EP.TAU / 2, rgba(PAL.paper, 0.24));
+  cg.addColorStop(span / EP.TAU, rgba(PAL.paper, 0));
+  cg.addColorStop(1, rgba(PAL.paper, 0));
+  ctx.lineWidth = Math.max(1.5, r * 0.012);
+  ctx.strokeStyle = cg;
+  ctx.beginPath(); ctx.arc(x, y, r * 0.985, a0, a0 + span); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, EP.TAU); ctx.arc(x, y, r * 0.70, 0, EP.TAU, true);
+  ctx.clip('evenodd');
+  const ao = ctx.createLinearGradient(0, y - r, 0, y - 0.2 * r);
+  ao.addColorStop(0, rgba(SHADE.inkDeep, 0.5)); ao.addColorStop(1, rgba(SHADE.inkDeep, 0));
+  ctx.fillStyle = ao;
+  ctx.fillRect(x - r, y - r, 2 * r, 0.9 * r);
+  ctx.restore();
+}
+
 /** Icon: circular arrow. dir +1 clockwise (solid = what really happens). */
 function turnIcon(EP, ctx, x, y, r, dir, o = {}) {
   const a0 = dir > 0 ? -135 * EP.DEG : 135 * EP.DEG;
@@ -183,6 +214,16 @@ export default {
     g2.addColorStop(0, EP.rgba(PAL.paper, 0.13)); g2.addColorStop(1, EP.rgba(PAL.paper, 0));
     L.fillStyle = g2; L.fillRect(0, Y_CREASE, W, 220);
     L.fillStyle = EP.rgba(PAL.paper, 0.34); L.fillRect(0, Y_CREASE, W, 3);
+    // the arch: a soft shadow on the panel around it and a light lip on its edge (both drawn in world units, zoomed with the car)
+    L.setTransform(s * zoom, 0, 0, s * zoom, s * CX * (1 - zoom), s * CY * (1 - zoom));
+    const ao = L.createRadialGradient(CX, CY, 1.13 * r, CX, CY, 1.47 * r);
+    ao.addColorStop(0, EP.rgba(PAL.ink, 0.34)); ao.addColorStop(1, EP.rgba(PAL.ink, 0));
+    L.fillStyle = ao; L.fillRect(CX - 2 * r, CY - 2 * r, 4 * r, 3 * r);
+    const lip = L.createLinearGradient(CX - 1.13 * r, CY - 1.13 * r, CX + 1.13 * r, CY);
+    lip.addColorStop(0, EP.rgba(PAL.paper, 0.55)); lip.addColorStop(1, EP.rgba(PAL.paper, 0.06));
+    L.strokeStyle = lip; L.lineWidth = r * 0.035;
+    const aa = Math.asin(0.5 / 1.13);
+    L.beginPath(); L.arc(CX, CY, 1.13 * r, aa, Math.PI - aa, true); L.stroke();
     L.globalCompositeOperation = 'source-over';
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -222,6 +263,7 @@ export default {
 
     // the wheel: exact angle, no blur
     EP.wheel(ctx, { x: CX, y: CY, r, angle: theta });
+    tyreDetail(EP, ctx, CX, CY, r);
     ctx.restore();
 
     // ---- readouts (screen space)

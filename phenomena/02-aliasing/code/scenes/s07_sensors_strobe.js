@@ -133,9 +133,9 @@ const K = {
   // part 2
   blocks: [12.3, 13.0, 13.75, 14.5],
   equation: [15.0, 15.7],
-  p2Out: [16.65, 17.15],
+  p2Out: [16.5, 16.95],
   // part 3
-  fansIn: 17.1,               // the fans appear (blurred, as the eye sees them in normal light)
+  fansIn: 16.95,              // the fans appear (blurred, as the eye sees them in normal light)
   numL: 18.0,
   strobeOn: 18.65,            // click: the strobe lamp switches on
   freeze: [18.9, 19.6],       // the blur resolves into crisp, slowly turning blades
@@ -532,8 +532,8 @@ function blockFrame(ctx, cx, cy, k) {
 function iconFilter(ctx, cx, cy, k) {
   const { PAL, rgba } = EP;
   const w = 150, h = 88, x0 = cx - w / 2, y0 = cy - h / 2;
-  // gain of a 4th-order low-pass; cut-off at half the sampling rate
-  const fc = 0.5, gain = f => 1 / Math.sqrt(1 + Math.pow(f / fc, 8));
+  // gain of a 4th-order low-pass on a frequency axis from 0 to f_s; cut-off well below f_s / 2
+  const fc = 0.3, gain = f => 1 / Math.sqrt(1 + Math.pow(f / fc, 8));
   const X = f => x0 + 6 + f * (w - 10), Y = g => y0 + h - 8 - g * (h - 22);
   ctx.save();
   ctx.strokeStyle = rgba(PAL.steel, 0.85); ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -716,18 +716,21 @@ function drawFanCrisp(ctx, x, y, R, angle, a) {
  * blink, so each radius gets the share of paint the blades cover at one instant.
  */
 function drawFanBlur(ctx, x, y, R, a) {
-  const { PAL, SHADE, rgba } = EP;
+  const { SHADE, rgba } = EP;
   if (a <= 0) return;
   const sh = bladeShapes(R);
+  // coverage averaged over a small window of radii, so the disc has no faint rings
+  const cover = f => { let sum = 0; for (let j = -3; j <= 3; j++) sum += sh.cover(clamp(f + 0.05 * j, 0.16, 0.9) * R); return sum / 7; };
+  const smooth = (e0, e1, v) => { const q = clamp((v - e0) / (e1 - e0)); return q * q * (3 - 2 * q); };
   ctx.save();
   ctx.translate(x, y);
   ctx.globalAlpha *= a;
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.02);
-  const n = 28;
+  const n = 32;
   for (let i = 0; i <= n; i++) {
-    const f = i / n, r = f * R;
-    const c = i === 0 ? sh.cover(0.16 * R) : sh.cover(r);
-    g.addColorStop(f, rgba(SHADE.steelLight, clamp(0.16 + 1.5 * c, 0, 0.62) * (f > 0.97 ? 0 : 1)));
+    const f = i / n;
+    const al = clamp(0.16 + 1.5 * cover(f), 0, 0.6) * (1 - smooth(0.84, 1.0, f));
+    g.addColorStop(f, rgba(SHADE.steelLight, al));
   }
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.arc(0, 0, R * 1.02, 0, TAU); ctx.fill();
@@ -757,7 +760,7 @@ function drawFanFrame(ctx, x, y, R, a) {
 }
 
 /** Pendant lamp with rays. rays 0..1 = brightness of the rays (orange = light output). */
-function drawLamp(ctx, x, y, rays, a) {
+function drawLamp(ctx, x, y, rays, a, ring = 0) {
   const { PAL, SHADE, rgba, mix } = EP;
   if (a <= 0) return;
   ctx.save();
@@ -769,6 +772,12 @@ function drawLamp(ctx, x, y, rays, a) {
     const g = ctx.createRadialGradient(0, 4, 4, 0, 4, 58);
     g.addColorStop(0, rgba(PAL.energy, 0.26 * rays)); g.addColorStop(1, rgba(PAL.energy, 0));
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 4, 58, 0, TAU); ctx.fill();
+  }
+  // a ring spreads once when the lamp is switched on (small, brief)
+  if (ring > 0 && ring < 1) {
+    const q = 1 - Math.pow(1 - ring, 3);
+    ctx.strokeStyle = rgba(PAL.energy, 0.75 * (1 - ring)); ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 4, 18 + 52 * q, 0, TAU); ctx.stroke();
   }
   // cord and shade
   ctx.strokeStyle = rgba(PAL.steel, 0.8); ctx.lineWidth = 3;
@@ -859,11 +868,11 @@ export default {
     { t: 0.5, sfx: 'motor', dur: 11 },
     { t: K.ticks, sfx: 'tick', gain: -4 },
     // dots appear 11 per second; one blip per group of three (about 3.7 blips per second)
-    ...[0, 3, 6, 9, 12, 15, 18].map(k => ({ t: +dotTime(k).toFixed(3), sfx: 'blip' })),
+    ...[0, 3, 6, 9, 12, 15, 18].map(k => ({ t: +(dotTime(k) + 0.15).toFixed(3), sfx: 'blip' })),
     ...K.blocks.map(b => ({ t: b + 0.05, sfx: 'pop' })),
     { t: 17.3, sfx: 'whirr', dur: 4.6, rate: FAN.turns, gain: -8 },
     { t: K.strobeOn, sfx: 'click' },
-    { t: 19.45, sfx: 'shimmer', dur: 1.8, gain: -6 },
+    { t: 19.5, sfx: 'shimmer', dur: 1.8, gain: -6 },
   ],
   math: ['f_s > 2\\,f_{\\max}'],
   music: 'explain',
@@ -969,7 +978,7 @@ export default {
 
     // ------------------------------------------------------------------ PART 3
     if (t >= K.fansIn - 0.05) {
-      const aFan = P(t, K.fansIn + 0.1, K.fansIn + 0.8);
+      const aFan = P(t, K.fansIn, K.fansIn + 0.75);
       const kF = prog(t, K.freeze[0], K.freeze[1], ease.inOutSine);
       const apparent = (t - K.freeze[0]) * TAU * FAN.apparent;            // clockwise, 0.25 turns per second
       const age = t - K.strobeOn;
@@ -992,18 +1001,18 @@ export default {
       drawFanFrame(ctx, FV.cxR, FV.fanY, FV.R, aFan);
 
       // lamp and its name (a pair, mirrored in Arabic), and the light output over time under it
-      const top = (cx, key, rays, kind, a, dy) => {
+      const top = (cx, key, rays, kind, a, dy, ring = 0) => {
         if (a <= 0) return;
         const o = { size: 34, weight: 600, maxWidth: 250, shrink: true, maxLines: 2 };
         const lw = EP.measure(ctx, EP.T(key), o).w;
         const pairW = 96 + 14 + lw, left = cx - pairW / 2;
-        drawLamp(ctx, rtl ? left + pairW - 48 : left + 48, FV.lampY + dy, rays, a);
+        drawLamp(ctx, rtl ? left + pairW - 48 : left + 48, FV.lampY + dy, rays, a, ring);
         EP.text(ctx, EP.T(key), { ...o, x: rtl ? left + pairW - 110 : left + 110, y: FV.lampY + 4 + dy, anchor: 'middle', align: rtl ? 'right' : 'left', opacity: a });
-        const ring = FV.R * 1.13;
-        drawLightWave(ctx, cx - ring, FV.waveY + dy, 2 * ring, kind, t, a, rtl ? -1 : 1);
+        const guard = FV.R * 1.13;                              // the strip is as wide as the guard ring below it
+        drawLightWave(ctx, cx - guard, FV.waveY + dy, 2 * guard, kind, t, a, rtl ? -1 : 1);
       };
       top(FV.cxL, 's07.normal', 0.82, 'steady', aFan, 0);
-      top(FV.cxR, 's07.strobe', pulse, 'pulses', aStrobe, (1 - aStrobe) * -10);
+      top(FV.cxR, 's07.strobe', pulse, 'pulses', aStrobe, (1 - aStrobe) * -10, age >= 0 ? age / 0.6 : 0);
 
       speedLine(ctx, FV.cxL, FV.yLabel, FV.yNum, 's07.realspeed', FAN.turns, 0, false, P(t, K.numL, K.numL + 0.55));
       speedLine(ctx, FV.cxR, FV.yLabel, FV.yNum, 's07.weesee', FAN.apparent, 2, true, P(t, K.numR, K.numR + 0.55));

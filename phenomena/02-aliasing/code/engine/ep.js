@@ -652,6 +652,45 @@ export function camera(ctx, o = {}) {
   ctx.restore();
 }
 
+// ---------------------------------------------------------------- layers
+const _layers = [];
+let _depth = 0;
+/**
+ * Draw something as one flat layer, then blend the layer with opacity alpha,
+ * so the overlapping parts of a drawing never show through each other while
+ * it fades in or out. (x0, y0, w, h) is its bounding box in current
+ * coordinates. The layer is pixel-aligned: no resampling, no softening.
+ */
+export function layer(ctx, alpha, x0, y0, w, h, draw) {
+  if (alpha <= 0) return;
+  const m = ctx.getTransform();
+  if (Math.abs(m.b) > 1e-6 || Math.abs(m.c) > 1e-6 || m.a <= 0 || m.d <= 0) {
+    ctx.save(); ctx.globalAlpha *= alpha; draw(ctx); ctx.restore();   // rotated or mirrored: draw directly
+    return;
+  }
+  const pad = 2;
+  const dx = Math.floor(m.e + x0 * m.a) - pad, dy = Math.floor(m.f + y0 * m.d) - pad;
+  const pw = Math.ceil(m.e + (x0 + w) * m.a) + pad - dx, ph = Math.ceil(m.f + (y0 + h) * m.d) + pad - dy;
+  if (pw <= 0 || ph <= 0) return;
+  let c = _layers[_depth];
+  if (!c) c = _layers[_depth] = document.createElement('canvas');
+  if (c.width < pw || c.height < ph) { c.width = Math.max(c.width, pw); c.height = Math.max(c.height, ph); }
+  const g = c.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = 1;
+  g.globalCompositeOperation = 'source-over';
+  g.shadowBlur = 0;
+  g.clearRect(0, 0, pw, ph);
+  g.setTransform(m.a, 0, 0, m.d, m.e - dx, m.f - dy);
+  _depth++;
+  try { draw(g); } finally { _depth--; }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(c, 0, 0, pw, ph, dx, dy, pw, ph);
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------- the wheel
 /**
  * Outline of spoke i of a star wheel, as a Path2D in wheel coordinates
@@ -690,6 +729,10 @@ export function spokePath(r, i, angle, spokes = 5) {
 export function wheel(ctx, o = {}) {
   const { x = 0, y = 0, r = 200, angle = 0, spokes = 5, highlight = null, highlightAlpha = 1, tyre = true, caliper = true, opacity = 1 } = o;
   if (opacity <= 0) return;
+  if (ctx.globalAlpha * opacity < 0.999 && !o._flat) {
+    layer(ctx, clamp(opacity), x - r - 3, y - r - 3, 2 * r + 6, 2 * r + 6, c => wheel(c, { ...o, opacity: 1, _flat: true }));
+    return;
+  }
   ctx.save();
   ctx.translate(x, y);
   ctx.globalAlpha *= clamp(opacity);
@@ -798,6 +841,10 @@ export function car(ctx, o = {}) {
   const { x = 0, y = 0, r = 60, rearAngle = 0, frontAngle = 0, spokes = 5, highlight = null, opacity = 1, wheels = true } = o;
   const L = 7.7;
   if (opacity <= 0) return { rear: [x, y], front: [x + L * r, y] };
+  if (ctx.globalAlpha * opacity < 0.999 && !o._flat) {
+    layer(ctx, clamp(opacity), x - 4.2 * r, y - 3.7 * r, 16.6 * r, 5.6 * r, c => car(c, { ...o, opacity: 1, _flat: true }));
+    return { rear: [x, y], front: [x + L * r, y] };
+  }
   const S = (u, v) => [x + u * r, y + v * r];
   ctx.save();
   ctx.globalAlpha *= clamp(opacity);

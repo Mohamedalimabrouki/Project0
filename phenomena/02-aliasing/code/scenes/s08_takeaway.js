@@ -100,7 +100,7 @@ export default {
     const wA = prog(t, 0.5, 1.15, ease.outCubic);
     const wK = prog(t, 0.5, 1.5, ease.outCubic);
     const spin = TAU * TURNS_PER_SECOND * t;
-    // the wink: a yellow spoke fades in, goes round with the wheel, fades out
+    // the wink: a yellow spoke fades in, goes round with the wheel, and fades out.
     // It arrives with the resolving chord and the small kick of the music at 4.0 s
     // and is gone when the bell rings at 6.0 s: the wheel is frozen again.
     const wink = prog(t, 3.92, 4.42, ease.outCubic) * (1 - prog(t, 5.5, 6.1, ease.inOutSine));

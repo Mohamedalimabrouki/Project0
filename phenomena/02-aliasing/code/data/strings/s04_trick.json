@@ -27,7 +27,7 @@
   "s04.c6": {
     "en": "Turn exactly one gap per picture, and every picture looks the same.",
     "fr": "Avec exactement un écart par image, toutes\u00a0les\u00a0images\u00a0sont\u00a0identiques.",
-    "ar": "وإذا دارت فجوة كاملة بالضبط بين كل صورتين، تبدو الصور كلها متطابقة."
+    "ar": "وإذا دارت العجلة فجوة كاملة بالضبط بين كل صورتين، تبدو الصور كلها متطابقة."
   },
   "s04.c7": {
     "en": "The wheel seems frozen, even though it is spinning fast.",
@@ -63,5 +63,20 @@
     "en": "Frozen",
     "fr": "Immobile",
     "ar": "متجمّدة"
+  },
+  "s04.short": {
+    "en": "Just short",
+    "fr": "Il manque",
+    "ar": "ينقص"
+  },
+  "s04.perpic": {
+    "en": "per picture",
+    "fr": "par image",
+    "ar": "في كل صورة"
+  },
+  "s04.prev": {
+    "en": "Previous picture",
+    "fr": "Image précédente",
+    "ar": "الصورة السابقة"
   }
 }

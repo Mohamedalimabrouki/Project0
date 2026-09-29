@@ -45,7 +45,7 @@ Votre cerveau enchaîne les images…
 11
 00:00:43,500 --> 00:00:47,850
 …en reliant chaque rayon au rayon le
-plus proche dans l’image suivante.
+plus proche dans l’image suivante.
 
 12
 00:00:48,800 --> 00:00:53,671
@@ -55,7 +55,7 @@ et peignons un rayon en jaune.
 13
 00:00:54,071 --> 00:00:58,943
 Petite rotation entre deux images : la roue
-semble tourner dans le bon sens. Exact !
+semble tourner dans le bon sens. Exact !
 
 14
 00:00:59,343 --> 00:01:04,214
@@ -70,12 +70,12 @@ la place qu’occupait le suivant…
 16
 00:01:09,886 --> 00:01:14,757
 …donc le lien le plus court va vers l’arrière.
-La roue semble tourner à l’envers !
+La roue semble tourner à l’envers !
 
 17
 00:01:15,157 --> 00:01:20,029
 Avec exactement un écart par image,
-toutes les images sont identiques.
+toutes les images sont identiques.
 
 18
 00:01:20,429 --> 00:01:25,300
@@ -90,12 +90,12 @@ un mouvement rapide sous un faux nom, un alias.
 20
 00:01:32,800 --> 00:01:38,800
 La caméra prend 30 images par seconde.
-Les rayons passent f fois par seconde.
+Les rayons passent f fois par seconde.
 
 21
 00:01:39,200 --> 00:01:46,600
 Jusqu’à 15 par seconde, la vidéo dit la
-vérité. Au-delà, le mouvement est déguisé.
+vérité. Au-delà, le mouvement est déguisé.
 
 22
 00:01:47,000 --> 00:01:54,400
@@ -105,7 +105,7 @@ Juste en dessous, elle semble tourner à l’envers.
 23
 00:01:54,800 --> 00:02:00,800
 La règle : échantillonnez plus de deux fois plus
-vite que le changement le plus rapide à observer.
+vite que le changement le plus rapide à observer.
 
 24
 00:02:01,200 --> 00:02:05,900
@@ -120,7 +120,7 @@ d’hélicoptère semblent figées.
 26
 00:02:12,025 --> 00:02:16,850
 Entre deux images, chaque pale se place
-exactement là où était la suivante.
+exactement là où était la suivante.
 
 27
 00:02:17,250 --> 00:02:22,075
@@ -129,13 +129,13 @@ jouer le même tour aux machines.
 
 28
 00:02:22,475 --> 00:02:27,300
-Un tour en marche peut sembler arrêté. C’est pourquoi
-l’éclairage d’atelier ne doit pas scintiller.
+Un tour en marche peut sembler arrêté.
+L’éclairage d’atelier ne doit donc pas scintiller.
 
 29
 00:02:28,800 --> 00:02:33,800
 Les machines échantillonnent aussi : leurs
-capteurs sont lus de nombreuses fois par seconde.
+capteurs sont lus de nombreuses fois par seconde.
 
 30
 00:02:34,200 --> 00:02:39,600
@@ -144,13 +144,13 @@ seconde ressemble à une onde lente de 100 Hz.
 
 31
 00:02:40,000 --> 00:02:44,800
-On filtre donc ce qui est trop rapide,
-puis on échantillonne plus de deux fois plus vite.
+On filtre donc ce qui est trop rapide, puis
+on échantillonne plus de deux fois plus vite.
 
 32
 00:02:45,200 --> 00:02:49,900
-Et un stroboscope utilise exprès le repliement de
-spectre pour figer les machines et les inspecter.
+Et un stroboscope utilise exprès le repliement
+de spectre pour figer et inspecter les machines.
 
 33
 00:02:50,800 --> 00:02:59,200

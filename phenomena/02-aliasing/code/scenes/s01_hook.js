@@ -1,10 +1,33 @@
 /*
- * Scene 01 - Hook (cold open). WORK IN PROGRESS, v3.
+ * Scene 01 - Hook (cold open, 18.5 s): "This car is speeding up. Now watch the wheel."
+ *
+ * Story
+ *    0.0 -  4.8  Wide tracking shot. The whole car (tyre radius 108 px) speeds up from 0.7 to about 4.7 m/s.
+ *    4.8 -  6.8  Eased push-in (a pure zoom, x2.43) onto the rear wheel (tyre radius 262 px).
+ *    6.8 - 16.8  Hold. The wheel is drawn at its TRUE turning rate, so the viewer's own 30 fps screen does the
+ *                aliasing: forwards, confusing (Nyquist limit 3.0 turns/s at 5.40 s), backwards and slowing,
+ *                frozen at exactly 6.0 turns/s (72 degrees per picture, 11.4 to 13.4 s), then creeping forwards.
+ *   13.6         Badge "Real speed: 30 pictures per second" and the note about pictures per second.
+ *   16.8 - 18.5  Settle; the last 0.5 s cross-fades into the title card.
+ *
+ * Physics (computed, nothing is placed by eye)
+ *   - f_r(t), turns per second: monotone cubic Hermite (C1) through the key values, zero slope on the holds.
+ *   - theta(t) = 2 pi * integral of f_r dt, integrated ONCE in setup (EP.angleTable). Both wheels use it
+ *     (the front wheel has a fixed phase offset). Nothing on the wheel breaks its 5-fold symmetry and there is
+ *     no blur, so at 6.0 turns/s every picture is identical.
+ *   - Rolling without slipping: distance x(t) = R theta(t), speed v = f_r C with R = 0.33 m, C = 2 pi R = 2.0735 m.
+ *   - The camera follows the car. A road mark at world position X is drawn at
+ *     wheel_x + (X - x(t)) * (tyre radius in px / R): the road moves at exactly v * (pixels per metre).
+ *   - The far layers (skyline, hills) move at a small fraction of that (parallax) and scale less when the camera zooms.
+ *
+ * Drawing order: glow, far layers, road (+ a faint reflection), road marks, shadows, car body (+ light falloff
+ * that keeps the caption band and the wheel clear), wheels, vignette, fade-in, speed panel, badge.
  */
 const R_TYRE = 0.33;                 // tyre radius, m
 const CIRC = 2 * Math.PI * R_TYRE;   // 2.0735 m
 const DUR = 18.5;
 const DEG = Math.PI / 180;
+const TAU = Math.PI * 2;
 
 // rotation rate keys: [t (s), turns per second]
 const KEYS = [[0, 0.35], [4.5, 2.0], [6.8, 4.7], [10.2, 5.86], [11.4, 6.0], [13.4, 6.0], [16.8, 6.25], [DUR, 6.25]];
@@ -240,6 +263,17 @@ function drawWheels(ctx, EP, wx, wy, r, angles) {
     ctx.beginPath(); ctx.arc(x, wy, r * 0.87, 0, Math.PI * 2); ctx.stroke();
     ctx.strokeStyle = rgba(SHADE.inkDeep, 0.45);
     ctx.beginPath(); ctx.arc(x, wy, r * 0.715, 0, Math.PI * 2); ctx.stroke();
+    // the light from the top left catches the shoulder of the tyre (fades out at both ends)
+    {
+      const a0 = -165 * DEG, span = 75 * DEG, cg = ctx.createConicGradient(a0, x, wy);
+      cg.addColorStop(0, rgba(PAL.paper, 0));
+      cg.addColorStop(span / TAU / 2, rgba(PAL.paper, 0.24));
+      cg.addColorStop(span / TAU, rgba(PAL.paper, 0));
+      cg.addColorStop(1, rgba(PAL.paper, 0));
+      ctx.lineWidth = Math.max(1.5, r * 0.012);
+      ctx.strokeStyle = cg;
+      ctx.beginPath(); ctx.arc(x, wy, r * 0.985, a0, a0 + span); ctx.stroke();
+    }
     ctx.restore();
     ctx.save();
     ctx.beginPath(); ctx.arc(x, wy, r, 0, Math.PI * 2); ctx.arc(x, wy, r * 0.70, 0, Math.PI * 2, true);
@@ -441,7 +475,7 @@ function drawPanel(ctx, EP, t, fr, W, rtl) {
   const slotC = tabWidth(ctx, EP, '0.0', numS, 600);
   const yV = y0 + 184;
   const iL = leftOf(0, icon);
-  EP.arcArrow(ctx, iL + icon / 2, yV - 13, 11, -2.2, 2.3, { kind: 'motion', width: 4, headSize: 9 });
+  EP.arcArrow(ctx, iL + icon / 2, yV - 13, 12, -2.5, 2.0, { kind: 'motion', width: 3.4, headSize: 10 });
   const cL = leftOf(icon + 12, slotC);
   tabNumber(ctx, EP, cL, yV, fr, 1, 1, numS, 600);
   const dU = icon + 12 + slotC + 10;
@@ -453,7 +487,7 @@ function drawPanel(ctx, EP, t, fr, W, rtl) {
 }
 
 /** "Real speed" badge and the note that says why the picture is not smooth: one calm row on the road. */
-function drawBadge(ctx, EP, t, rtl) {
+function drawBadge(ctx, EP, t, W, rtl) {
   const { prog, ease, T, PAL } = EP;
   const k = prog(t, 13.6, 14.2, ease.outCubic), k2 = prog(t, 13.75, 14.35, ease.outCubic);
   if (k <= 0) return;
@@ -463,7 +497,7 @@ function drawBadge(ctx, EP, t, rtl) {
   ctx.filter = 'blur(14px)';
   ctx.globalAlpha *= k;
   ctx.fillStyle = EP.rgba(EP.PAL.ink, 0.66);
-  const px0 = rtl ? EP.STAGE.W - 96 - 1120 : 96 - 30;
+  const px0 = rtl ? W - 96 - 1120 : 96 - 30;
   ctx.fillRect(px0, yc - 30, 1150, 60);
   ctx.restore();
   const box = EP.badge(ctx, T('badge.real'), { x: EP.startX(96), y: yc + 10 * (1 - k), align: 'start', opacity: k });
@@ -538,8 +572,8 @@ export default {
 
     const farLen = 5200, nearLen = 7000;
     const layers = [
-      { k: 0.030, e: 0.30, a: 0.055, blur: 1.6, blocks: makeSkyline(EP.rng(11), farLen, 60, 230) },
-      { k: 0.085, e: 0.45, a: 0.090, blur: 1.0, hills: makeHills(EP.rng(23), nearLen) },
+      { k: 0.030, e: 0.30, a: 0.07, blur: 1.6, blocks: makeSkyline(EP.rng(11), farLen, 60, 230) },
+      { k: 0.085, e: 0.45, a: 0.11, blur: 1.0, hills: makeHills(EP.rng(23), nearLen) },
     ];
     ST = { rate, spin, dist, phaseRear, phaseFront, marks, layers };
   },
@@ -618,11 +652,17 @@ export default {
     ctx.restore();
     drawWheels(ctx, EP, wx, wy, r, angles);
 
+    // a soft vignette keeps the eye on the wheel
+    const vg = ctx.createRadialGradient(W * 0.56, H * 0.52, H * 0.42, W * 0.5, H * 0.5, Math.hypot(W, H) * 0.56);
+    vg.addColorStop(0, rgba(SHADE.inkDeep, 0));
+    vg.addColorStop(1, rgba(SHADE.inkDeep, 0.4));
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
     // open from black
     const kIn = prog(t, 0, 0.9, ease.inOutSine);
     if (kIn < 1) { ctx.fillStyle = rgba(PAL.ink, 1 - kIn); ctx.fillRect(0, 0, W, H); }
 
     drawPanel(ctx, EP, t, fr, W, rtl);
-    drawBadge(ctx, EP, t, rtl);
+    drawBadge(ctx, EP, t, W, rtl);
   },
 };

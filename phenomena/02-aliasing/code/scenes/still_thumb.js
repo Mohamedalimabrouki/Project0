@@ -139,8 +139,8 @@ export default {
     // Counter-clockwise (backwards) round the left of the wheel: three dashes,
     // then a solid stem that runs through the open head (no stray cap in the V).
     // The angular span follows from the pattern, so dashes always fit exactly.
-    const lw = 28, rA = R * 1.13;
-    const a0 = -58 * D;
+    const lw = 28, rA = R * 1.175;
+    const a0 = -60 * D;
     const on = lw * 1.2, off = lw * 1.8, dashes = 3, stem = lw * 3.9;
     const total = dashes * (on + off) + stem;                  // arc length in px
     const a1 = a0 - total / rA;
