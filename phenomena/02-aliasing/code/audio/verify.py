@@ -37,9 +37,23 @@ def _mono(x):
     return x.mean(axis=1) if x.ndim == 2 else x
 
 
+def _lufs(meter, x):
+    """Integrated loudness, or None for a silent signal (a timeline with no sound cues has a silent sfx.wav)."""
+    if not np.any(x):
+        return None
+    try:
+        v = float(meter.integrated_loudness(x))
+    except Exception:
+        return None
+    return v if np.isfinite(v) else None
+
+
 def band_shares(x, sr=SR):
     f, P = signal.welch(_mono(x), sr, nperseg=8192)
     tot = float(P.sum())
+    if tot <= 0.0:                                   # silence: no shares to report
+        edges = [0, 40, 60, 120, 250, 500, 1000, 2000, 4000, 8000, 12000, sr / 2]
+        return {f"{int(lo)}-{int(hi)}": 0.0 for lo, hi in zip(edges[:-1], edges[1:])}, 0.0, f, P
     edges = [0, 40, 60, 120, 250, 500, 1000, 2000, 4000, 8000, 12000, sr / 2]
     out = {}
     for lo, hi in zip(edges[:-1], edges[1:]):
@@ -400,8 +414,7 @@ def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True, comp
 
     # ---- loudness and peaks
     meter = pyln.Meter(sr)
-    rep["loudness"] = dict(main_lufs=float(meter.integrated_loudness(main)), music_lufs=float(meter.integrated_loudness(music)),
-                           sfx_lufs=float(meter.integrated_loudness(sfxs)))
+    rep["loudness"] = dict(main_lufs=_lufs(meter, main), music_lufs=_lufs(meter, music), sfx_lufs=_lufs(meter, sfxs))
     rep["true_peak_own_8x_dbtp"] = dict(main=dsp.true_peak_db(main), music=dsp.true_peak_db(music), sfx=dsp.true_peak_db(sfxs))
     rep["ffmpeg"] = _run_ffmpeg(out_dir / fmain)
     # loudness through time (3 s windows, every 3 s) for the report
@@ -485,7 +498,8 @@ def summarise(rep, log):
     log(f"fade-in: first sample {fi['first_sample']}, first 10 ms peak {fi['first_10ms_peak_dbfs']:.1f} dBFS; "
         f"end: last 0.5 s peak {se['last_0p5s_peak_dbfs']:.1f} dBFS (all zero: {se['last_0p5s_all_zero']}), the 0.5 s before that peaks at {se['peak_1s_to_0p5s_before_end_dbfs']:.1f} dBFS")
     l = rep["loudness"]
-    log(f"loudness (pyloudnorm BS.1770-4): main {l['main_lufs']:.2f} LUFS, music {l['music_lufs']:.2f}, sfx {l['sfx_lufs']:.2f}")
+    fmt = lambda v: "silent" if v is None else f"{v:.2f}"
+    log(f"loudness (pyloudnorm BS.1770-4): main {fmt(l['main_lufs'])} LUFS, music {fmt(l['music_lufs'])}, sfx {fmt(l['sfx_lufs'])}")
     fm = rep["ffmpeg"]
     log(f"ffmpeg ebur128: I {fm.get('ebur128_integrated_lufs')} LUFS, LRA {fm.get('ebur128_lra_lu')} LU, true peak {fm.get('ebur128_true_peak_dbtp')} dBTP; "
         f"loudnorm: I {fm.get('loudnorm_input_i')}, TP {fm.get('loudnorm_input_tp')}, LRA {fm.get('loudnorm_input_lra')}")

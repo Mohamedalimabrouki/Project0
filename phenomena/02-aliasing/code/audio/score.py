@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import numpy as np
 
-import dsp
 from instruments import Bend
 
 BAR = 2.0

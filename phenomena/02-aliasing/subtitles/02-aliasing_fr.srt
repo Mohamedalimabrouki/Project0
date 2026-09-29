@@ -34,15 +34,15 @@ C’est un folioscope :
 30 images fixes par seconde.
 
 9
-00:00:35,000 --> 00:00:40,200
+00:00:35,000 --> 00:00:39,600
 Entre deux images, rien n’est enregistré.
 
 10
-00:00:40,600 --> 00:00:43,150
+00:00:40,000 --> 00:00:42,450
 Votre cerveau enchaîne les images…
 
 11
-00:00:43,300 --> 00:00:47,850
+00:00:42,650 --> 00:00:47,850
 …d’habitude en reliant chaque rayon au
 rayon le plus proche dans l’image suivante.
 
@@ -82,12 +82,12 @@ La roue semble figée, alors
 qu’elle tourne à toute vitesse.
 
 19
-00:01:26,800 --> 00:01:32,400
+00:01:26,600 --> 00:01:32,600
 On appelle cela le repliement de spectre (aliasing) :
 un mouvement rapide sous un faux nom, un alias.
 
 20
-00:01:32,800 --> 00:01:38,800
+00:01:33,000 --> 00:01:38,800
 La caméra prend 30 images par seconde.
 Les rayons passent f fois par seconde.
 
@@ -133,23 +133,23 @@ d’atelier ne devrait donc pas scintiller.
 
 29
 00:02:28,800 --> 00:02:33,800
-Les machines échantillonnent aussi : leurs
-capteurs sont lus de nombreuses fois par seconde.
+Les machines aussi : leurs capteurs
+sont lus de nombreuses fois par seconde.
 
 30
 00:02:34,200 --> 00:02:39,600
-Une vibration de 900 Hz lue 1000 fois par
-seconde ressemble à une onde lente de 100 Hz.
+Une vibration de 900 Hz lue 1000 fois
+par seconde ressemble à du 100 Hz.
 
 31
 00:02:40,000 --> 00:02:44,800
-On filtre donc ce qui est trop rapide, puis on
-échantillonne bien plus de deux fois plus vite.
+La solution : filtrer d’abord, puis
+échantillonner à bien plus du double.
 
 32
 00:02:45,200 --> 00:02:49,900
-Un stroboscope utilise exprès le repliement de
-spectre pour figer et inspecter les machines.
+Le stroboscope exploite ce repliement
+pour inspecter les machines en marche.
 
 33
 00:02:50,800 --> 00:02:59,200

@@ -19,7 +19,7 @@ import numpy as np
 from scipy import signal
 
 import dsp
-from dsp import SR, nsamp, tax, midi_hz, rng_for, exp_decay, ramp_up, ramp_down
+from dsp import SR, nsamp, midi_hz, rng_for, ramp_up, ramp_down
 
 # -------------------------------------------------------------------------- the cue record
 

@@ -22,7 +22,7 @@ So what is going on?
 6
 00:00:18,600 --> 00:00:23,900
 Engineering Phenomena, episode 02: Aliasing.
-Why wheels spin backwards on video.
+Why wheels seem to spin backwards on video.
 
 7
 00:00:24,800 --> 00:00:28,800
@@ -34,18 +34,17 @@ It is a flip book:
 30 still pictures every second.
 
 9
-00:00:35,000 --> 00:00:40,200
-Between two pictures,
-the camera sees nothing at all.
+00:00:35,000 --> 00:00:39,600
+Between two pictures, nothing is recorded.
 
 10
-00:00:40,600 --> 00:00:43,150
+00:00:40,000 --> 00:00:42,450
 Your brain joins the pictures together...
 
 11
-00:00:43,300 --> 00:00:47,850
-...by linking each spoke to the
-closest spoke in the next picture.
+00:00:42,650 --> 00:00:47,850
+...usually by linking each spoke to
+the closest spoke in the next picture.
 
 12
 00:00:48,800 --> 00:00:53,000
@@ -83,18 +82,18 @@ The wheel seems frozen,
 even though it is spinning fast.
 
 19
-00:01:26,800 --> 00:01:32,400
+00:01:26,600 --> 00:01:32,600
 Engineers call this aliasing: a fast motion
 that shows up under a false name, an alias.
 
 20
-00:01:32,800 --> 00:01:38,800
+00:01:33,000 --> 00:01:38,800
 The camera takes 30 pictures per second.
 The spokes pass by f times per second.
 
 21
 00:01:39,200 --> 00:01:46,600
-Up to 15 per second, the video tells the truth.
+Below 15 per second, the video tells the truth.
 Faster than that, the motion is disguised.
 
 22
@@ -104,8 +103,8 @@ looks frozen. Just below, it looks backwards.
 
 23
 00:01:54,800 --> 00:02:00,800
-The rule: take samples more than twice as
-fast as the fastest change you want to see.
+The rule: take samples more than
+twice as fast as the fastest change.
 
 24
 00:02:01,200 --> 00:02:05,900
@@ -130,27 +129,27 @@ the same trick on machines.
 28
 00:02:22,600 --> 00:02:27,900
 A spinning lathe can look stopped. That
-is why workshop lights must not flicker.
+is why workshop lights should not flicker.
 
 29
 00:02:28,800 --> 00:02:33,800
-Machines sample the world too: their
-sensors are read many times per second.
+Machines sample too: their sensors
+are read many times per second.
 
 30
 00:02:34,200 --> 00:02:39,600
-A 900 Hz vibration read 1000 times per
-second looks like a slow 100 Hz wave.
+A 900 Hz vibration read 1000 times
+per second looks like 100 Hz.
 
 31
 00:02:40,000 --> 00:02:44,800
-So engineers filter out what is too fast,
-then sample more than twice as fast.
+The fix: filter out the fast part,
+then sample well over twice as fast.
 
 32
 00:02:45,200 --> 00:02:49,900
-And a strobe light uses aliasing on purpose,
-to freeze fast machines for inspection.
+A strobe light uses aliasing on
+purpose, to inspect fast machines.
 
 33
 00:02:50,800 --> 00:02:59,200
