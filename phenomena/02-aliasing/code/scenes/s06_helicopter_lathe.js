@@ -104,13 +104,17 @@ function drawTail(ctx, R, t) {
   // boom: a slim cone, lit from the left
   const boom = new Path2D();
   boom.moveTo(...S(-0.064, 0.34)); boom.lineTo(...S(0.064, 0.34));
-  boom.lineTo(...S(0.030, 1.03)); boom.lineTo(...S(-0.030, 1.03));
+  boom.lineTo(...S(0.027, 1.0));
+  boom.quadraticCurveTo(...S(0.02, 1.075), ...S(0, 1.092));
+  boom.quadraticCurveTo(...S(-0.02, 1.075), ...S(-0.027, 1.0));
   boom.closePath();
   const gb = ctx.createLinearGradient(-0.064 * R, 0, 0.064 * R, 0);
   gb.addColorStop(0, SHADE.steelLight); gb.addColorStop(0.42, PAL.steel); gb.addColorStop(1, SHADE.steelMid);
   ctx.fillStyle = gb; ctx.fill(boom);
   ctx.strokeStyle = rgba(PAL.ink, 0.30); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(...S(0, 0.42)); ctx.lineTo(...S(0, 0.79)); ctx.stroke();
+  ctx.strokeStyle = rgba(PAL.ink, 0.28);
+  ctx.stroke(boom);
 
   // horizontal stabiliser (ahead of the tail rotor), swept back, small end plates
   const st = new Path2D();
@@ -125,19 +129,17 @@ function drawTail(ctx, R, t) {
   ctx.fillRect(0.208 * R, 0.634 * R, 0.014 * R, 0.088 * R);
   ctx.fillRect(-0.222 * R, 0.634 * R, 0.014 * R, 0.088 * R);
 
-  // vertical fin seen edge-on: a tapered strip on the centre line
+  // vertical fin seen edge-on: a lighter strip on the centre line of the boom's end
   const fin = new Path2D();
-  fin.moveTo(...S(-0.030, 0.79)); fin.lineTo(...S(0.030, 0.79)); fin.lineTo(...S(0.015, 1.065));
-  fin.quadraticCurveTo(...S(0, 1.09), ...S(-0.015, 1.065)); fin.closePath();
-  const gf = ctx.createLinearGradient(-0.03 * R, 0, 0.03 * R, 0);
-  gf.addColorStop(0, SHADE.steelLight); gf.addColorStop(1, PAL.steel);
-  ctx.fillStyle = gf; ctx.fill(fin);
-  ctx.strokeStyle = rgba(PAL.ink, 0.35); ctx.lineWidth = 1; ctx.stroke(fin);
+  fin.moveTo(...S(-0.012, 0.80)); fin.lineTo(...S(0.012, 0.80)); fin.lineTo(...S(0.010, 1.06));
+  fin.quadraticCurveTo(...S(0, 1.078), ...S(-0.010, 1.06)); fin.closePath();
+  ctx.fillStyle = mix(PAL.steel, PAL.paper, 0.32); ctx.fill(fin);
+  ctx.strokeStyle = rgba(PAL.ink, 0.30); ctx.lineWidth = 1; ctx.stroke(fin);
 
   // tail rotor: gearbox on the left of the fin, hub, two blades
   const hx = -0.064 * R, hy = 0.945 * R;
   ctx.fillStyle = SHADE.steelDark;
-  EP.roundRect(ctx, hx - 0.012 * R, hy - 0.02 * R, 0.062 * R, 0.04 * R, 0.012 * R); ctx.fill();
+  EP.roundRect(ctx, hx - 0.012 * R, hy - 0.02 * R, 0.058 * R, 0.04 * R, 0.012 * R); ctx.fill();
   // Two blades, true angle every frame. The disc is edge-on from above, so a
   // blade at angle phi from the vertical reaches r sin(phi) along the boom.
   const phi = wrap(tailAngle(t), TAU), rt = 0.15;
@@ -387,13 +389,16 @@ function rowHi(ctx, str, o) {
 }
 
 /** A panel on the background: slightly lifted ink, thin steel border. */
-function drawPanel(ctx, x, y, w, h, a) {
+function drawPanel(ctx, x, y, w, h, a, look = 0) {
   if (a <= 0) return;
   ctx.save();
   ctx.globalAlpha *= clamp(a);
   EP.roundRect(ctx, x, y, w, h, 16);
   ctx.fillStyle = rgba(SHADE.inkLift, 0.94); ctx.fill();
-  ctx.lineWidth = 1.5; ctx.strokeStyle = rgba(PAL.steel, 0.34); ctx.stroke();
+  // look: 0..1 turns the thin border towards yellow ("look here")
+  ctx.lineWidth = 1.5 + 0.8 * look;
+  ctx.strokeStyle = rgba(mix(PAL.steel, PAL.highlight, look), 0.34 + 0.34 * look);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -406,7 +411,11 @@ function drawLamp(ctx, x, y, a) {
   if (a <= 0) return;
   ctx.save();
   ctx.translate(x, y);
-  ctx.globalAlpha *= clamp(a);
+  withAlpha(ctx, { x: -62, y: -8, w: 124, h: 134 }, clamp(a), drawLampBody);
+  ctx.restore();
+}
+function drawLampBody(ctx) {
+  ctx.save();
   const g = ctx.createRadialGradient(0, 60, 3, 0, 60, 58);
   g.addColorStop(0, rgba(PAL.energy, 0.50)); g.addColorStop(0.4, rgba(PAL.energy, 0.16)); g.addColorStop(1, rgba(PAL.energy, 0));
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 60, 58, 0, TAU); ctx.fill();
@@ -700,7 +709,7 @@ function drawBlur(ctx, cx, cy, a) {
 const TM = {
   eyebrow: [0.4, 4.5],
   heliIn: [0.5, 1.5],
-  slide: [5.6, 6.6],                 // from the centre to the left
+  slide: [5.5, 6.8],                 // from the centre to the left
   badgeReal: 1.1,
   rows: [6.2, 6.75, 7.3],            // blades, = passes, = pictures
   example: 6.2,
@@ -746,7 +755,7 @@ function renderPart1(ctx, t, W, rtl) {
 
   // the equation-like block: blades x turns = passes = pictures
   const bx = rtl ? TEXT_X.rtl : TEXT_X.ltr;
-  const parts = EP.T('s06.blades').split(' = ');
+  const parts = EP.T('s06.blades').split(/[\s\u00a0\u202f]=[\s\u00a0\u202f]/);
   const passes = String(BLADES * ROTOR_RATE);
   const rows = [{ s: parts[0], hi: null, t0: TM.rows[0] }];
   if (parts.length > 1) rows.push({ s: '= ' + parts.slice(1).join(' = '), hi: passes, t0: TM.rows[1] });
@@ -796,8 +805,8 @@ function renderPart2(ctx, t, W, rtl) {
     const ka = prog(t, TM.arrow[0], TM.arrow[1], ease.inOutCubic);
     EP.arcArrow(ctx, cx, cy, R * 1.16, 30 * DEG, 128 * DEG, { kind: 'motion', progress: ka, alpha: kLC, width: 4.5 });
     const kl = enter(TM.arrow[0] + 0.25);
-    EP.text(ctx, EP.num(CHUCK_RATE) + ' ' + EP.T('unit.turns'), { x: cx, y: P.top + 404, size: 27, weight: 600, align: 'center', opacity: kl, maxWidth: P.w - 60, shrink: true, maxLines: 1 });
-    EP.text(ctx, EP.qty(CHUCK_RATE * 60, 'rpm'), { x: cx, y: P.top + 432, size: 22, weight: 500, color: PAL.steel, align: 'center', latin: true, opacity: kl });
+    EP.text(ctx, EP.num(CHUCK_RATE) + ' ' + EP.T('unit.turns'), { x: cx, y: P.top + 398, size: 27, weight: 600, align: 'center', opacity: kl, maxWidth: P.w - 60, shrink: true, maxLines: 1 });
+    EP.text(ctx, (rtl ? '\u200e' : '') + EP.num(CHUCK_RATE * 60) + ' ' + EP.T('s06.rpm'), { x: cx, y: P.top + 434, size: 22, weight: 500, color: PAL.steel, align: 'center', opacity: kl, maxWidth: P.w - 60, shrink: true, maxLines: 1 });
     ctx.restore();
   }
   if (kLM > 0) {
@@ -815,7 +824,7 @@ function renderPart2(ctx, t, W, rtl) {
   const crisp = prog(t, TM.crisp[0], TM.crisp[1], ease.inOutSine);
   if (kRP > 0) {
     ctx.save(); ctx.translate(0, (1 - kRP) * 14);
-    drawPanel(ctx, xR, P.top, P.w, P.h, kRP);
+    drawPanel(ctx, xR, P.top, P.w, P.h, kRP, prog(t, TM.warn, TM.warn + 0.7, ease.inOutSine));
     EP.text(ctx, EP.T('s06.eye'), { x: startEdge(xR), y: P.top + 46, size: 30, weight: 600, opacity: kRP, align: 'start', maxWidth: P.w - 290, shrink: true, maxLines: 1 });
     const cx = xR + P.w / 2, cy = P.top + cyOff;
     drawBlur(ctx, cx, cy, kRP);
@@ -823,8 +832,7 @@ function renderPart2(ctx, t, W, rtl) {
       // crisp, stationary jaws dominate; a faint veil of the blur stays (real lamps never go fully dark)
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.globalAlpha *= crisp * (1 - VEIL);
-      drawChuck(ctx, R, CRISP_ANGLE);
+      withAlpha(ctx, { x: -R - 4, y: -R - 4, w: 2 * R + 8, h: 2 * R + 8 }, crisp * (1 - VEIL), g => drawChuck(g, R, CRISP_ANGLE));
       ctx.restore();
     }
     const kb = enter(TM.crisp[0] + 0.1);
@@ -835,7 +843,7 @@ function renderPart2(ctx, t, W, rtl) {
     ctx.save(); ctx.translate(0, (1 - kRM) * 10);
     drawLamp(ctx, xR + 48, modY, kRM);
     drawGraph(ctx, { x: xR + 108, y: 310, w: 522, h: 58, t, k: flick, a: kRM });
-    EP.badge(ctx, EP.T('badge.slowx', { n: SLOW }), { x: xR + 108 + 522, y: 294, align: 'right', size: 15, opacity: enter(TM.flicker[0] - 0.1) });
+    EP.badge(ctx, EP.T('badge.slowx', { n: SLOW }), { x: xR + 108 + 522, y: 296, align: 'right', size: 16, opacity: enter(TM.flicker[0] - 0.1) });
     ctx.restore();
   }
 
@@ -846,8 +854,11 @@ function renderPart2(ctx, t, W, rtl) {
     const o = { size: 27, weight: 500, hi, maxWidth: 850 };
     const s1 = EP.T('s06.flicker'), s2 = EP.T('s06.jaws');
     const w1 = rowHi(ctx, s1, { ...o, x: 0, y: 0, draw: false }).w, w2 = rowHi(ctx, s2, { ...o, x: 0, y: 0, draw: false }).w;
-    const Wb = Math.max(w1, w2), cxb = xR + P.w / 2;
-    const edge = rtl ? cxb + Wb / 2 : cxb - Wb / 2;
+    const Wb = Math.max(w1, w2), cxb = xR + P.w / 2 + 22;
+    let edge = rtl ? cxb + Wb / 2 : cxb - Wb / 2;
+    // keep the text, the bracket and the equals sign inside the safe area (96 px margin)
+    const edgeLo = rtl ? 96 + Wb : 96 + 64, edgeHi = rtl ? W - 96 - 64 : W - 96 - Wb;
+    edge = Math.max(edgeLo, Math.min(edgeHi, edge));
     const y1 = 410, y2 = 446;
     rowHi(ctx, s1, { ...o, x: edge, y: y1 + (1 - k1) * 10, opacity: k1 });
     if (k2 > 0) rowHi(ctx, s2, { ...o, x: edge, y: y2 + (1 - k2) * 10, opacity: k2 });
@@ -891,7 +902,7 @@ export default {
     { t: TM.leftPanel + 0.25, sfx: 'pop' },
     { t: TM.rightPanel, sfx: 'pop' },
     { t: TM.flicker[0], sfx: 'hum', dur: 9.7 },
-    { t: 13.3, sfx: 'shimmer', dur: 1.6 },
+    { t: 13.35, sfx: 'shimmer', dur: 1.6 },
     { t: TM.lab1, sfx: 'pop' },
     { t: TM.lab2, sfx: 'pop' },
     { t: TM.warn, sfx: 'pop' },

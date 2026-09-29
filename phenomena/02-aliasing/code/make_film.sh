@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # Engineering Phenomena 02 - build every final file from the code, in one go.
 #
-#   ./make_film.sh            everything (3 languages, Short, stills, subtitles)
-#   ./make_film.sh en         only the English full video
-#   KEEP_FRAMES=1 ./make_film.sh en    keep the PNG frames afterwards (for checks)
+#   ./make_film.sh              everything: full film and Short in en, fr, ar, stills, subtitles
+#   ./make_film.sh en           only the English versions
+#   WORKERS=2 ./make_film.sh    fewer parallel browser pages (slower machine)
+#
+# Frames are streamed straight into the video encoder (no huge PNG folders);
+# one frame per second is kept as a PNG in build/ for visual checks.
 #
 # Needs: Node.js 18+, Python 3 with numpy scipy soundfile pyloudnorm pillow,
 # ffmpeg, and the browser used by Playwright (npx playwright install chromium).
 set -euo pipefail
 cd "$(dirname "$0")"
 
-LANGS=("${@:-en fr ar}")
-LANGS=(${LANGS[@]})
+LANGS=(${@:-en fr ar})
 WORKERS="${WORKERS:-4}"
 PIECE=02-aliasing
 VIDEO=../video
@@ -33,23 +35,12 @@ for COMP in main short; do
 
   SHAPE=16x9; [ "$COMP" = short ] && SHAPE=9x16
   for L in "${LANGS[@]}"; do
-    step "$COMP / $L: drawing every frame"
-    node render.mjs --comp "$COMP" --lang "$L" --workers "$WORKERS"
-    step "$COMP / $L: encoding"
-    ffmpeg -hide_banner -loglevel error -y -framerate 30 -start_number 0 \
-      -i "build/${COMP}_${L}/frames/f%05d.png" -i "build/audio/${COMP}.wav" \
-      -map 0:v -map 1:a \
-      -vf "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p" \
-      -c:v libx264 -preset slow -crf 16 -tune animation -profile:v high \
-      -color_primaries bt709 -color_trc bt709 -colorspace bt709 -color_range tv \
-      -g 60 -c:a aac -b:a 320k -ar 48000 -shortest -movflags +faststart \
-      "$VIDEO/${PIECE}_${SHAPE}_${L}.mp4"
-    echo "video: $VIDEO/${PIECE}_${SHAPE}_${L}.mp4"
-    if [ "$COMP" = main ] && [ "$L" = en ]; then
-      step "accessibility: flash check"
-      python3 qa/flash_check.py "build/${COMP}_${L}/frames"
-    fi
-    [ "${KEEP_FRAMES:-0}" = 1 ] || rm -rf "build/${COMP}_${L}/frames"
+    OUT="$VIDEO/${PIECE}_${SHAPE}_${L}.mp4"
+    step "$COMP / $L: drawing and encoding every frame"
+    node render.mjs --comp "$COMP" --lang "$L" --workers "$WORKERS" \
+      --stream --encode --audio "build/audio/${COMP}.wav" --video "$OUT" --png-every 30
+    step "$COMP / $L: photosensitivity check"
+    python3 qa/flash_check.py "$OUT"
   done
 done
 

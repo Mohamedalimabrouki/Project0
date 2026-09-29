@@ -23,6 +23,8 @@ A collection of professional visual art (Blender renders, videos, stills) that e
 - `docs/BACKLOG.md` - subjects to make next.
 - `assets/palette/palette.json` - the palette, single source of truth. `tools/blender_palette.py` and `docs/STYLE_GUIDE.md` repeat its values: keep all three in sync.
 - `tools/blender_palette.py` - creates the house materials in Blender (tested in Blender 5.0).
+- `phenomena/02-aliasing/code/` - a piece made entirely with code (every frame drawn in headless Chromium from the equations). Its `README.md` explains how to build it and `SCENE_GUIDE.md` holds the rules and drawing API; reuse the engine for other code-drawn pieces.
+- `assets/fonts/` - Inter and IBM Plex Sans Arabic (SIL Open Font Licence). `assets/brand/logo-mark.svg` - the series mark for the bottom-right corner.
 
 ## When helping
 

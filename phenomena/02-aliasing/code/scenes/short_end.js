@@ -133,6 +133,6 @@ export default {
     text(ctx, unit, { x: bl, y: wy + 48, size: 32, weight: 600, color: PAL.steel, opacity: kR * out, align: 'left', maxWidth: 300, shrink: true, maxLines: 1 });
 
     // honest label: real speed, sampled by your own screen
-    EP.badge(ctx, T('badge.real'), { x: CX, y: by, align: 'center', size: 26, opacity: prog(t, 3.3, 3.9, ease.outCubic) * out });
+    EP.badge(ctx, T('badge.real'), { x: CX, y: by, align: 'center', size: 30, opacity: prog(t, 3.3, 3.9, ease.outCubic) * out });
   },
 };

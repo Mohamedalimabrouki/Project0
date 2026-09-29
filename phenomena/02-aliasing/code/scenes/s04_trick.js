@@ -9,7 +9,11 @@
  *   Part B  66 degrees per picture   seen  -6 degrees          backwards
  *           then the same at REAL SPEED: 5.5 turns per second = 66 degrees per frame
  *   Part C  72 degrees per picture   seen   0 degrees          frozen
+ *           the paint is on for ONE stepped picture (the yellow spoke lands exactly on the
+ *           old place of the next spoke), then it fades while still stepping: from picture 3
+ *           on, every picture really is identical while "every picture looks the same" shows
  *           then the same at REAL SPEED: 6 turns per second = 72 degrees per frame
+ *           (the yellow spoke comes back for a moment to prove the wheel spins, then fades)
  *
  * Everything on screen is computed from those few numbers:
  *   real turn per picture     = delta
@@ -26,6 +30,12 @@
  *
  * render() is a pure function of t: the wheel angle comes from integer frame
  * numbers (no accumulated error), every overlay from time since its picture.
+ *
+ * Hand-over from scene 03: it ends on the wheel alone, at (960, 606), radius 250, spoke
+ * up, still and opaque. This scene therefore has that same wheel, fully opaque, from its
+ * very first frame (angle 0 = spoke up), so the cross-fade between the two scenes is
+ * invisible. If scene 03 ever ends on another wheel, change A.base (a multiple of 72
+ * degrees keeps the pattern identical) and the wheel position constants below.
  */
 
 // ------------------------------------------------------------------ numbers
@@ -38,7 +48,6 @@ const SPOKES = 5;
 const CX = 960, CY = 606, R = 250;
 const R_REAL = R + 22;   // ring of the solid "real turn" arrow
 const R_SEEN = R + 60;   // ring of the dashed "what we see" arrow
-const R_LAB = R + 84;    // labels start outside this ring
 
 // ------------------------------------------------------------------ the runs
 // Step run: picture i shows spoke 0 at  base + delta * i  (degrees, unwrapped),
@@ -293,7 +302,7 @@ function stepOverlays(ctx, t, EP, m, paintA) {
   const tEnd = r.f1 / FPS;
   const ov = 1 - prog(t, tEnd - SLOW_EDGE, tEnd, ease.inOutSine);                 // the run's overlays leave together
   const fl = flagsFor(m.part, n), fp = n > 0 ? flagsFor(m.part, n - 1) : {};
-  const annK = m.part === 'C' ? 1 - prog(t, 28.5, 29.0, ease.inOutSine) : 1;      // part C: arrows leave with the paint
+  const annK = m.part === 'C' ? 1 - prog(t, 27.9, 28.35, ease.inOutSine) : 1;     // part C: arrows leave with the paint
   const k = ov * annK;
   const a1 = m.angle, a0 = m.prev;                                                // new and old position of the yellow spoke
   const ang = mod(a1, 360) * DEG;
@@ -370,7 +379,7 @@ function stepOverlays(ctx, t, EP, m, paintA) {
   }
 
   // ---- part C: once the paint is gone the pictures ARE identical, and only then do we say "frozen"
-  if (m.part === 'C') seenFixed(ctx, EP, real, prog(t, 28.9, 29.4, ease.outCubic) * ov);
+  if (m.part === 'C') seenFixed(ctx, EP, real, prog(t, 28.5, 29.0, ease.outCubic) * ov);
 }
 
 /** an arrow of zero length is a dot: "what we see" did not move */
@@ -472,7 +481,7 @@ cue(23.7, 'glitch');                                    // the paint is gone: th
 cue(C.t0 - 0.1, 'click');                               // back to slow motion
 cue(C.t0 + 0.3, 'pop', { gain: -4 });                   // the paint comes back
 cue(C.t0 + 1.3, 'pop', { gain: -6 });                   // "real turn +72"
-cue(29.0, 'shimmer', { gain: -6, dur: 1.6 });           // the paint is gone: every picture looks the same
+cue(28.5, 'shimmer', { gain: -6, dur: 1.6 });           // the paint is gone: every picture looks the same
 cue(Cr.t0, 'click');                                    // real speed again
 cue(Cr.t0, 'whirr', { dur: Cr.t1 - Cr.t0, rate: turnsPerSecond(Cr) });
 cue(35.0, 'shimmer', { dur: 3 });                       // the paint is gone: frozen while it spins
@@ -487,7 +496,7 @@ function paintAt(EP, t) {
   let a = prog(t, 2.2, 3.2, ease.inOutSine);              // "paint one spoke yellow"
   if (t >= 22.6) a = 1 - prog(t, 22.6, 24.1, ease.inOutSine);   // real speed B: paint fades, only identical spokes remain
   if (t >= 26.6) a = prog(t, 26.6, 27.2, ease.inOutSine);       // slow motion again: painted again
-  if (t >= 28.55) a = 1 - prog(t, 28.55, 29.05, ease.inOutSine);   // C: paint fades while still stepping: identical pictures
+  if (t >= 27.95) a = 1 - prog(t, 27.95, 28.4, ease.inOutSine);    // C: after ONE painted step the paint fades, still stepping: from picture 3 all pictures are identical
   if (t >= 32.4) a = prog(t, 32.4, 32.7, ease.inOutSine);       // real speed C: the yellow spoke shows it spins...
   if (t >= 33.5) a = 1 - prog(t, 33.5, 35.0, ease.inOutSine);   // ...then the paint fades: perfectly still
   return a;
@@ -508,21 +517,16 @@ export default {
   music: 'explain',
 
   render(ctx, t, EP, { W, H }) {
-    const { PAL, ease, prog } = EP;
+    const { PAL } = EP;
     EP.bg(ctx, W, H);
-    const wheelA = prog(t, 0.4, 1.0, ease.outCubic);
-    if (wheelA <= 0) return;
-
+    // Scene 03 ends on exactly this wheel (960, 606), radius 250, spoke up, still and opaque:
+    // it is here from the very first frame, so the cross-fade between the scenes cannot be seen.
     const m = model(t);
     const ang = mod(m.angle, 360) * DEG;
     const paintA = paintAt(EP, t);
 
     // ------------------------------------------------------------- the wheel
-    const grow = 0.95 + 0.05 * prog(t, 0.4, 1.3, ease.outCubic);          // the wheel settles in as it fades in
-    ctx.save();
-    ctx.translate(CX, CY); ctx.scale(grow, grow); ctx.translate(-CX, -CY);
-    EP.wheel(ctx, { x: CX, y: CY, r: R, angle: ang, highlight: 0, highlightAlpha: paintA, opacity: wheelA });
-    ctx.restore();
+    EP.wheel(ctx, { x: CX, y: CY, r: R, angle: ang, highlight: 0, highlightAlpha: paintA });
     if (m.mode === 'step' && m.s < 0.12) {
       // a new picture: the spokes settle from slightly brighter in 0.12 s (not a flash)
       const k = Math.pow(1 - m.s / 0.12, 1.5);

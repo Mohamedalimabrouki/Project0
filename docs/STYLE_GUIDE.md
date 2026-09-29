@@ -115,5 +115,5 @@ Equation rules (the international convention):
 ## 9. Signature
 
 - Opening card: **Engineering Phenomena** / episode number / phenomenon name.
-- Small logo mark in the bottom-right corner, same place in every piece.
+- Small logo mark in the bottom-right corner, same place in every piece: [`assets/brand/logo-mark.svg`](../assets/brand/logo-mark.svg) (about 60 % opacity on the ink background).
 - Closing card: the one-sentence takeaway, in the kids layer wording.

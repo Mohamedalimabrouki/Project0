@@ -38,7 +38,7 @@ const REAL_RATE = TURN * FPS / 360;   // 5.5 turns per second
 const X = 540;
 const Y_START = 1070, R_START = 300;  // where the hook leaves the wheel (same place, same size)
 const Y_MAIN = 1000, R_MAIN = 330;
-const LEFT = 60, RIGHT = 920;         // text margins; the right edge stays free for the app buttons
+const LEFT = 60, RIGHT = 916;         // text margins (the right edge, x > 920, is kept free for the app buttons)
 const ROW_TOP = 612;                  // badge and picture counter
 // the "unrolled rim" ruler under the wheel: one spoke gap (72 degrees) drawn 780 px wide, so 66 and 6 degrees are readable
 const RX0 = 110, RPX = 780 / 72;      // x of 0 degrees, pixels per degree (a diagram: never mirrored)
@@ -167,7 +167,7 @@ export default {
         ctx.beginPath(); ctx.moveTo(X, Y); ctx.arc(X, Y, R * 0.66, a0 - Math.PI / 2, a1 - Math.PI / 2); ctx.closePath(); ctx.fill(); ctx.restore();
       };
       // one spoke gap: the wedge between the old painted spoke and the old next spoke; the last 6 degrees of it are "just short"
-      if (pWedge > 0) wedge(aPrev, aPrev + GAP * DEG * pWedge, 0.14, PAL.paper);
+      if (pWedge > 0) wedge(aPrev, aPrev + GAP * DEG * pWedge, 0.18, PAL.paper);
       if (pShort > 0) wedge(aNew, aNext, 0.42 * pShort, PAL.highlight);
 
       // where the spokes were in the previous picture (outlines)
@@ -181,6 +181,9 @@ export default {
         EP.arcArrow(ctx, X, Y, rS, aPrev, aNew, { width: 8, headSize: 30, progress: pSolid, alpha: env });
         dot(ctx, ...EP.polar(X, Y, rS, aPrev), 7.5, { fill: PAL.motion, alpha: env });
       }
+      // the closest match for the old painted spoke: dashed blue, -6 degrees, backwards, from the same tail dot.
+      // It grows with the ghost's glide, so the yellow outline slides along it (the ruler below shows it to scale).
+      if (phD && glide > 0.02) EP.arcArrow(ctx, X, Y, rS, aPrev, aPrev + seen * DEG, { width: 7, headSize: 20, dash: [5, 4], progress: glide, alpha: env });
     }
 
     // ---- top row: honest badge, camera and picture counter
@@ -188,8 +191,8 @@ export default {
     // the swap is sequential (old label gone, then the new one arrives), so two texts never overlap
     const kSlow = prog(t, 0.6, 1.1, ease.outCubic) * (1 - prog(t, T_SWITCH - 0.05, T_SWITCH + 0.1, ease.inOutSine));
     const kReal = prog(t, T_SWITCH + 0.12, T_SWITCH + 0.4, ease.outCubic);
-    EP.badge(ctx, T('badge.slowx', { n: 30 }), { x: xs, y: ROW_TOP, align: 'start', size: 26, opacity: kSlow });
-    EP.badge(ctx, T('badge.real'), { x: xs, y: ROW_TOP, align: 'start', size: 26, opacity: kReal });
+    EP.badge(ctx, T('badge.slowx', { n: 30 }), { x: xs, y: ROW_TOP, align: 'start', size: 30, opacity: kSlow });
+    EP.badge(ctx, T('badge.real'), { x: xs, y: ROW_TOP, align: 'start', size: 30, opacity: kReal });
 
     const camOp = (t >= 1 ? prog(t, 1, 1.3) : 0) * (1 - prog(t, T_SWITCH - 0.05, T_SWITCH + 0.15, ease.inOutSine));
     if (camOp > 0) {

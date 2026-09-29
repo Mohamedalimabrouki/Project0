@@ -1,37 +1,54 @@
 /*
- * Scene 03 - Snapshots. Opens the "See it" chapter.
+ * Scene 03 - Snapshots. Opens the "See it" chapter (24.5 s).
  *
  * Idea: a video is a series of still pictures, 30 per second, with nothing
  * recorded in between. The brain joins the pictures by linking each spoke to
  * the closest spoke in the next picture.
  *
- * EVERYTHING on screen is computed from four numbers:
+ * EVERYTHING on screen is computed from a few numbers (nothing is placed by eye):
  *
  *   FR    real turning rate of the wheel ............ 1.5 turns per second
  *   FS    pictures per second of the video .......... 30
  *   SLOW  slow-motion factor while pictures are shown  15
- *   N     pictures in the strip = one second ........ 30
+ *   N     pictures in the strip = one second ........ FS x 1 s = 30
  *
- *   turn between two pictures = 360 * FR / FS = 18 degrees   (never typed)
+ *   turn between two pictures = 360 * FR / FS = 18 degrees
  *   seconds between two pictures on screen = SLOW / FS = 0.5 s
  *   turning rate on screen while slowed = FR / SLOW = 0.1 turns per second
+ *   the closest spoke of the next picture = EP.wrapSigned(turn, 72 degrees) = +18 degrees
  *
- * TIME WARP. The wheel turns at the same REAL rate (FR) all the time. What
- * changes is how fast screen time runs compared with real time:
+ * TIME WARP. The wheel turns at the same REAL rate (FR) all the time. Only the
+ * speed of screen time against real time changes ("rho" = real seconds per screen second):
  *
- *   0 - 4.4 s      real time (the wheel is drawn at its true rate, no blur)
+ *   0 - 4.4 s      real time (the wheel is drawn at its true rate, no motion blur)
  *   4.4 - 5.4 s    time slows down, x1 to x15 (eased in the logarithm of the rate)
- *   5.4 - 9.5 s    x15 slow motion: one picture every 0.5 s on screen
+ *   5.4 - 9.5 s    x15 slow motion: one picture every 0.5 s on screen (badge "Slowed down x15")
  *   9.5 - 10.15 s  time speeds up again to real time
- *   after          real time: the rest of the second fills in one picture per
- *                  video frame (1/30 s), exactly like the film itself
+ *   after          real time: the rest of the second fills in at one picture per
+ *                  video frame (1/30 s), exactly as the film itself is made (badge "Real speed")
  *
- * "rho(t)" is real seconds per screen second. The wheel angle is the integral
- * of FR * rho (EP.angleTable, computed once in setup). Picture n is taken when
- * the wheel has turned exactly n * 18 degrees since picture 0; the screen
- * time of every picture is found by inverting that angle. So the angles in the
- * cards are exact and the on-screen spacing is 0.5 s in slow motion, 1/30 s
- * in real time, and everything in between during the ramps.
+ * The wheel angle is the integral of FR * rho (EP.angleTable, computed once in
+ * setup). Picture n is taken when the wheel has turned exactly n * 18 degrees
+ * since picture 0; the screen time of each picture is found by inverting that
+ * angle (bisection). So every card shows the true angle of that instant, and the
+ * spacing of pictures on screen is 0.5 s slowed down, 1/30 s in real time, and
+ * everything in between during the ramps. A check is exported (_check) for tools.
+ *
+ * STORY (screen time)
+ *   0.4 -  4.8   the wheel (real time) and a camera aimed at it; eyebrow "See it"
+ *   4.4 -  6.0   time slows down; the film strip runs across the stage; timeline of 30 ticks
+ *   6.0 - 10.6   pictures 1..8 one by one (shutter, card slides out and into the strip),
+ *                then time speeds up and the strip fills; a bracket says "1 second"
+ *  11.0 - 15.6   the strip slides so pictures 1 and 2 are in the middle, they unfold into two
+ *                big cards; between them the motion nobody recorded: ghost sweep, "Not recorded", 1/30 s
+ *  16.5 - 18.4   the two cards slide onto each other (double exposure) and grow into ONE big wheel:
+ *                picture 2 solid, picture 1 a dashed ghost (the language scene 04 continues)
+ *  19.5 - 22.0   each spoke is linked to the closest spoke of the next picture: one dashed blue arrow
+ *                ("what we see") per beat, on the same ring as in scene 04; then a calm hold and a
+ *                fade to the wheel alone, exactly scene 04's opening wheel (960, 606), radius 250, spoke up.
+ *
+ * Captions: c3 to c5 are timed for reading (about 2.5 words per second at most) and, when needed, given
+ * a per-language line width in setup (fitCaptions) so that no word is left alone on a second line.
  */
 
 const DUR = 24.5;
@@ -59,8 +76,8 @@ const B = {
   stripA: 16.4, stripB: 17.1,               // the strip leaves
   stackA: 16.5, stackB: 17.4,               // the two cards slide onto each other
   bigA: 17.3, bigB: 18.4,                   // and grow into one big wheel
-  legA: 18.55, legB: 19.2,
-  arrow0: 20.0, arrowStep: 0.4, arrowDur: 0.5,
+  legA: 18.5, legB: 19.15,
+  arrow0: 19.5, arrowStep: 0.5, arrowDur: 0.5,        // one arrow per beat (120 bpm)
   endA: 23.6, endB: 24.3,                   // everything but the wheel leaves (s04 starts with that wheel)
 };
 
@@ -103,7 +120,7 @@ let ST = null;
 /** A snapshot card: rounded frame, thin paper stroke, lifted ink fill, the wheel of that instant. */
 function drawCard(ctx, EP, cx, cy, S, ang, o = {}) {
   const { PAL, SHADE, rgba } = EP;
-  const { alpha = 1, frame = 1, wheel = 1, edge = PAL.paper, edgeAlpha = 0.9 } = o;
+  const { alpha = 1, frame = 1, fill = 1, wheel = 1, edge = PAL.paper, edgeAlpha = 0.9 } = o;
   if (alpha <= 0) return;
   ctx.save();
   ctx.globalAlpha *= alpha;
@@ -111,8 +128,11 @@ function drawCard(ctx, EP, cx, cy, S, ang, o = {}) {
     ctx.save();
     ctx.globalAlpha *= frame;
     EP.roundRect(ctx, cx - S / 2, cy - S / 2, S, S, S * 0.085);
+    ctx.save();
+    ctx.globalAlpha *= fill;                   // a translucent fill lets the card underneath show through
     ctx.fillStyle = SHADE.inkLift;
     ctx.fill();
+    ctx.restore();
     ctx.lineWidth = Math.max(1.3, S * 0.0075);
     ctx.strokeStyle = rgba(edge, edgeAlpha);
     ctx.stroke();
@@ -161,7 +181,10 @@ function cardState(EP, k, t) {
     // The flight is shortened when the next picture follows quickly (the pace picks up).
     const next = k + 1 < N ? ST.shots[k + 1] - t0 : 0.5;
     const life = clamp(1.5 * next, 0.2, 0.75), u = (t - t0) / life, ue = 0.2 / life;
-    if (u >= 1) return { x: px, y: py, S: STRIP.card, a: 1, landed: true };
+    if (u >= 1) {
+      const age = t - (t0 + life), press = age < 0.16 ? 0.06 * Math.sin(Math.PI * age / 0.16) : 0;   // the card presses into its slot
+      return { x: px, y: py, S: STRIP.card * (1 - press), a: 1, landed: true };
+    }
     if (u < ue) {
       const e = ease.outCubic(u / ue);
       return { x: CAM.x, y: lerp(EJECT.yB - EJECT.s / 2, EJECT.yB + EJECT.s / 2, e), S: EJECT.s, a: 1, clipY: EJECT.yB, landed: false, fly: true };
@@ -311,16 +334,54 @@ function legendBlock(ctx, EP, rtl, side, xEdge, rows, a) {
   });
 }
 
+// exposed for tests only (tools and checks read the numbers; the stage ignores it)
+export const _check = { get state() { return ST; }, FR, FS, SLOW, N, STEP, TM, B, thetaOf, cardState, slotX, STRIP, FOC, BIG, STRIP_DX };
+
+// ---------------------------------------------------------------- captions
+// Reading time: at most about 2.5 words per second (c5 is 13 words: 5.2 s).
+const CAPTIONS = [
+  { key: 's03.c1', in: 0.8, out: 4.8 },
+  { key: 's03.c2', in: 5.2, out: 10.6 },
+  { key: 's03.c3', in: 11.0, out: 15.6 },
+  { key: 's03.c4', in: 16.0, out: 18.45 },      // appears just before the two pictures join (16.5 s)
+  { key: 's03.c5', in: 18.65, out: 23.85 },     // the arrows start at 19.5 s
+];
+
+/**
+ * Caption line breaks. The engine wraps a caption greedily (default band: 50 px, weight 600, 1560 px wide),
+ * which can strand one word on a second line. Each caption is measured once, in the language being rendered:
+ * if it fits on one line inside the safe width it gets that width (one line); otherwise it gets the narrowest
+ * width that reproduces the most even two-line split (never ending a line on a tiny word). Any wording works,
+ * so a changed English or translated line needs no change here.
+ */
+function fitCaptions(EP) {
+  if (typeof document === 'undefined') return;                     // only in the browser renderer
+  const ctx = document.createElement('canvas').getContext('2d');
+  const SIZE = 50, WEIGHT = 600, DEFAULT = 1560, SAFE = 1728;
+  const width = str => EP.measure(ctx, str, { size: SIZE, weight: WEIGHT }).w;
+  for (const c of CAPTIONS) {
+    delete c.band;
+    const str = EP.T(c.key), w = width(str);
+    if (w <= DEFAULT) continue;
+    if (w <= SAFE - 60) { c.band = { maxWidth: SAFE }; continue; }   // one line, still inside the safe area
+    const words = str.split(' ');
+    let best = null;
+    for (let k = 1; k < words.length; k++) {
+      const l1 = words.slice(0, k).join(' '), l2 = words.slice(k).join(' ');
+      const w1 = width(l1), w2 = width(l2), mw = Math.max(w1, w2) + 10;
+      if (width(l1 + ' ' + words[k]) <= mw) continue;               // the engine would pull the next word up: not reachable
+      const tiny = /^\p{L}{1,3}$/u.test(words[k - 1].replace(/[^\p{L}\p{N}]/gu, ''));
+      const cost = Math.max(w1, w2) + (tiny ? 250 : 0);
+      if (!best || cost < best.cost) best = { cost, mw };
+    }
+    if (best && best.mw < DEFAULT) c.band = { maxWidth: Math.ceil(best.mw) };
+  }
+}
+
 // ---------------------------------------------------------------- the scene
 export default {
   duration: DUR,
-  captions: [
-    { key: 's03.c1', in: 0.8, out: 4.8 },
-    { key: 's03.c2', in: 5.2, out: 10.6 },
-    { key: 's03.c3', in: 11.0, out: 16.2 },
-    { key: 's03.c4', in: 16.6, out: 19.15 },
-    { key: 's03.c5', in: 19.3, out: 23.85 },
-  ],
+  captions: CAPTIONS,
   cues: [
     { t: 0.45, sfx: 'whoosh', dur: 0.8, gain: -10 },
     { t: 0.95, sfx: 'pop', gain: -8 },
@@ -332,17 +393,18 @@ export default {
     ...Array.from({ length: 8 }, (_, i) => ({ t: TM.shot1 + i * SLOW / FS, sfx: 'shutter' })),
     { t: 9.55, sfx: 'whoosh', dur: 1.1, gain: -5 },
     { t: 10.63, sfx: 'tick' },
-    { t: B.slideA, sfx: 'whoosh', dur: 0.9, gain: -6 },
-    { t: 12.85, sfx: 'pop', gain: -8 },
-    { t: 13.8, sfx: 'pop', gain: -10 },
-    { t: B.stackA, sfx: 'whoosh', dur: 1.3, gain: -8 },
-    { t: 18.55, sfx: 'pop', gain: -10 },
+    { t: B.slideA, sfx: 'whoosh', dur: 0.9, gain: -6 },        // the strip slides: pictures 1 and 2 come to the centre
+    { t: B.gapA + 0.1, sfx: 'pop', gain: -8 },                  // "Not recorded"
+    { t: B.dimA + 0.05, sfx: 'pop', gain: -10 },                // 1/30 s
+    { t: B.stackA, sfx: 'whoosh', dur: 1.3, gain: -8 },         // the two pictures join
+    { t: B.legA, sfx: 'pop', gain: -10 },                       // legend
     ...Array.from({ length: 5 }, (_, i) => ({ t: B.arrow0 + B.arrowStep * i, sfx: 'blip', gain: -6 })),
   ],
   math: [],
   music: 'explain',
 
   setup(EP) {
+    fitCaptions(EP);
     // real seconds per screen second
     const rho = t => {
       const { downA, downB, upA, upB } = TM;
@@ -526,7 +588,7 @@ export default {
         // (a double exposure), then becomes the dashed ghost of its spokes (the language s04 continues)
         drawCard(ctx, EP, c1.x, c1.y, c1.S, thetaOf(1), { frame, wheel: 1 });
         const w0 = 1 - 0.45 * prog(m1, 0.55, 1, ease.inOutSine) - 0.55 * prog(m2, 0, 0.55, ease.inOutSine);
-        drawCard(ctx, EP, c0.x, c0.y, c0.S, thetaOf(0), { frame, wheel: w0, edgeAlpha: 0.9 - 0.3 * m1 });
+        drawCard(ctx, EP, c0.x, c0.y, c0.S, thetaOf(0), { frame, fill: 1 - 0.92 * prog(m1, 0.5, 0.95, ease.inOutSine), wheel: w0, edgeAlpha: 0.9 - 0.3 * m1 });
         const gh = prog(m2, 0.1, 0.65, ease.inOutSine);
         if (gh > 0) EP.wheelGhost(ctx, { x: c0.x, y: c0.y, r: c0.S * CARD_R, angle: thetaOf(0), color: SHADE.steelLight, opacity: 0.85 * gh * endFade, width: 2.4, dash: [8, 6] });
 

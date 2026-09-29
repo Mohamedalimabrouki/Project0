@@ -5,13 +5,13 @@
     "ar": "التعرّج"
   },
   "s02.tagline": {
-    "en": "Why wheels spin backwards on video",
+    "en": "Why wheels seem to spin backwards on video",
     "fr": "Pourquoi les roues semblent tourner à l’envers en vidéo",
     "ar": "لماذا تبدو العجلات وكأنها تدور إلى الوراء في الفيديو"
   },
   "s02.srt": {
-    "en": "Engineering Phenomena, episode 02: Aliasing. Why wheels spin backwards on video.",
-    "fr": "Engineering Phenomena, épisode 02\u00a0: Aliasing. Pourquoi les roues semblent tourner à l’envers en vidéo.",
+    "en": "Engineering Phenomena, episode 02: Aliasing. Why wheels seem to spin backwards on video.",
+    "fr": "Engineering Phenomena, épisode 02 : Aliasing. Pourquoi les roues semblent tourner à l’envers en vidéo.",
     "ar": "Engineering Phenomena، الحلقة 02: التعرّج. لماذا تبدو العجلات وكأنها تدور إلى الوراء في الفيديو."
   }
 }

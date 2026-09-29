@@ -65,7 +65,8 @@ const CX = 540, CY = 1070;            // rear wheel centre at full zoom
 const Y_CREASE = 708;                 // the car body is cropped at its shoulder crease, just under the readouts
 const R0 = 300;                       // tyre radius at full zoom
 const ZOOM0 = 0.9;                    // the camera starts a little wider and settles on the wheel
-const LEFT = 60, RIGHT = 920;         // text margins (right edge kept free for the app buttons)
+const LEFT = 60, RIGHT = 916;         // text margins (the right edge, x > 920, is kept free for the app buttons)
+const BW = 396;                       // width of the wheel readout block (its left edge is at x = 520, or at LEFT in Arabic)
 
 let spin = null;                      // angle table, built once in setup
 let phase = 0;                        // constant turn so the trick scene can freeze on a nice pose
@@ -288,14 +289,14 @@ export default {
 
     // real wheel speed: solid blue forward arc (what really happens)
     const bx = rtl ? LEFT : 520;                          // block start (left edge of the block)
-    text(ctx, T('s01.wheel'), { x: rtl ? bx + 400 : bx, y: 526, size: 30, weight: 700, color: PAL.steel, tracking: 0.1, caps: true, align: rtl ? 'right' : 'left', maxWidth: 400, shrink: true });
-    turnIcon(EP, ctx, rtl ? bx + 400 - 32 : bx + 32, 590, 28, +1);
-    group(EP, ctx, rtl ? bx + 400 - 84 : bx + 84, 626, [
+    text(ctx, T('s01.wheel'), { x: rtl ? bx + BW : bx, y: 526, size: 30, weight: 700, color: PAL.steel, tracking: 0.1, caps: true, align: rtl ? 'right' : 'left', maxWidth: BW, shrink: true });
+    turnIcon(EP, ctx, rtl ? bx + BW - 32 : bx + 32, 590, 28, +1);
+    group(EP, ctx, rtl ? bx + BW - 84 : bx + 84, 626, [
       { s: num(fr, 2), tab: true, size: 80, weight: 800, color: PAL.paper, gap: 0 },
     ], rtl ? 'right' : 'left');
-    text(ctx, T('unit.turns'), { x: rtl ? bx + 400 : bx, y: 684, size: 32, weight: 600, color: PAL.steel, align: rtl ? 'right' : 'left', maxWidth: 400, shrink: true });
+    text(ctx, T('unit.turns'), { x: rtl ? bx + BW : bx, y: 684, size: 32, weight: 600, color: PAL.steel, align: rtl ? 'right' : 'left', maxWidth: BW, shrink: true });
 
     // honest label: this is the real thing, sampled by your own screen
-    EP.badge(ctx, T('badge.real'), { x: xs, y: 1494, align: 'start', size: 26 });
+    EP.badge(ctx, T('badge.real'), { x: xs, y: 1494, align: 'start', size: 30 });
   },
 };

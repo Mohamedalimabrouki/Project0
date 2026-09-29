@@ -18,27 +18,51 @@ other half get darker in the same frame, and each frame moves only a small
 area: that is motion, not a flash, and this method treats it that way.
 
 Usage: python3 qa/flash_check.py build/main_en/frames [fps]
+       python3 qa/flash_check.py ../video/02-aliasing_16x9_en.mp4
 """
 import glob
+import os
+import subprocess
 import sys
 
 import numpy as np
 from PIL import Image
 
-frames_dir = sys.argv[1]
+src = sys.argv[1]
 fps = int(sys.argv[2]) if len(sys.argv) > 2 else 30
-files = sorted(glob.glob(f"{frames_dir}/f*.png"))
-if len(files) < 2:
-    sys.exit("not enough frames")
 
 
-def rel_lum(path):
-    im = Image.open(path).convert("RGB")
-    w = 480 if im.width >= im.height else 270
-    im = im.resize((w, round(w * im.height / im.width)), Image.BILINEAR)
-    c = np.asarray(im, dtype=np.float32) / 255.0
+def lum(rgb):
+    c = rgb.astype(np.float32) / 255.0
     lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
     return 0.2126 * lin[..., 0] + 0.7152 * lin[..., 1] + 0.0722 * lin[..., 2]
+
+
+def frames_from_dir(d):
+    for path in sorted(glob.glob(f"{d}/f*.png")):
+        im = Image.open(path).convert("RGB")
+        w = 480 if im.width >= im.height else 270
+        im = im.resize((w, round(w * im.height / im.width)), Image.BILINEAR)
+        yield lum(np.asarray(im))
+
+
+def frames_from_video(f):
+    probe = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                            "stream=width,height", "-of", "csv=p=0", f], capture_output=True, text=True).stdout
+    W0, H0 = map(int, probe.strip().split(","))
+    w = 480 if W0 >= H0 else 270
+    h = round(w * H0 / W0 / 2) * 2
+    p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", f, "-vf", f"scale={w}:{h}", "-f", "rawvideo",
+                          "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE)
+    size = w * h * 3
+    while True:
+        buf = p.stdout.read(size)
+        if len(buf) < size:
+            break
+        yield lum(np.frombuffer(buf, np.uint8).reshape(h, w, 3))
+
+
+frames = frames_from_video(src) if os.path.isfile(src) else frames_from_dir(src)
 
 
 def box_sums(mask, wh, ww, stride):
@@ -49,13 +73,14 @@ def box_sums(mask, wh, ww, stride):
     return ii[Y + wh, X + ww] - ii[Y, X + ww] - ii[Y + wh, X] + ii[Y, X]
 
 
-prev = rel_lum(files[0])
+prev = next(frames)
 H, W = prev.shape
 wh, ww = H // 3, W // 3
 area = wh * ww
 trans_win, trans_full, worst_frac = [], [], 0.0
-for f in files[1:]:
-    cur = rel_lum(f)
+count = 1
+for cur in frames:
+    count += 1
     d = cur - prev
     ok = np.minimum(cur, prev) < 0.80
     rise = (d >= 0.10) & ok
@@ -90,7 +115,7 @@ def worst_flash_rate(seq):
 
 wf = worst_flash_rate(trans_win)
 ff = worst_flash_rate(np.array(trans_full)[:, None])
-print(f"frames: {len(files)}")
+print(f"frames: {count}")
 print(f"largest share of a 10-degree window changing together in one frame: {100 * worst_frac:.1f} % (flash needs 25 %)")
 print(f"most flashes in any 1 s, any 10-degree window (WCAG): {wf} (limit 3)")
 print(f"most flashes in any 1 s, whole screen (ITU-R BT.1702): {ff} (limit 3)")

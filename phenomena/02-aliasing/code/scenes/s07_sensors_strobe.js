@@ -212,6 +212,18 @@ function balanceCaptions() {
   }
 }
 
+/**
+ * EP.layer grows its shared offscreen canvases on demand, and the browser rasterises a big
+ * canvas very slightly differently from a small one (one level in one colour channel). To make
+ * a frame bit-identical whatever was drawn before it, allocate them at full frame size once.
+ */
+function allocateLayers() {
+  const cv = document.createElement('canvas');
+  cv.width = 16; cv.height = 16;
+  const { W, H } = EP.STAGE;
+  EP.layer(cv.getContext('2d'), 1, 0, 0, W, H, h => EP.layer(h, 1, 0, 0, W, H, () => {}));
+}
+
 // =====================================================================================
 // 5. PART 1 - THE MOTOR, THE SENSOR, THE WIRE
 // =====================================================================================
@@ -896,7 +908,7 @@ export default {
   math: ['f_s > 2\\,f_{\\max}'],
   music: 'explain',
 
-  setup(EPin) { EP = EPin; balanceCaptions(); },
+  setup(EPin) { EP = EPin; balanceCaptions(); allocateLayers(); },
 
   render(ctx, t, EPin, { W, H }) {
     EP = EPin;
@@ -914,7 +926,7 @@ export default {
     const aMotor = P(t, K.motor, K.motor + 0.8) * (1 - prog(t, 11.85, 12.35, ease.inOutSine));
     EP.layer(ctx, aMotor, MOTOR.x - 170, MOTOR.y + rise - 60, 320, 150, g => drawMotor(g, MOTOR.x, MOTOR.y + rise, MS, 1));
 
-    EP.layer(ctx, aP1, 90, 300, 1750, 590, g => {
+    EP.layer(ctx, aP1, 90, 262, 1750, 640, g => {                       // box: the badge reaches up to y = 285
       const dim = prog(t, K.dim[0], K.dim[1], ease.inOutSine);
       drawWire(g, t, 1);
       drawAxes(g, t, 1);

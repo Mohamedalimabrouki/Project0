@@ -17,11 +17,11 @@
   "s04.c4": {
     "en": "Every spoke lands just short of where the next one was...",
     "fr": "Chaque rayon arrive juste avant la place qu’occupait le suivant…",
-    "ar": "كل شعاع يتوقف قبل مكان الشعاع التالي بقليل…"
+    "ar": "كل شعاع يتوقف قبل مكان الشعاع\u00a0التالي\u00a0بقليل…"
   },
   "s04.c5": {
     "en": "...so the closest match is backwards. The wheel seems to turn backwards!",
-    "fr": "…donc le lien le plus court va vers l’arrière. La\u00a0roue\u00a0semble\u00a0tourner\u00a0à\u00a0l’envers\u00a0!",
+    "fr": "…donc le lien le plus court va\u00a0vers\u00a0l’arrière. La\u00a0roue\u00a0semble\u00a0tourner\u00a0à\u00a0l’envers\u00a0!",
     "ar": "…ولذلك تكون أقرب مطابقة إلى الوراء. تبدو العجلة وكأنها تدور إلى الوراء!"
   },
   "s04.c6": {

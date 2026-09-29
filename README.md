@@ -22,6 +22,7 @@ The rule that makes it professional: **beautiful, but never wrong.** Every anima
 | # | Phenomenon | Field | Status |
 |---|---|---|---|
 | 01 | [Resonance](phenomena/01-resonance/) | Vibrations | Script written, storyboard drafted, art not started |
+| 02 | [Aliasing](phenomena/02-aliasing/) | Vibrations and waves · Mechatronics | Finished: full video (EN, FR, AR), Short (9:16), hero still, thumbnail, subtitles. Made entirely with code |
 
 The full list of planned subjects is in the [backlog](docs/BACKLOG.md).
 
@@ -35,7 +36,7 @@ engineering-phenomena/
 │   ├── _template/          copy this to start a new one
 │   └── 01-resonance/
 │       ├── README.md       the explanation (kids layer + engineers layer + storyboard)
-│       ├── blender/        .blend source files
+│       ├── blender/        .blend source files (or code/ for a piece drawn by code, like 02)
 │       ├── renders/        still images (PNG)
 │       ├── video/          final videos (MP4)
 │       ├── subtitles/      en.srt, fr.srt, ar.srt

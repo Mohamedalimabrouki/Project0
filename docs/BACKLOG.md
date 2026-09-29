@@ -11,7 +11,7 @@ Subjects waiting to be made, grouped by field. Each one has a hook that works fo
 | | Phenomenon | Kids hook | Engineering core |
 |---|---|---|---|
 | ★ | **Resonance** ([started](../phenomena/01-resonance/)) | Why small pushes make a swing go so high | Forced damped oscillator, amplification 1/(2ζ) |
-| ★ | **Aliasing (wagon wheel effect)** | Why car wheels seem to spin backwards in videos | Sampling theorem, Nyquist frequency |
+| ★ | **Aliasing (wagon wheel effect)** ([made](../phenomena/02-aliasing/)) | Why car wheels seem to spin backwards in videos | Sampling theorem, Nyquist frequency |
 | | Standing waves | Why a guitar string makes one note | Modes, nodes, boundary conditions |
 | | Doppler effect | Why an ambulance siren changes pitch as it passes | Frequency shift, relative velocity |
 | | Tuned mass damper | How a giant ball keeps a skyscraper still | Two-degree-of-freedom system, tuning |

@@ -6,11 +6,11 @@
   },
   "s03.c2": {
     "en": "It is a flip book: 30 still pictures every second.",
-    "fr": "C’est un folioscope\u00a0: 30\u00a0images fixes par seconde.",
+    "fr": "C’est un folioscope : 30 images fixes par seconde.",
     "ar": "إنه كدفتر تُقلَّب صفحاته بسرعة: 30 صورة ثابتة في كل ثانية."
   },
   "s03.c3": {
-    "en": "Between two pictures, the camera sees nothing at all.",
+    "en": "Between two pictures, nothing is recorded.",
     "fr": "Entre deux images, rien n’est enregistré.",
     "ar": "بين صورتين، لا يُسجَّل شيء."
   },
@@ -20,13 +20,13 @@
     "ar": "يربط دماغكم الصور ببعضها…"
   },
   "s03.c5": {
-    "en": "...by linking each spoke to the closest spoke in the next picture.",
-    "fr": "…d’habitude en reliant chaque rayon au rayon le plus proche dans\u00a0l’image\u00a0suivante.",
+    "en": "...usually by linking each spoke to the closest spoke in the next picture.",
+    "fr": "…d’habitude en reliant chaque rayon au rayon le plus proche dans l’image suivante.",
     "ar": "…وذلك غالبًا بوصل كل شعاع بأقرب شعاع إليه في الصورة التالية."
   },
   "s03.second": {
     "en": "1 second",
-    "fr": "1\u00a0seconde",
+    "fr": "1 seconde",
     "ar": "ثانية واحدة"
   },
   "s03.unseen": {

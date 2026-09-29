@@ -26,16 +26,17 @@
  *
  * The scene is a pure function of t: nothing is remembered between frames.
  *
- * Key moments (seconds from the start of the scene):
+ * Key moments (seconds from the start of the scene; the score is at 120 beats
+ * per minute, so 0.5 s is one beat):
  *   0.4   chapter label                1.0-4.0  axes, grid and titles build
  *   4.0   the true diagonal (blue)     6.7  wheel and badge appear, 7.0 first equation
  *   9.0   wheel starts to turn         13.4 green zone, 14.6 Nyquist line
- *   16.8  marker hits 15 Hz and falls  21.0 second equation, 21.7 frozen points
- *   22.3  frozen at 30 Hz              27.0 marker falls again at 45 Hz
- *   29.0  key equation appears         30.4 frozen at 60 Hz, 30.8 yellow box
+ *   17.0  marker hits 15 Hz and falls  21.0 second equation, 21.7 frozen points
+ *   22.25 frozen at 30 Hz              27.0 marker falls again at 45 Hz
+ *   29.0  key equation appears         30.5 frozen at 60 Hz, 30.8 yellow box
  *   33.7  top of the sweep (66 Hz)     35.0-38.0 settles at 60 Hz (wheel still)
  *   35.4  theorem named, box and green zone breathe once
- * The four crossing times (16.8, 22.3, 27.0, 30.4 s) are computed from the
+ * The four crossing times (17.0, 22.25, 27.0, 30.5 s) are computed from the
  * sweep, not typed, and drive the sound cues and the pulses on the graph.
  *
  * Named exports (alias, SWEEP, GRAPH, FS, N_SPOKES) are only for the numerical
@@ -64,11 +65,14 @@ export const alias = f => f - FS * Math.round(f / FS);
  */
 export const SWEEP = (() => {
   const smooth = k => k * k * (3 - 2 * k);
-  const VL = 2.516;                        // solved so that the top is exactly 66 Hz
+  const VL = 2.7340;                       // solved so that the top is exactly 66 Hz
+  // Speeds were fitted so that the sweep reaches 15, 30, 45 and 60 Hz exactly on
+  // the music's beat grid (17.00, 22.25, 27.00 and 30.50 s: 120 beats per minute),
+  // so the four "blip" sounds fall in time with the score.
   const V = [                              // [time s, speed Hz/s]
-    [9.0, 0.0], [13.2, 2.3], [16.9, 3.3], [19.0, 3.4], [21.0, 2.1], [22.6, 1.3],
-    [24.0, 1.12], [25.3, 1.4], [26.3, 8.0], [27.2, 10.8], [28.0, 6.5], [28.8, 2.3],
-    [29.9, 1.35], [31.0, 1.4], [32.0, VL], [32.8, VL], [33.7, 0.0],
+    [9.0, 0.0], [13.2, 2.2229], [16.9, 3.1894], [19.0, 3.5943], [21.0, 2.2200], [22.6, 1.3743],
+    [24.0, 1.1281], [25.3, 1.4102], [26.3, 8.0582], [27.2, 10.8785], [28.0, 6.5473], [28.8, 2.0026],
+    [29.9, 1.1754], [31.0, 1.2189], [32.0, VL], [32.8, VL], [33.7, 0.0],
   ];
   const T_TOP = V[V.length - 1][0];
   const vel = t => {
@@ -638,7 +642,7 @@ export default {
     { t: T30, sfx: 'blip' },
     { t: T45, sfx: 'blip' },
     { t: TM.eq[2], sfx: 'pop' },
-    { t: TM.eq[2] + 0.08, sfx: 'hit', gain: -6 },
+    { t: TM.eq[2], sfx: 'hit', gain: -6 },        // the score resolves on this beat
     { t: T60, sfx: 'blip' },
   ],
   math: [
