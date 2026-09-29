@@ -56,7 +56,7 @@ CH = {
     "F":      dict(root=5,  pcs=(5, 9, 0),  bass=41, pad=(57, 60, 65, 69), pool=(60, 65, 69, 72, 77), keys=(65, 72)),
     "Fmaj7":  dict(root=5,  pcs=(5, 9, 0),  bass=41, pad=(57, 60, 64, 69), pool=(60, 64, 69, 72, 77), keys=(64, 69)),
     "Fadd9":  dict(root=5,  pcs=(5, 9, 0),  bass=41, pad=(57, 60, 67, 69), pool=(60, 65, 69, 72, 79), keys=(67, 72)),
-    "Fsus2":  dict(root=5,  pcs=(5, 7, 0),  bass=41, pad=(60, 65, 67, 72), pool=(60, 65, 67, 72, 77), keys=(67, 72)),
+    "Fsus2":  dict(root=5,  pcs=(5, 7, 0),  bass=41, pad=(55, 60, 65, 67), pool=(60, 65, 67, 72, 77), keys=(67, 72)),
     "C":      dict(root=0,  pcs=(0, 4, 7),  bass=36, pad=(55, 60, 64, 67), pool=(60, 64, 67, 72, 76), keys=(64, 67)),
     "Csus4":  dict(root=0,  pcs=(0, 5, 7),  bass=36, pad=(55, 60, 65, 67), pool=(60, 65, 67, 72, 77), keys=(65, 67)),
     "Cadd9":  dict(root=0,  pcs=(0, 4, 7),  bass=36, pad=(55, 62, 64, 67), pool=(60, 64, 67, 72, 74), keys=(64, 67)),
@@ -77,7 +77,6 @@ class Score:
         self.marks = []               # (t, kind): every rhythmic onset, for the onset check
         self.bend = None
         self.scene_moods = {}
-        self._pad_open = {}
 
     # ------------------------------------------------------------------ harmony
     def chord(self, t0, t1, name):
@@ -113,29 +112,22 @@ class Score:
         return float(np.exp(np.interp(t, [p[0] for p in pts], np.log([p[1] for p in pts]))))
 
     # --------------------------------------------------------------------- notes
-    def add_pad(self, layer, t0, t1, midi, db=0.0, att=0.9, rel=1.8):
-        """Pad note; if the same pitch was just playing in this layer it simply carries on."""
-        key = (layer, midi)
-        prev = self._pad_open.get(key)
-        if prev is not None and abs(prev["t1"] - t0) < 1e-6:
-            prev["t1"] = t1
-            prev["rel"] = rel
-            return
-        ev = dict(t0=float(t0), t1=float(t1), midi=int(midi), db=db, att=att, rel=rel, layer=layer)
-        self.pad.append(ev)
-        self._pad_open[key] = ev
+    def add_pad(self, layer, voice, t0, t1, midi, db=0.0, att=0.9, rel=1.8):
+        """One pad voice for one chord. Voices with the same pitch in the next chord carry on, the others
+        glide (see instruments.pad_tracks)."""
+        self.pad.append(dict(layer=layer, voice=int(voice), t0=float(t0), t1=float(t1), midi=int(midi), db=db, att=att, rel=rel))
 
     def harmony(self, segs, att=0.9, rel=1.8, air_db=None, air_from=None):
-        """Register chords and give each one its pad voicing."""
+        """Register chords and give each one its pad voicing (four voices, plus three an octave up if asked)."""
         for a, b, n in segs:
             self.chord(a, b, n)
-            for m in CH[n]["pad"]:
-                self.add_pad("main", a, b, m, 0.0, att, rel)
+            for v, m in enumerate(CH[n]["pad"]):
+                self.add_pad("main", v, a, b, m, 0.0, att, rel)
             if air_db is not None and a >= (air_from or 0.0):
-                for m in CH[n]["pad"][1:]:
-                    self.add_pad("air", a, b, m + 12, air_db, att + 0.3, rel + 0.4)
+                for v, m in enumerate(CH[n]["pad"][1:]):
+                    self.add_pad("air", v, a, b, m + 12, air_db, att + 0.4, rel + 0.4)
 
-    def bass_long(self, segs, db=0.0, sub=0.32, att=0.03, rel=0.22, bar_retrigger=True, gap=0.06):
+    def bass_long(self, segs, db=0.0, sub=0.32, att=0.03, rel=0.12, bar_retrigger=True, gap=0.06):
         """One bass note per bar (and per chord change): steady, precise, breathing."""
         for a, b, n in segs:
             cur = a
@@ -156,11 +148,11 @@ class Score:
                 m = CH[n]["bass"]
                 for off, dur, dm, dd in ((0.0, 0.70, 0, 0.0), (0.75, 0.43, 0, -3.0), (1.25, 0.70, 7, -1.5)):
                     self.bass.append(dict(t0=b + off, t1=b + off + dur, midi=m + dm, db=db + dd, att=0.02,
-                                          rel=0.14, sub=sub if (m + dm) >= 36 and dm == 0 and off == 0 else 0.0))
+                                          rel=0.10, sub=sub if (m + dm) >= 36 and dm == 0 and off == 0 else 0.0))
                     self.marks.append((b + off, "bass"))
             b += BAR
 
-    def add_pulse(self, t0, t1, step=E8, unify=None, db_extra=0.0, pan_w=0.30, tau=0.42,
+    def add_pulse(self, t0, t1, step=E8, unify=None, db_extra=0.0, pan_w=0.30, tau=0.34,
                   skip=None, octave_double_db=None, kind="pluck"):
         """The five-step pluck pulse on the grid `step` between t0 and t1 (t1 excluded)."""
         t = t0
@@ -312,7 +304,7 @@ def _automation(S, T):
     S.set("pad_db", [
         (0.0, -40), (0.6, -28), (2.6, -16), (4.0, -13), (7.0, -10.5), (8.0, -9.5), (11.0, -8.0), (11.5, -11.5), (13.4, -11.0),
         (13.5, -10), (14.0, -8.5), (16.0, -7.0), (17.95, -5.5),
-        (18.0, -5.0), (18.9, -3.5), (21.0, -5.5), (23.9, -7.0),
+        (18.0, -7.5), (18.9, -3.5), (21.0, -5.5), (23.9, -7.0),
         (24.0, -9.5), (47.9, -9.5),
         (48.0, -9.5), (67.9, -9.5), (70.0, -7.5), (74.0, -8.5), (78.0, -9.0), (80.0, -9.0), (85.9, -8.5),
         (86.0, -8.0), (100.0, -7.0), (110.0, -6.5), (114.9, -6.0), (115.1, -3.5), (118.0, -5.0), (125.9, -6.0),
@@ -402,7 +394,7 @@ def _title(S, t0, t1, en):
     S.harmony(segs, att=0.9, rel=2.2)
     S.bass_long(segs, sub=0.32)
     S.add_bell(t0 + 0.5, 77, -14.0, pan=0.0, dur=3.2)             # F5, on the beat where the swoosh lands
-    S.motif(t0 + 1.0, "F", -12.5)                                  # C5 F5 A5 G5 F5
+    S.motif(t0 + 1.0, "F", -12.5, dur_last=2.2)                    # C5 F5 A5 G5 F5
     S.add_pulse(t0 + 2.0, t0 + 4.0, step=BEAT)
     S.add_pulse(t0 + 4.0, t1, step=E8)
 
@@ -574,7 +566,7 @@ def _keys_comp(S, t0, t1, db):
         n = S.chord_at(b)
         pan = -0.25 if int(round(b / BAR)) % 2 == 0 else 0.25
         S.add_keys(b, 1.2, n, db, pan)
-        S.add_keys(b + 1.25, 0.6, S.chord_at(b + 1.25), db - 4.0, -pan)
+        S.add_keys(b + 1.25, 0.4, S.chord_at(b + 1.25), db - 4.0, -pan)
 
 
 def _outro(S, t0, t1, en):

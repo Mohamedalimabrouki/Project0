@@ -135,28 +135,33 @@ def detect_onsets(x, lo, hi, smooth_ms=1.5, ratio=2.2, min_gap=0.03):
     return np.array(out) / SR
 
 
-def _lag(xs, tmpl, centre, search=0.015):
-    """Where does `tmpl` sit in `xs` around sample `centre`? Returns (lag in samples, match 0..1)."""
-    a = max(0, centre - int(search * SR))
-    b = min(len(xs), centre + len(tmpl) + int(search * SR))
-    seg = xs[a:b]
-    if len(seg) < len(tmpl):
-        return None, 0.0
-    corr = signal.fftconvolve(seg, tmpl[::-1], mode="valid")
-    en = np.sqrt(np.convolve(seg ** 2, np.ones(len(tmpl)), mode="valid") * np.sum(tmpl ** 2)) + 1e-18
-    nc = corr / en
-    k = int(np.argmax(nc))
-    return (a + k) - centre, float(nc[k])
+def _judge(det, times, detail, name, tol=0.02):
+    """Compare detected onsets with the scheduled times and store the statistics."""
+    times = np.asarray(times, dtype=float)
+    errs = []
+    for t in times:
+        j = det[np.abs(det - t) < tol]
+        if len(j):
+            errs.append(float(j[np.argmin(np.abs(j - t))] - t) * 1000.0)
+    if not errs:
+        return
+    e = np.array(errs)
+    near = np.array([np.min(np.abs(times - t)) for t in det]) * 1000.0 if len(det) else np.array([0.0])
+    detail[name] = dict(found=int(len(e)), of=int(len(times)), median_ms=float(np.median(e)), p05_ms=float(np.percentile(e, 5)),
+                        p95_ms=float(np.percentile(e, 95)), max_abs_ms=float(np.abs(e).max()), detections=int(len(det)),
+                        detections_within_5ms_of_an_event_pct=float(100 * np.mean(near < 5.0)))
 
 
 def onset_check(music, score, log):
     """Are the music's onsets on the beat?
     (a) by construction: every scheduled event is a multiple of a sixteenth note (0.125 s) and every scene
         starts on a bar line;
-    (b) measured in the finished music.wav: the noisy hats are found blind, and every kick, rim click and
-        pluck is located by sliding its own waveform along the audio (matched filter)."""
+    (b) measured: the noisy hats are found blind in the finished music.wav; the kick, rim clicks and plucks
+        (whose onsets are buried in pad and reverb) are found blind in their own dry tracks, which the
+        same script renders again for this check."""
     import instruments as ins
     mono = _mono(music)
+    n = music.shape[0]
     res = {}
     marks = {}
     for t, kind in score.marks:
@@ -170,45 +175,17 @@ def onset_check(music, score, log):
     scene_off = [abs(s["t0"] / 2.0 - round(s["t0"] / 2.0)) * 2.0 for s in score.T_scenes]
     res["scene_starts_max_off_bar_ms"] = float(max(scene_off) * 1000.0) if scene_off else 0.0
     detail = {}
-    # (b1) hats, blind
     if score.hat:
-        det = detect_onsets(mono, 4500, 9500)
-        ts = np.array([h["t"] for h in score.hat])
-        allm = np.array(sorted(t for t, k in score.marks))
-        errs = []
-        for t in ts:
-            j = det[np.abs(det - t) < 0.02]
-            if len(j):
-                errs.append(float(j[np.argmin(np.abs(j - t))] - t) * 1000.0)
-        near = np.array([np.min(np.abs(allm - t)) for t in det]) * 1000.0
-        e = np.array(errs)
-        detail["hat (blind detector)"] = dict(found=int(len(e)), of=int(len(ts)), median_ms=float(np.median(e)), p05_ms=float(np.percentile(e, 5)),
-                                              p95_ms=float(np.percentile(e, 95)), max_abs_ms=float(np.abs(e).max()),
-                                              detections=int(len(det)), detections_within_5ms_of_an_event_pct=float(100 * np.mean(near < 5.0)))
-    # (b2) matched filter for the others
-    xh = dsp.hp(mono, 150.0, 2)
-    def run(kind, items):
-        lags, ok = [], 0
-        for t, tmpl in items:
-            lag, m = _lag(xh, tmpl, dsp.idx(t))
-            if lag is not None and m >= 0.25:
-                ok += 1
-                lags.append(lag * 1000.0 / SR)
-        if lags:
-            l = np.array(lags)
-            detail[f"{kind} (matched filter)"] = dict(found=int(ok), of=int(len(items)), median_ms=float(np.median(l)), p05_ms=float(np.percentile(l, 5)),
-                                                    p95_ms=float(np.percentile(l, 95)), max_abs_ms=float(np.abs(l).max()))
-    kw = dsp.hp(ins.kick_wave(), 150.0, 2)[: int(0.06 * SR)]
-    run("kick", [(k["t"], kw) for k in score.kick if score.bend is None or not score.bend.touches(k["t"] - 0.02, k["t"] + 0.1)])
-    rws = [dsp.hp(ins.rim_wave(v), 150.0, 2)[: int(0.03 * SR)] for v in range(3)]
-    run("rim", [(r["t"], rws[i % 3]) for i, r in enumerate(score.rim)])
-    items = []
-    for e in score.pluck:
-        if score.bend is not None and score.bend.touches(e["t"] - 0.02, e["t"] + 1.2):
-            continue
-        w = dsp.hp(ins.pluck_wave(e["midi"], e.get("fc", 2600.0), e.get("tau", 0.42)), 150.0, 2)[: int(0.05 * SR)]
-        items.append((e["t"], w))
-    run("pluck", items)
+        _judge(detect_onsets(mono, 4500, 9500), [h["t"] for h in score.hat], detail, "hat, in the finished music.wav")
+    kick, hat, rim = ins.render_drums(score.kick, [], score.rim, n)
+    if score.kick:
+        _judge(detect_onsets(kick, 35, 250, smooth_ms=4.0, ratio=2.0), [k["t"] for k in score.kick], detail, "kick, dry track")
+    if score.rim:
+        _judge(detect_onsets(_mono(rim), 1200, 5000, smooth_ms=1.0), [r["t"] for r in score.rim], detail, "rim click, dry track")
+    if score.pluck:
+        pl = _mono(ins.render_pluck(score.pluck, n, score.bend))
+        # the octave doublings and the pickup notes are separate notes on the same grid: judge all of them
+        _judge(detect_onsets(pl, 700, 6000, smooth_ms=1.5, ratio=1.8), sorted({round(e["t"], 6) for e in score.pluck}), detail, "pluck, dry track")
     res["by_kind"] = detail
     starts = {}
     for sc in score.T_scenes:
@@ -223,31 +200,37 @@ def onset_check(music, score, log):
 def cue_check(sfx_stem, cues, records, score, log):
     """Where is every cue really? Each sound is re-made and slid along the finished sfx.wav (a matched
     filter): the position of the best match, within 25 ms of the intended time, is the true placement.
-    This is independent of the renderer's own bookkeeping, and not fooled by overlapping sounds."""
+    This does not use the renderer's own bookkeeping, and overlapping sounds do not fool it. A steady tone
+    (hum, a shimmer, a blip) matches equally well one period away; among matches within 2 % of the best
+    the one nearest to the intended time is taken."""
     import sfx as sfxlib
     x = dsp.hp(_mono(sfx_stem), 150.0, 2)
     rows = []
     for c, r in zip(cues, records):
         snd = sfxlib.REGISTRY[c.sfx](c, score)
         ref = dsp.hp(_mono(snd.audio), 150.0, 2)
-        start = r["start_sample"]
+        expect = dsp.idx(c.t)
         pad = int(0.025 * SR)
-        a, b = max(0, start - pad), min(len(x), start + len(ref) + pad)
+        a, b = max(0, expect - pad), min(len(x), expect + len(ref) + pad)
         seg = x[a:b]
         row = dict(t=r["t"], sfx=r["sfx"], dur=r["dur"], gain=r["gain"], scene=r["scene"], kind=r["kind"],
                    bookkeeping_error_ms=float((r["start_sample"] + r["anchor"] - dsp.idx(r["t"] + ((r["dur"] or 0.0) if r["anchor"] else 0.0))) * 1000.0 / SR))
-        if len(seg) < len(ref) or np.sum(ref ** 2) < 1e-20:
+        e_ref = float(np.sum(ref ** 2))
+        if len(seg) < len(ref) or e_ref < 1e-20:
             row.update(lag_ms=None, match=None)
             rows.append(row)
             continue
         corr = signal.fftconvolve(seg, ref[::-1], mode="valid")
-        win_e = np.convolve(seg ** 2, np.ones(len(ref)), mode="valid")
-        nc = corr / (np.sqrt(win_e * np.sum(ref ** 2)) + 1e-18)
-        k = int(np.argmax(nc))
-        lag = (a + k) - start
+        cs = np.concatenate([[0.0], np.cumsum(seg ** 2)])
+        win_e = cs[len(ref):] - cs[:-len(ref)]
+        nc = corr / (np.sqrt(np.maximum(win_e, 0.0) * e_ref) + 1e-18)
+        best = float(nc.max())
+        near = np.where(nc >= 0.98 * best)[0]
+        k = int(near[np.argmin(np.abs((a + near) - expect))])
+        lag = (a + k) - expect
         row.update(lag_samples=int(lag), lag_ms=float(lag * 1000.0 / SR), match=float(nc[k]))
         if r["kind"] == "swell" and r["anchor"]:
-            row["lands_at_s"] = float((start + lag + r["anchor"]) / SR)
+            row["lands_at_s"] = float((expect + lag + r["anchor"]) / SR)
         rows.append(row)
     return rows
 
@@ -307,7 +290,7 @@ def tuning_check(music, S):
     out["bass_A1_cents"] = cents(_peak_freq_sig(w, 45, 65), a1)
     k = ins.keys_note(69, 1.2, 0.0)[:, 0][int(0.3 * SR): int(1.0 * SR)]
     out["keys_A4_cents"] = cents(_peak_freq_sig(k, 400, 480), a4)
-    pad = ins.render_pad([dict(t0=0.0, t1=3.0, midi=69, db=0.0, att=0.5, rel=0.5)], int(3.6 * SR)).mean(axis=1)[int(1.0 * SR): int(2.6 * SR)]
+    pad = ins.render_pad([dict(layer="main", voice=0, t0=0.0, t1=3.0, midi=69, db=0.0, att=0.5, rel=0.5)], int(3.6 * SR)).mean(axis=1)[int(1.0 * SR): int(2.6 * SR)]
     out["pad_A4_centroid_cents"] = cents(_centroid(pad, a4), a4)
     out["definition_A4_hz"] = float(dsp.midi_hz(69))
     # a bass note inside the mix: the longest one with no other bass note and no tape bend near it

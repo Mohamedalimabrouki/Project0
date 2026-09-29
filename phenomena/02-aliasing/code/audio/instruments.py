@@ -60,45 +60,114 @@ def _freq_bend(f0, t, bend):
 
 
 # -------------------------------------------------------------------------------- pad
-_PAD_CENTS = (-11.0, -4.0, 4.0, 11.0)          # four detuned saws per note
+_PAD_CENTS = (-11.0, -4.0, 4.0, 11.0)          # four detuned saws per voice
 _PAD_PANS = (-0.85, -0.30, 0.30, 0.85)
+_CHUNK = 20 * SR                                # long voices are rendered 20 s at a time (memory)
 
 
-def render_pad(notes, n_total, bend=None):
-    """Sum of pad notes. notes: dicts with t0, t1, midi, db, att, rel. Returns (n_total, 2)."""
+def _saw_chunk(freq, phase0):
+    """Band-limited saw for one chunk; returns the wave and the phase at the end (so chunks join exactly)."""
+    dt = freq / SR
+    ph = phase0 + np.cumsum(dt) - dt
+    end = phase0 + float(dt.sum())
+    ph = ph - np.floor(ph)
+    y = 2.0 * ph - 1.0
+    m1 = ph < dt
+    if m1.any():
+        t = ph[m1] / dt[m1]
+        y[m1] -= t + t - t * t - 1.0
+    m2 = ph > 1.0 - dt
+    if m2.any():
+        t = (ph[m2] - 1.0) / dt[m2]
+        y[m2] -= t * t + t + t + 1.0
+    return y, end - np.floor(end)
+
+
+def pad_tracks(events):
+    """Group pad events (one per chord and voice) into legato tracks: one continuous voice each.
+
+    A voice that plays the same pitch in the next chord simply carries on; a voice that changes
+    pitch glides to it, so two neighbouring notes (A then B flat) are never heard at the same time.
+    """
+    groups = {}
+    for e in events:
+        groups.setdefault((e["layer"], e["voice"]), []).append(e)
+    tracks = []
+    for key in sorted(groups):
+        cur = None
+        for e in sorted(groups[key], key=lambda e: e["t0"]):
+            if cur is not None and abs(cur["segs"][-1][1] - e["t0"]) < 1e-6:
+                t0, t1, m = cur["segs"][-1]
+                if m == e["midi"]:
+                    cur["segs"][-1] = (t0, e["t1"], m)
+                else:
+                    cur["segs"].append((e["t0"], e["t1"], e["midi"]))
+                cur["rel"] = e["rel"]
+            else:
+                if cur is not None:
+                    tracks.append(cur)
+                cur = dict(layer=key[0], voice=key[1], segs=[(e["t0"], e["t1"], e["midi"])], db=e["db"], att=e["att"], rel=e["rel"])
+        if cur is not None:
+            tracks.append(cur)
+    return tracks
+
+
+def glide_time(semitones):
+    """Portamento between two chord tones: 0.10 s plus 20 ms per semitone, at most 0.24 s."""
+    return float(np.clip(0.10 + 0.02 * abs(semitones), 0.10, 0.24))
+
+
+def render_pad(events, n_total, bend=None):
+    """The pad: every voice is one continuous track of four detuned saws. Returns (n_total, 2)."""
     out = np.zeros((n_total, 2))
     gains = [dsp.pan_gains(p) for p in _PAD_PANS]
-    for k, nt in enumerate(notes):
-        a = idx(nt["t0"])
-        n_on = max(1, idx(nt["t1"]) - a)
-        att = min(idx(nt["att"]), n_on)
-        rel = idx(nt["rel"])
+    for k, tr in enumerate(pad_tracks(events)):
+        segs = tr["segs"]
+        a = idx(segs[0][0])
+        n_on = max(1, idx(segs[-1][1]) - a)
+        att = min(idx(tr["att"]), n_on)
+        rel = idx(tr["rel"])
         n = n_on + rel
-        env = np.ones(n)
-        env[:att] = ramp_up(att)
-        env[n_on:] = ramp_down(rel)
-        t = (a + np.arange(n)) / SR
-        f0 = float(midi_hz(nt["midi"]))
-        rng = rng_for("pad", k, nt["midi"])
-        f_base = _freq_bend(f0, t, bend)
-        L = np.zeros(n)
-        R = np.zeros(n)
-        for j in range(4):
-            drift = 2.4 * np.sin(dsp.TAU * (0.083 + 0.031 * j) * t + rng.uniform(0, dsp.TAU))
-            fj = f_base * 2.0 ** ((_PAD_CENTS[j] + drift) / 1200.0)
-            s = dsp.saw_blep(fj, rng.uniform())
-            L += s * gains[j][0] * np.sqrt(2)
-            R += s * gains[j][1] * np.sqrt(2)
-        amp = db2lin(nt["db"]) * 0.11 * env
-        lo, hi = a, min(n_total, a + n)
-        if hi > lo:
-            out[lo:hi, 0] += (L * amp)[: hi - lo]
-            out[lo:hi, 1] += (R * amp)[: hi - lo]
+        amp0 = db2lin(tr["db"]) * 0.11
+        rng = rng_for("pad", k, tr["layer"], tr["voice"])
+        phases = [float(rng.uniform()) for _ in range(4)]
+        lfo = [(0.083 + 0.031 * j, float(rng.uniform(0, dsp.TAU))) for j in range(4)]
+        for c0 in range(0, n, _CHUNK):
+            c1 = min(n, c0 + _CHUNK)
+            t = (a + np.arange(c0, c1)) / SR
+            m = np.full(len(t), float(segs[0][2]))
+            for (s0, s1, m0), (n0, n1, m1) in zip(segs, segs[1:]):
+                d = m1 - m0
+                g = glide_time(d)
+                m += d * dsp.smoothstep((t - (n0 - g / 2)) / g)
+            f_base = 440.0 * 2.0 ** ((m - 69.0) / 12.0)
+            if bend is not None and bend.touches(t[0], t[-1]):
+                f_base = f_base * bend.mult(t)
+            L = np.zeros(len(t))
+            R = np.zeros(len(t))
+            for j in range(4):
+                drift = 2.4 * np.sin(dsp.TAU * lfo[j][0] * t + lfo[j][1])
+                fj = f_base * 2.0 ** ((_PAD_CENTS[j] + drift) / 1200.0)
+                sj, phases[j] = _saw_chunk(fj, phases[j])
+                L += sj * gains[j][0] * np.sqrt(2)
+                R += sj * gains[j][1] * np.sqrt(2)
+            env = np.ones(c1 - c0)
+            i = np.arange(c0, c1)
+            if att > 0:
+                ra = i < att
+                env[ra] = 0.5 - 0.5 * np.cos(np.pi * i[ra] / att)
+            if rel > 0:
+                rr = i >= n_on
+                env[rr] = 0.5 + 0.5 * np.cos(np.pi * (i[rr] - n_on) / rel)
+            lo, hi = a + c0, min(n_total, a + c1)
+            if hi > lo:
+                out[lo:hi, 0] += (L * env * amp0)[: hi - lo]
+                out[lo:hi, 1] += (R * env * amp0)[: hi - lo]
     return out
 
 
 # ------------------------------------------------------------------------------- bass
-def bass_note(midi, dur, db=0.0, att=0.022, rel=0.20, sub=0.0, t0=0.0, bend=None):
+def bass_note(midi, dur, db=0.0, att=0.022, rel=0.12, sub=0.0, t0=0.0, bend=None):
     f0 = float(midi_hz(midi))
     n_on = nsamp(dur)
     n = n_on + nsamp(rel)
@@ -119,7 +188,7 @@ def render_bass(notes, n_total, bend=None):
     out = np.zeros(n_total)
     for nt in notes:
         y = bass_note(nt["midi"], nt["t1"] - nt["t0"], nt.get("db", 0.0), nt.get("att", 0.022),
-                      nt.get("rel", 0.20), nt.get("sub", 0.0), nt["t0"], bend)
+                      nt.get("rel", 0.12), nt.get("sub", 0.0), nt["t0"], bend)
         dsp.place(out, y, idx(nt["t0"]))
     return out
 
@@ -154,7 +223,7 @@ def _pluck_wave(midi, fc, tau0, t_start=None, bend=None):
     return y
 
 
-def pluck_wave(midi, fc, tau0=0.42, t_start=None, bend=None):
+def pluck_wave(midi, fc, tau0=0.34, t_start=None, bend=None):
     """Unit-level pluck waveform (cached unless the tape bend touches it)."""
     if bend is not None and t_start is not None and bend.touches(t_start, t_start + 1.2):
         return _pluck_wave(midi, fc, tau0, t_start, bend)
@@ -167,7 +236,7 @@ def pluck_wave(midi, fc, tau0=0.42, t_start=None, bend=None):
 def render_pluck(notes, n_total, bend=None):
     out = np.zeros((n_total, 2))
     for nt in notes:
-        w = pluck_wave(nt["midi"], nt.get("fc", 2600.0), nt.get("tau", 0.42), nt["t"], bend)
+        w = pluck_wave(nt["midi"], nt.get("fc", 2600.0), nt.get("tau", 0.34), nt["t"], bend)
         st = dsp.to_stereo(w * db2lin(nt["db"]) * 0.5, nt.get("pan", 0.0))
         dsp.place(out, st, idx(nt["t"]))
     return out
@@ -208,10 +277,9 @@ def render_bells(notes, n_total, bend=None):
 
 
 # ------------------------------------------------------------------------------- keys
-def keys_note(midi, dur, db=0.0, pan=0.0, t0=0.0):
+def keys_note(midi, dur, db=0.0, pan=0.0, t0=0.0, rel=0.35):
     """Warm electric piano: sine carrier, 1:1 self-modulation that relaxes, a soft tine on top."""
     f0 = float(midi_hz(midi))
-    rel = 0.55
     n_on = nsamp(dur)
     n = n_on + nsamp(rel)
     t = np.arange(n) / SR
@@ -229,7 +297,7 @@ def keys_note(midi, dur, db=0.0, pan=0.0, t0=0.0):
 def render_keys(notes, n_total):
     out = np.zeros((n_total, 2))
     for nt in notes:
-        st = keys_note(nt["midi"], nt["t1"] - nt["t0"], nt["db"], nt.get("pan", 0.0), nt["t0"])
+        st = keys_note(nt["midi"], nt["t1"] - nt["t0"], nt["db"], nt.get("pan", 0.0), nt["t0"], nt.get("rel", 0.35))
         dsp.place(out, st, idx(nt["t0"]))
     return out
 

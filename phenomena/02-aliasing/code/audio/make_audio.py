@@ -21,6 +21,12 @@ fixed seed, so the result is identical each time. See audio/README.md for a plai
 """
 from __future__ import annotations
 
+import os
+
+# one thread for the numerical libraries: the results are then identical on every machine and every run
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 import argparse
 import json
 import subprocess
