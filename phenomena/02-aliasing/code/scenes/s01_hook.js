@@ -426,7 +426,7 @@ function tabNumber(ctx, EP, x, y, value, digits, intDigits, size, weight) {
   const str = EP.num(value, digits);
   const pad = Math.max(0, intDigits - str.split(/[.,]/)[0].length);
   const cell = tabWidth(ctx, EP, '0', size, weight);
-  if (pad) EP.textTab(ctx, '0'.repeat(pad), { x, y, size, weight, align: 'left', color: EP.rgba(EP.PAL.steel, 0.26) });
+  if (pad) EP.textTab(ctx, '0'.repeat(pad), { x, y, size, weight, align: 'left', color: EP.rgba(EP.PAL.steel, 0.2) });
   EP.textTab(ctx, str, { x: x + pad * cell, y, size, weight, align: 'left', color: EP.PAL.paper });
 }
 
@@ -531,7 +531,11 @@ export default {
   // the series mark fades in with the picture and is gone before the title card takes over
   hideLogo: t => (t < 1.2 ? 1 - Math.max(0, (t - 0.4) / 0.8) : t > 17.2 ? Math.min(1, (t - 17.2) / 0.6) : 0),
 
-  setup(EP) {
+  setup(EP, info = {}) {
+    // Right-to-left: the speed panel sits on the right, so the close-up wheel moves a little left to stay clear of it.
+    CAM.X1 = info.rtl ? 1170 : 1210;
+    CAM.PX = (CAM.S * CAM.X0 - CAM.X1) / (CAM.S - 1);
+
     const rate = makeRate(KEYS);
     const spin = EP.angleTable(rate, 0, DUR);
     const dist = R_TYRE * spin(DUR);            // metres driven in the whole scene
@@ -553,7 +557,7 @@ export default {
       marks.push({
         X, kind: seam ? 'seam' : 'dash', fine: false,
         len: seam ? 0.20 + rnd() * 0.45 : 0.04 + rnd() * 0.10,
-        depth: rnd(), sm: 0.7 + rnd() * 0.6,
+        depth: rnd(), sm: 0.8 + rnd() * 0.6,
         th: seam ? 1.6 + rnd() * 1.2 : 2.8 + rnd() * 2.4,
         a: seam ? 0.20 + rnd() * 0.12 : 0.34 + rnd() * 0.22,
       });
@@ -561,7 +565,7 @@ export default {
     X = -8;
     while (X < dist + 16) {
       X += 0.10 + rnd() * 0.5;
-      marks.push({ X, kind: 'seam', fine: true, len: 0.03 + rnd() * 0.08, depth: rnd(), sm: 0.5 + rnd() * 0.9, th: 1.4 + rnd() * 1.0, a: 0.16 + rnd() * 0.12 });
+      marks.push({ X, kind: 'seam', fine: true, len: 0.03 + rnd() * 0.08, depth: rnd(), sm: 0.8 + rnd() * 0.9, th: 1.4 + rnd() * 1.0, a: 0.16 + rnd() * 0.12 });
     }
 
     X = -8;                                      // soft, wide streaks of the nearest road: only felt at speed

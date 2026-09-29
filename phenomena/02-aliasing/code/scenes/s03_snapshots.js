@@ -40,7 +40,7 @@ const DEG = Math.PI / 180;
 const FR = 1.5;                  // real turns per second
 const FS = 30;                   // pictures per second
 const SLOW = 15;                 // slow-motion factor
-const N = 30;                    // pictures in one second
+const N = Math.round(FS * 1);    // pictures in one second
 const STEP = 360 * FR / FS;      // degrees between two pictures (= 18)
 const SPOKES = 5;
 
@@ -50,11 +50,11 @@ const TM = { downA: 4.4, downB: 5.4, shot1: 6.0, upA: 9.5, upB: 10.15 };
 // screen-time schedule of the pictures shown after the strip is full
 const B = {
   outA: 10.95, outB: 11.65,                 // wheel and camera leave
-  slideA: 11.0, slideB: 11.85,              // the strip slides: pictures 1 and 2 come to the centre
+  slideA: 11.0, slideB: 11.9,              // the strip slides: pictures 1 and 2 come to the centre
   ringA: 11.6, ringB: 12.0,                 // yellow marks on those two
-  growA: 11.8, growB: 12.85,                // the two cards unfold out of the strip
-  gapA: 12.55, gapB: 13.2, sweepA: 12.85, sweepB: 14.0,
-  labA: 12.7, labB: 13.3, dimA: 13.7, dimB: 14.6,
+  growA: 11.85, growB: 12.9,                // the two cards unfold out of the strip
+  gapA: 12.6, gapB: 13.25, sweepA: 12.9, sweepB: 14.0,
+  labA: 12.75, labB: 13.35, dimA: 13.7, dimB: 14.6,
   goneA: 16.35, goneB: 16.9,                // gap, labels and time mark leave
   stripA: 16.4, stripB: 17.1,               // the strip leaves
   stackA: 16.5, stackB: 17.4,               // the two cards slide onto each other
@@ -76,10 +76,11 @@ const NUM_Y = 838;                                       // running count under 
 const BR = { y: 858, cap: 9, notch: 11 };                // the "1 second" bracket
 const LABEL_Y = 908;
 const FOC = { s: 284, cy: 486, x: [560, 1360] };          // the two enlarged cards
-const BIG = { x: 960, y: 610, r: 230 };                   // the overlay wheel (s04 starts here)
+const BIG = { x: 960, y: 606, r: 250 };                   // the overlay wheel: exactly where s04 starts (its CX, CY, R)
+const R_SEEN = BIG.r + 60;                                // ring of the dashed "what we see" arrows (same as s04)
 const CARD_R = 0.38;                                      // wheel radius / card side
 const EJECT = { s: 92, yB: CAM.y + 24 * CAM.s };          // instant-camera slot: bottom edge of the body
-const LEG = { left: 380, leftW: 250, right: 1310, rightW: 340, y: 610 };   // legends beside the big wheel
+const LEG = { leftEdge: BIG.x - 380, rightEdge: BIG.x + 380, y: BIG.y };   // legends beside the big wheel: they hug it, 380 px from its centre
 
 /** Angle of picture n (radians). Picture 0 is 18 degrees behind vertical, so picture 1 stands upright. */
 const thetaOf = n => (n - 1) * STEP * DEG;
@@ -159,13 +160,13 @@ function cardState(EP, k, t) {
     // slow motion: the card slides out of the camera, drops, then runs along the strip into its slot.
     // The flight is shortened when the next picture follows quickly (the pace picks up).
     const next = k + 1 < N ? ST.shots[k + 1] - t0 : 0.5;
-    const life = clamp(1.12 * next, 0.2, 0.56), u = (t - t0) / life, ue = 0.24;
+    const life = clamp(1.5 * next, 0.2, 0.75), u = (t - t0) / life, ue = 0.2 / life;
     if (u >= 1) return { x: px, y: py, S: STRIP.card, a: 1, landed: true };
     if (u < ue) {
       const e = ease.outCubic(u / ue);
       return { x: CAM.x, y: lerp(EJECT.yB - EJECT.s / 2, EJECT.yB + EJECT.s / 2, e), S: EJECT.s, a: 1, clipY: EJECT.yB, landed: false, fly: true };
     }
-    const v = ease.inOutCubic((u - ue) / (1 - ue));
+    const v = ease.inOutSine((u - ue) / (1 - ue));
     const ex = CAM.x, ey = EJECT.yB + EJECT.s / 2, cx = CAM.x, cy = py;   // quadratic Bezier E -> C -> P
     const b0 = (1 - v) * (1 - v), b1 = 2 * v * (1 - v), b2 = v * v;
     return { x: b0 * ex + b1 * cx + b2 * px, y: b0 * ey + b1 * cy + b2 * py, S: lerp(EJECT.s, STRIP.card, ease.smooth(v)), a: 1, landed: false, fly: true };
@@ -188,17 +189,19 @@ function drawSlot(ctx, EP, k, a) {
   ctx.restore();
 }
 
-/** One timeline tick: dim until its picture is taken, then paper (yellow for a moment while it is the newest). */
+/** One timeline tick: dim until its picture is taken, then paper; yellow while it is the newest. */
 function drawTick(ctx, EP, k, t, a) {
   const { PAL, rgba, mix, clamp, ease } = EP;
   if (a <= 0) return;
   const age = t - ST.shots[k], lit = age >= 0;
   const x = slotX(k);
+  const next = k + 1 < N ? ST.shots[k + 1] - ST.shots[k] : 0.5;       // time until the next picture
   let color, len = TICK.len, w = 2.2;
   if (!lit) color = rgba(PAL.steel, 0.5);
   else {
-    color = mix(PAL.highlight, PAL.paper, ease.smooth(clamp(age / 0.5)));
-    len += 7 * Math.sin(Math.PI * clamp(age / 0.3));
+    color = mix(PAL.highlight, PAL.paper, ease.smooth(clamp(age / clamp(1.2 * next, 0.04, 0.5))));
+    const pop = clamp(3 * next, 0.1, 0.3);
+    len += 7 * Math.sin(Math.PI * clamp(age / pop));
     w = 3.2;
   }
   ctx.save();
@@ -286,19 +289,26 @@ function drawGap(ctx, EP, T, a, sweep) {
 }
 
 /**
- * Legend row in a block [x, x + w]: icon and text, laid out from the reading-start side
- * (the icon sits on the right in Arabic). The block itself never moves: diagrams do not mirror.
+ * A legend block beside the wheel: rows of [icon, text]. The block hugs the wheel (side 'left' ends at xEdge,
+ * side 'right' starts at xEdge) whatever the length of the text, and inside a row the icon sits on the
+ * reading-start side (right in Arabic). Diagrams do not mirror, so the block itself never changes side.
  */
-function legendRow(ctx, EP, rtl, x, y, w, icon, text, a) {
+function legendBlock(ctx, EP, rtl, side, xEdge, rows, a) {
   if (a <= 0) return;
-  const ix = rtl ? x + w - 44 : x + 44;
-  const tx = rtl ? x + w - 108 : x + 108;
-  ctx.save();
-  ctx.globalAlpha *= a;
-  ctx.translate(ix, y);
-  icon(ctx);
-  ctx.restore();
-  EP.text(ctx, text, { x: tx, y, anchor: 'middle', align: 'start', size: 30, weight: 600, color: EP.PAL.paper, opacity: a, maxWidth: w - 116, shrink: true, maxLines: 1 });
+  const ICON = 88, size = 30;
+  const tw = rows.map(r => EP.measure(ctx, r.text, { size, weight: 600, maxWidth: 300, shrink: true, maxLines: 1 }).w);
+  const wText = Math.max(...tw), wBlock = ICON + wText;
+  const x0 = side === 'left' ? xEdge - wBlock : xEdge;
+  rows.forEach(r => {
+    const ix = rtl ? x0 + wBlock - ICON / 2 : x0 + ICON / 2;
+    const tx = rtl ? x0 + wBlock - ICON : x0 + ICON;
+    ctx.save();
+    ctx.globalAlpha *= a;
+    ctx.translate(ix, r.y);
+    r.icon(ctx);
+    ctx.restore();
+    EP.text(ctx, r.text, { x: tx, y: r.y, anchor: 'middle', align: 'start', size, weight: 600, color: EP.PAL.paper, opacity: a, maxWidth: 300, shrink: true, maxLines: 1 });
+  });
 }
 
 // ---------------------------------------------------------------- the scene
@@ -308,15 +318,16 @@ export default {
     { key: 's03.c1', in: 0.8, out: 4.8 },
     { key: 's03.c2', in: 5.2, out: 10.6 },
     { key: 's03.c3', in: 11.0, out: 16.2 },
-    { key: 's03.c4', in: 16.6, out: 19.3 },
-    { key: 's03.c5', in: 19.5, out: 23.85 },
+    { key: 's03.c4', in: 16.6, out: 19.15 },
+    { key: 's03.c5', in: 19.3, out: 23.85 },
   ],
   cues: [
     { t: 0.45, sfx: 'whoosh', dur: 0.8, gain: -10 },
     { t: 0.95, sfx: 'pop', gain: -8 },
     { t: 4.4, sfx: 'swoosh_rev', dur: 1.0, gain: -6 },
-    { t: 5.4, sfx: 'whoosh', dur: 0.9, gain: -8 },
-    { t: 5.95, sfx: 'pop', gain: -6 },
+    { t: 5.25, sfx: 'whoosh', dur: 0.8, gain: -8 },
+    { t: 5.7, sfx: 'pop', gain: -6 },
+    { t: 5.95, sfx: 'tick', gain: -6 },
     // one shutter per picture while slowed down: 2 per second, on the beat
     ...Array.from({ length: 8 }, (_, i) => ({ t: TM.shot1 + i * SLOW / FS, sfx: 'shutter' })),
     { t: 9.55, sfx: 'whoosh', dur: 1.1, gain: -5 },
@@ -358,7 +369,7 @@ export default {
   },
 
   render(ctx, t, EP, { W, H, rtl }) {
-    const { PAL, rgba, prog, ease, win, clamp, lerp, T } = EP;
+    const { PAL, SHADE, rgba, prog, ease, win, clamp, lerp, T } = EP;
     const st = ST;
     EP.bg(ctx, W, H);
 
@@ -370,14 +381,14 @@ export default {
 
     // ------------------------------------------------ wheel, camera, lines of sight
     const gOut = 1 - prog(t, B.outA, B.outB, ease.inOutSine);
-    const aW = prog(t, 0.3, 0.95, ease.outCubic) * gOut;
-    const kW = 0.9 + 0.1 * prog(t, 0.3, 1.3, ease.outCubic);
-    const aC = prog(t, 0.75, 1.35, ease.outCubic) * gOut;
-    const camX = CAM.x + 28 * (1 - prog(t, 0.75, 1.5, ease.outCubic));
+    const aW = prog(t, 0.4, 1.05, ease.outCubic) * gOut;
+    const kW = 0.9 + 0.1 * prog(t, 0.4, 1.4, ease.outCubic);
+    const aC = prog(t, 0.85, 1.45, ease.outCubic) * gOut;
+    const camX = CAM.x + 28 * (1 - prog(t, 0.85, 1.6, ease.outCubic));
     let ring = 0;
     for (let n = 0; n < st.nFly; n++) { const age = t - st.shots[n]; if (age >= 0 && age < 0.45) ring = age / 0.45; }
 
-    const pF = prog(t, 1.2, 2.0, ease.inOutCubic);
+    const pF = prog(t, 1.3, 2.1, ease.inOutCubic);
     if (pF > 0 && gOut > 0) {
       const [A, Bq] = FOV;
       const pt = (P, q) => [lerp(P.x0, P.x1, q), lerp(P.y0, P.y1, q)];
@@ -396,6 +407,13 @@ export default {
       ctx.beginPath(); ctx.moveTo(A.x0, A.y0); ctx.lineTo(ax, ay); ctx.moveTo(Bq.x0, Bq.y0); ctx.lineTo(bx, by); ctx.stroke();
       ctx.restore();
     }
+    if (aW > 0) {                                   // a soft light behind the wheel lifts it off the grid
+      const gl = ctx.createRadialGradient(WHEEL.x, WHEEL.y, WHEEL.r * 0.7, WHEEL.x, WHEEL.y, WHEEL.r * 2.2);
+      gl.addColorStop(0, rgba(PAL.steel, 0.1 * aW));
+      gl.addColorStop(1, rgba(PAL.steel, 0));
+      ctx.fillStyle = gl;
+      ctx.fillRect(WHEEL.x - WHEEL.r * 2.3, WHEEL.y - WHEEL.r * 2.3, WHEEL.r * 4.6, WHEEL.r * 4.6);
+    }
     EP.wheel(ctx, { x: WHEEL.x, y: WHEEL.y, r: WHEEL.r * kW, angle: ang, opacity: aW });
     EP.camera(ctx, { x: camX, y: CAM.y, s: CAM.s, opacity: aC, shot: ring });
 
@@ -409,17 +427,17 @@ export default {
     if (aReal2 > 0) EP.badge(ctx, T('badge.real'), { x: bx, y: bY + 8 * (1 - aReal2), align: 'start', opacity: aReal2 });
 
     // ------------------------------------------------ the strip: 30 pictures = 1 second
-    const wipe = prog(t, 5.35, 6.15, ease.outQuint);
+    const wipe = prog(t, 5.25, 5.95, ease.outQuint);
     const aStrip = 1 - prog(t, B.stripA, B.stripB, ease.inOutSine);
-    const slide = prog(t, B.slideA, B.slideB, ease.inOutCubic);
-    const dim = 1 - 0.55 * slide;                                    // the strip steps back while two cards are enlarged
-    if (t > 5.3 && aStrip > 0) {
+    const slide = prog(t, B.slideA, B.slideB, ease.inOutSine);
+    const dim = 1 - 0.6 * slide;                                    // the strip steps back while two cards are enlarged
+    if (t > 5.2 && aStrip > 0) {
       ctx.save();
       ctx.globalAlpha *= aStrip * dim;
       ctx.translate(STRIP_DX * slide, 0);
       drawBand(ctx, EP, wipe);
-      for (let k = 0; k < N; k++) drawSlot(ctx, EP, k, prog(t, 5.42 + 0.02 * k, 5.85 + 0.02 * k, ease.outCubic));
-      for (let k = 0; k < N; k++) drawTick(ctx, EP, k, t, prog(t, 5.5 + 0.02 * k, 5.9 + 0.02 * k, ease.outCubic));
+      for (let k = 0; k < N; k++) drawSlot(ctx, EP, k, prog(t, 5.3 + 0.015 * k, 5.7 + 0.015 * k, ease.outCubic));
+      for (let k = 0; k < N; k++) drawTick(ctx, EP, k, t, prog(t, 5.38 + 0.015 * k, 5.78 + 0.015 * k, ease.outCubic));
       // landed cards, then the ones popping in, then the ones flying (newest on top)
       const pops = [], flying = [];
       for (let k = 0; k < N; k++) {
@@ -454,7 +472,7 @@ export default {
         ctx.save();
         ctx.globalAlpha *= aBr;
         const done = prog(t, st.shots[N - 1], st.shots[N - 1] + 0.4, ease.inOutSine);
-        drawBracket(ctx, EP, T, prog(t, 5.7, 6.35, ease.outCubic), prog(t, 5.95, 6.5, ease.outCubic), done);
+        drawBracket(ctx, EP, T, prog(t, 5.45, 5.95, ease.outCubic), prog(t, 5.65, 6.15, ease.outCubic), done);
         ctx.restore();
       }
       ctx.restore();
@@ -474,7 +492,7 @@ export default {
       const aDim = prog(t, B.dimA, B.dimB, ease.outCubic) * gone;
       if (aDim > 0) {
         const xa = FOC.x[0] + 100, xb = FOC.x[1] - 100, xc = (xa + xb) / 2;
-        const lab = EP.num(1) + '/' + EP.num(N) + ' s';
+        const lab = EP.num(1) + '/' + EP.num(FS) + ' s';
         const lw = EP.measure(ctx, lab, { size: 32, weight: 600, latin: true }).w;
         const hw = ((xb - xa) / 2) * ease.outCubic(prog(t, B.dimA, B.dimB + 0.3));
         ctx.save();
@@ -495,73 +513,71 @@ export default {
       // the two cards (copies of the thumbnails): they unfold out of the strip, slide onto each other, then grow into one wheel
       const m1 = prog(t, B.stackA, B.stackB, ease.inOutCubic);
       const m2 = prog(t, B.bigA, B.bigB, ease.inOutCubic);
+      const g = prog(t, B.growA, B.growB, ease.inOutCubic);                 // both together: the unfolding is exactly symmetric
       const pair = [0, 1].map(i => {
-        const g = prog(t, B.growA + 0.05 * i, B.growB + 0.05 * i, ease.inOutCubic);
         const gx = lerp(slotX(i) + STRIP_DX, FOC.x[i], g), gy = lerp(STRIP.cy, FOC.cy, g), gS = lerp(STRIP.card, FOC.s, g);
-        return { g, x: lerp(gx, BIG.x, m1), y: lerp(gy, BIG.y, m2), S: lerp(gS, BIG.r / CARD_R, m2) };
+        return { x: lerp(gx, BIG.x, m1), y: lerp(gy, BIG.y, m2), S: lerp(gS, BIG.r / CARD_R, m2) };
       });
       if (t > B.growA - 0.02) {
         const frame = 1 - prog(m2, 0, 0.5, ease.inOutSine);
         const endFade = 1 - prog(t, B.endA, B.endB, ease.inOutSine);
         const [c0, c1] = pair;
-        // picture 2 (the solid one) below, picture 1 on top: it turns half transparent when they overlap,
-        // then a dashed ghost of its spokes
+        // picture 2 (the solid one) below, picture 1 on top: it turns half transparent when they overlap
+        // (a double exposure), then becomes the dashed ghost of its spokes (the language s04 continues)
         drawCard(ctx, EP, c1.x, c1.y, c1.S, thetaOf(1), { frame, wheel: 1 });
         const w0 = 1 - 0.45 * prog(m1, 0.55, 1, ease.inOutSine) - 0.55 * prog(m2, 0, 0.55, ease.inOutSine);
         drawCard(ctx, EP, c0.x, c0.y, c0.S, thetaOf(0), { frame, wheel: w0, edgeAlpha: 0.9 - 0.3 * m1 });
         const gh = prog(m2, 0.1, 0.65, ease.inOutSine);
-        if (gh > 0) {
-          const r = c0.S * CARD_R;
-          const fade = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 0.52);      // outlines fade towards the hub: less clutter
-          fade.addColorStop(0, rgba(PAL.paper, 0));
-          fade.addColorStop(1, rgba(PAL.paper, 1));
-          EP.wheelGhost(ctx, { x: c0.x, y: c0.y, r, angle: thetaOf(0), color: fade, opacity: 0.9 * gh * endFade, width: 2.6 * (r / 160 + 0.2), dash: [r * 0.06, r * 0.046] });
-        }
+        if (gh > 0) EP.wheelGhost(ctx, { x: c0.x, y: c0.y, r: c0.S * CARD_R, angle: thetaOf(0), color: SHADE.steelLight, opacity: 0.85 * gh * endFade, width: 2.4, dash: [8, 6] });
 
         // ---- beat 4: legends and the links between spokes
         const th1 = thetaOf(0), th2 = thetaOf(1);
         // the closest spoke of the next picture = the shortest way round (spokes repeat every 72 degrees)
         const shift = EP.wrapSigned(th2 - th1, EP.TAU / SPOKES);
         const aLeg = prog(t, B.legA, B.legB, ease.outCubic) * endFade;
-        legendRow(ctx, EP, rtl, LEG.left, LEG.y - 36, LEG.leftW, c => {
-          EP.wheelGhost(c, { x: 0, y: 30, r: 104, angle: 0, only: 0, color: PAL.paper, opacity: 0.9, width: 2.4, dash: [6, 5] });
-        }, T('word.picture', { n: 1 }), aLeg);
-        legendRow(ctx, EP, rtl, LEG.left, LEG.y + 36, LEG.leftW, c => {
-          c.translate(0, 30);
-          const p = EP.spokePath(104, 0, 0);
-          c.fillStyle = PAL.steel; c.fill(p);
-          c.lineWidth = 1.4; c.strokeStyle = rgba(PAL.paper, 0.4); c.stroke(p);
-        }, T('word.picture', { n: 2 }), aLeg);
-
         const tA = i => B.arrow0 + B.arrowStep * i;
-        const aSeen = prog(t, B.arrow0, B.arrow0 + 0.6, ease.outCubic) * endFade;
-        legendRow(ctx, EP, rtl, LEG.right, LEG.y, LEG.rightW, c => {
-          EP.arrow(c, -34, 0, 34, 0, { kind: 'motion', dash: [7, 6], width: 4.5, headSize: 15 });
-        }, T('s03.seen'), aSeen);
+        legendBlock(ctx, EP, rtl, 'left', LEG.leftEdge, [
+          { y: LEG.y - 36, text: T('word.picture', { n: 1 }), icon: c => EP.wheelGhost(c, { x: 0, y: 30, r: 104, angle: 0, only: 0, color: SHADE.steelLight, opacity: 0.9, width: 2.4, dash: [6, 5] }) },
+          { y: LEG.y + 36, text: T('word.picture', { n: 2 }), icon: c => {
+            c.translate(0, 30);
+            const p = EP.spokePath(104, 0, 0);
+            c.fillStyle = PAL.steel; c.fill(p);
+            c.lineWidth = 1.4; c.strokeStyle = rgba(PAL.paper, 0.4); c.stroke(p);
+          } },
+        ], aLeg);
+        legendBlock(ctx, EP, rtl, 'right', LEG.rightEdge, [
+          { y: LEG.y, text: T('s03.seen'), icon: c => EP.arrow(c, -34, 0, 34, 0, { kind: 'motion', dash: [9, 6], width: 5.5, headSize: 17 }) },
+        ], prog(t, B.arrow0, B.arrow0 + 0.6, ease.outCubic) * endFade);
 
-        const rA = BIG.r * 0.84;
         for (let i = 0; i < SPOKES; i++) {
-          const p = ease.outCubic(clamp((t - tA(i)) / B.arrowDur));
-          if (p <= 0) continue;
+          const u = t - tA(i);
+          if (u <= 0) continue;
+          const p = ease.outCubic(clamp(u / B.arrowDur));
           const a0 = th1 + (i * EP.TAU) / SPOKES, a1 = a0 + shift;
+          // this link lights up while its arrow is drawn: the old spoke (dashed) and the closest new spoke (outline)
+          const lit = ease.outCubic(clamp(u / 0.3)) * (0.3 + 0.7 * (1 - ease.inOutSine(clamp((u - 0.5) / 0.9)))) * endFade;
+          const g0 = { x: BIG.x, y: BIG.y, r: BIG.r, only: i, color: PAL.paper, opacity: lit };
+          EP.wheelGhost(ctx, { ...g0, angle: th1, width: 3.4, dash: [8, 6] });
+          EP.wheelGhost(ctx, { ...g0, angle: th2, width: 4.4 });
           ctx.save();
           ctx.globalAlpha *= endFade;
-          // hairline guides from the two spoke tips (old, new) out to the ends of the arrow
-          ctx.strokeStyle = rgba(PAL.paper, 0.5 * p);
-          ctx.lineWidth = 1.6;
+          // extension lines from the two spokes out to the ends of the arrow (dashed = old picture)
+          ctx.strokeStyle = rgba(PAL.paper, 0.75 * p);
+          ctx.lineWidth = 2;
           ctx.lineCap = 'round';
-          for (const a of [a0, a1]) {
-            const [sx, sy] = EP.polar(BIG.x, BIG.y, BIG.r * 0.67, a), [ex, ey] = EP.polar(BIG.x, BIG.y, rA + 8, a);
+          for (const [a, dash] of [[a0, [4, 6]], [a1, []]]) {
+            const [sx, sy] = EP.polar(BIG.x, BIG.y, BIG.r * 0.7, a), [ex, ey] = EP.polar(BIG.x, BIG.y, R_SEEN + 10, a);
+            ctx.setLineDash(dash);
             ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke();
           }
-          EP.arcArrow(ctx, BIG.x, BIG.y, rA, a0, a1, { kind: 'motion', dash: [7, 6], width: 11, color: PAL.ink, alpha: 0.85, headSize: 15, progress: p });
-          EP.arcArrow(ctx, BIG.x, BIG.y, rA, a0, a1, { kind: 'motion', dash: [7, 6], width: 4.5, headSize: 15, progress: p });
+          ctx.setLineDash([]);
+          EP.arcArrow(ctx, BIG.x, BIG.y, R_SEEN, a0, a1, { kind: 'motion', dash: [9, 6], width: 5.5, headSize: 17, progress: p });
           ctx.restore();
         }
-        const aDeg = prog(t, B.arrow0 + 0.7, B.arrow0 + 1.3, ease.outCubic) * endFade;
+        const aDeg = prog(t, tA(1) + 0.3, tA(1) + 0.9, ease.outCubic) * endFade;
         if (aDeg > 0) {
-          const [dx, dy] = EP.polar(BIG.x, BIG.y, BIG.r * 0.955, th1 + shift / 2);
-          EP.text(ctx, EP.num(STEP) + '°', { x: dx, y: dy, anchor: 'middle', align: 'center', size: 26, weight: 700, latin: true, color: PAL.paper, opacity: aDeg });
+          const [dx, dy] = EP.polar(BIG.x, BIG.y, R_SEEN + 40, th1 + EP.TAU / SPOKES + shift / 2);
+          EP.text(ctx, EP.num(STEP) + '°', { x: dx, y: dy, anchor: 'middle', align: 'center', size: 30, weight: 700, latin: true, color: PAL.paper, opacity: aDeg });
         }
       }
     }

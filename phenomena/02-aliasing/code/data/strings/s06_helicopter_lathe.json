@@ -16,12 +16,12 @@
   },
   "s06.c4": {
     "en": "A spinning lathe can look stopped. That is why workshop lights must not flicker.",
-    "fr": "Un tour en marche peut sembler arrêté. L’éclairage d’atelier ne devrait donc pas scintiller.",
+    "fr": "Un tour en marche peut sembler arrêté. L’éclairage\u00a0d’atelier\u00a0ne\u00a0devrait\u00a0donc\u00a0pas\u00a0scintiller.",
     "ar": "قد تبدو المخرطة الدوّارة متوقفة. لهذا ينبغي ألا تومض أضواء الورشة."
   },
   "s06.blades": {
     "en": "5 blades × 6 turns per second = 30 blade passes per second",
-    "fr": "5\u00a0pales\u00a0× 6\u00a0tours par seconde\u00a0= 30\u00a0passages de pale par seconde",
+    "fr": "5\u00a0pales\u00a0× 6\u00a0tours par seconde = 30\u00a0passages de pale par seconde",
     "ar": "5 شفرات × 6 دورات في الثانية = 30 شفرة تمرّ في الثانية"
   },
   "s06.match": {
@@ -52,7 +52,7 @@
   "s06.marker": {
     "en": "Marked blade: it jumps {n}° every picture",
     "fr": "Pale marquée\u00a0: bond de\u00a0{n}° à chaque image",
-    "ar": "الشفرة ذات العلامة: تقفز {n}° في كل صورة"
+    "ar": "الشفرة ذات العلامة: تقفز \u200e{n}° في كل صورة"
   },
   "s06.steady": {
     "en": "Steady light",

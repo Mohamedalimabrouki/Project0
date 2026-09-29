@@ -1,0 +1,46 @@
+1
+00:00:00,800 --> 00:00:03,600
+This car is speeding up.
+
+2
+00:00:04,000 --> 00:00:06,000
+Now watch the wheel.
+
+3
+00:00:06,400 --> 00:00:09,000
+It seems to turn backwards!
+
+4
+00:00:09,400 --> 00:00:12,400
+Now it seems to stand still.
+
+5
+00:00:12,800 --> 00:00:15,900
+The car never slowed down.
+So what is going on?
+
+6
+00:00:16,800 --> 00:00:21,200
+It is a flip book:
+30 still pictures every second.
+
+7
+00:00:21,600 --> 00:00:26,000
+Now it turns almost one
+spoke gap between pictures.
+
+8
+00:00:26,400 --> 00:00:31,200
+Every spoke lands just short
+of where the next one was...
+
+9
+00:00:31,600 --> 00:00:37,900
+...so the closest match is backwards.
+The wheel seems to turn backwards!
+
+10
+00:00:38,600 --> 00:00:44,400
+Take pictures too slowly, and fast things
+can look slow, stopped, or even backwards.
+

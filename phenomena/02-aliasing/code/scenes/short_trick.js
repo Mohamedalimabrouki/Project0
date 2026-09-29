@@ -3,17 +3,23 @@
  *
  * One big wheel, spoke 0 painted yellow. Pictures are shown one per second
  * (slowed down x30, because the real gap is 1/30 s), each 66 degrees further
- * round: 66 degrees is 5.5 turns per second at 30 pictures per second.
+ * round: 66 degrees per picture is 5.5 turns per second at 30 pictures per second.
  *
- *   picture n      wheel angle 66 (n - 1) degrees, exactly
- *   ghost          where the spokes were in picture n - 1
- *   solid arc      the real turn of the painted spoke, +66 degrees
- *   gap bracket    one spoke gap = 360 / 5 = 72 degrees
- *   dashed arc     the closest match = wrapSigned(66, 72) = -6 degrees (backwards)
+ * On the wheel (replayed on every picture, building up with the narration):
+ *   ghost          where the spokes were in picture n - 1 (outlines; the painted one in yellow)
+ *   solid arc      the real turn of the painted spoke, +66 degrees, clockwise
+ *   gap wedge      one spoke gap = 360 / 5 = 72 degrees, between two neighbouring old spokes
+ *   just short     the last 6 degrees of that gap, in yellow: the new spoke lands 6 degrees short of the old next one
+ *   glide          the closest match = EP.wrapSigned(66, 72) = -6 degrees: the ghost slides BACK onto the nearest new spokes
+ * Under the wheel, the same story to scale (the "unrolled rim": 72 degrees drawn 780 px wide, so +66 and -6 are
+ * readable arrows): solid blue +66 (real turn), dashed blue -6 (backwards). At the switch the same picture is
+ * restated per second: 66 x 30 / 360 = 5.5 turns per second real, -6 x 30 / 360 = -0.5 turns per second seen.
  *
- * The annotations build up with the narration (gap, "just short", backwards),
- * replaying on every picture. At t = 18 s the same wheel runs at its real
- * rate, 66 degrees per video frame, exact: your own screen shows the creep.
+ * Real speed (from 18 s): the wheel turns 66 degrees per video frame, exact, no blur, so your own screen shows
+ * the backwards creep. The paint fades after the switch, so all five spokes look alike.
+ *
+ * The first 0.5 s continues the hook's wheel exactly (same place, size and angle) through the cross-fade,
+ * then the wheel stops on picture 1 with the painted spoke at 12 o'clock.
  */
 
 const TAU = Math.PI * 2, DEG = Math.PI / 180;
@@ -50,29 +56,6 @@ export function wheelAngle(t) {
 }
 
 // ----------------------------------------------------------------- small drawing helpers
-function arcPath(ctx, cx, cy, r, a0, a1) {
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, a0 - Math.PI / 2, a1 - Math.PI / 2, a1 < a0);
-}
-
-/** Thin bracket along a circle from a0 to a1 with small radial ticks at both ends. p = 0..1 draws it growing. */
-function bracket(EP, ctx, cx, cy, r, a0, a1, o = {}) {
-  const { p = 1, alpha = 1, color = EP.PAL.paper, width = 3, tick = 9, dash = null } = o;
-  if (p <= 0 || alpha <= 0) return;
-  const end = a0 + (a1 - a0) * p;
-  ctx.save();
-  ctx.globalAlpha *= alpha;
-  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
-  if (dash) ctx.setLineDash(dash);
-  arcPath(ctx, cx, cy, r, a0, end); ctx.stroke();
-  ctx.setLineDash([]);
-  for (const a of [a0, end]) {
-    const [x1, y1] = EP.polar(cx, cy, r - tick, a), [x2, y2] = EP.polar(cx, cy, r + tick, a);
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-  }
-  ctx.restore();
-}
-
 /**
  * Extras on the tyre that never betray the spin: fine sidewall rings (circles look the same at every angle),
  * the light catching the tyre's shoulder, and the arch's shadow on the top of the tyre.
@@ -126,10 +109,10 @@ function tag(EP, ctx, x, y, value, word, o = {}) {
 }
 
 function dot(ctx, x, y, r, o = {}) {
-  const { fill = null, stroke = null, width = 3.5, alpha = 1, dash = null } = o;
+  const { fill = null, stroke = null, width = 3.5, alpha = 1 } = o;
   ctx.save(); ctx.globalAlpha *= alpha; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
   if (fill) { ctx.fillStyle = fill; ctx.fill(); }
-  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = width; if (dash) ctx.setLineDash(dash); ctx.stroke(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = width; ctx.stroke(); }
   ctx.restore();
 }
 
@@ -138,10 +121,11 @@ export default {
   strings: ['s03_snapshots', 's04_trick'],
   captionBand: { y: 366 },
   captions: [
-    { key: 's03.c2', in: 0.8, out: 5.2 },
-    { key: 's04.c3', in: 5.6, out: 10.0 },
-    { key: 's04.c4', in: 10.4, out: 15.2 },
-    { key: 's04.c5', in: 15.6, out: 21.9 },
+    // band widths chosen so the lines break at natural places in English, French and Arabic (see the report)
+    { key: 's03.c2', in: 0.8, out: 5.2, band: { maxWidth: 824 } },
+    { key: 's04.c3', in: 5.6, out: 10.0, band: { maxWidth: 790 } },
+    { key: 's04.c4', in: 10.4, out: 15.2, band: { maxWidth: 840 } },
+    { key: 's04.c5', in: 15.6, out: 21.9, band: { maxWidth: 940 } },
   ],
   cues: [
     ...Array.from({ length: N_LAST }, (_, i) => ({ t: i + 1, sfx: 'shutter' })),   // one per picture
@@ -154,7 +138,6 @@ export default {
     const { PAL, ease, prog, text, T, num } = EP;
     EP.bg(ctx, W, H);
 
-    const stepping = t >= T_FREEZE && t < T_SWITCH;
     const n = pic(t);
     const age = t - n;                                                    // seconds since this picture was taken
     const theta = wheelAngle(t);
@@ -202,12 +185,13 @@ export default {
 
     // ---- top row: honest badge, camera and picture counter
     const xs = rtl ? RIGHT : LEFT, xe = rtl ? LEFT : RIGHT;
-    const kSlow = prog(t, 0.6, 1.1, ease.outCubic) * (1 - prog(t, T_SWITCH - 0.05, T_SWITCH + 0.2, ease.inOutSine));
-    const kReal = prog(t, T_SWITCH + 0.05, T_SWITCH + 0.4, ease.outCubic);
+    // the swap is sequential (old label gone, then the new one arrives), so two texts never overlap
+    const kSlow = prog(t, 0.6, 1.1, ease.outCubic) * (1 - prog(t, T_SWITCH - 0.05, T_SWITCH + 0.1, ease.inOutSine));
+    const kReal = prog(t, T_SWITCH + 0.12, T_SWITCH + 0.4, ease.outCubic);
     EP.badge(ctx, T('badge.slowx', { n: 30 }), { x: xs, y: ROW_TOP, align: 'start', size: 26, opacity: kSlow });
     EP.badge(ctx, T('badge.real'), { x: xs, y: ROW_TOP, align: 'start', size: 26, opacity: kReal });
 
-    const camOp = (t >= 1 ? prog(t, 1, 1.3) : 0) * (1 - prog(t, T_SWITCH - 0.05, T_SWITCH + 0.25, ease.inOutSine));
+    const camOp = (t >= 1 ? prog(t, 1, 1.3) : 0) * (1 - prog(t, T_SWITCH - 0.05, T_SWITCH + 0.15, ease.inOutSine));
     if (camOp > 0) {
       const camX = rtl ? xe + 152 + 58 : xe - 152 - 58;                    // fixed: the number changes, the icon does not move
       const shot = age >= 0 && age < 0.55 && t >= 1 ? age / 0.55 : 0;
@@ -216,13 +200,12 @@ export default {
     }
 
     // ---- the ruler: one spoke gap (72 degrees) unrolled, drawn to scale
-    const real = prog(t, T_SWITCH + 0.1, T_SWITCH + 0.5, ease.outCubic);     // per-second wording after the switch
-    const slow = 1 - real;
+    const slow = 1 - prog(t, T_SWITCH, T_SWITCH + 0.2, ease.inOutSine);       // per-picture wording leaves ...
+    const real = prog(t, T_SWITCH + 0.25, T_SWITCH + 0.6, ease.outCubic);   // ... then the per-second wording arrives
     const aArrow = prog(t, 2.1, 2.6, ease.outCubic);
     const aRuler = phB ? prog(t, 6.0, 6.5, ease.outCubic) : 0;
     const aSliver = phC ? prog(t, 11.0, 11.5, ease.outCubic) : 0;
     const aDash = phD ? prog(t, 16.0, 16.5, ease.outCubic) : 0;
-    const yellowGhost = { stroke: PAL.highlight }, whiteGhost = { stroke: PAL.paper };
     if (aArrow > 0) {
       // real turn: solid blue, +66 degrees (long)
       EP.arrow(ctx, xd(0), Y_ARROW, xd(TURN), Y_ARROW, { kind: 'motion', width: 8, headSize: 30, alpha: aArrow });
@@ -248,13 +231,11 @@ export default {
       dot(ctx, xNext, Y_RULER, 12, { stroke: PAL.paper, width: 3.5, alpha: aRuler * slow });
       tag(EP, ctx, xd(0) - 14, Y_LBL2, num(GAP) + '°', T('s04.gap'), { align: 'left', alpha: aRuler * slow });
     }
-    if (aDash > 0) {
+    if (aDash > 0 || real > 0) {
       // closest match: dashed blue, -6 degrees (short), backwards. The chart stays; only the ring above slides with the ghost.
-      EP.arrow(ctx, xd(GAP), Y_DASH, xd(TURN), Y_DASH, { kind: 'motion', width: 8, headSize: 26, dash: [7, 6], alpha: slow, progress: prog(t, 16.0, 16.6, ease.outCubic) });
+      // The arrow itself is the same before and after the switch (66 : 6 = 5.5 : 0.5), so it stays put; only its words change.
+      EP.arrow(ctx, xd(GAP), Y_DASH, xd(TURN), Y_DASH, { kind: 'motion', width: 8, headSize: 26, dash: [7, 6], alpha: Math.max(aDash, 0), progress: prog(t, 16.0, 16.6, ease.outCubic) });
       tag(EP, ctx, xd(TURN) - 22, Y_LBL2, num(seen) + '°', T('s04.backwards'), { align: 'right', alpha: aDash * slow });
-    }
-    if (real > 0) {                                                        // the same picture, per second: 66 -> 5.5 turns, -6 -> -0.5 turns
-      EP.arrow(ctx, xd(GAP), Y_DASH, xd(TURN), Y_DASH, { kind: 'motion', width: 8, headSize: 26, dash: [7, 6], alpha: real });
       tag(EP, ctx, xd(TURN) - 22, Y_LBL2, num(seen * FPS / 360, 1), T('s04.backwards'), { align: 'right', alpha: real, unit: T('unit.turns'), rtl });
     }
   },

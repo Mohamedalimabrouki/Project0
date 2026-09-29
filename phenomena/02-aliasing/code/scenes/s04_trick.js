@@ -89,7 +89,7 @@ function model(t) {
 function flagsFor(part, n) {
   if (part === 'A') return { real: n >= 1, seen: n >= 2, closest: n >= 2, verdict: n >= 2, gap: false, short: false };
   if (part === 'B') return { real: n >= 1, gap: n <= 1, short: n >= 5 && n <= 8, closest: n >= 8, seen: n >= 9, verdict: n >= 9 };
-  return { real: n >= 1, seen: n >= 1, closest: n >= 1, verdict: n >= 1, gap: false, short: false };
+  return { real: n >= 1, seen: false, closest: n >= 1, verdict: false, gap: false, short: false };   // C: "frozen" is told once the paint is gone (by time)
 }
 
 // index of the spoke (in the new picture) that is closest to where the yellow spoke was
@@ -194,6 +194,7 @@ function makeLabel(EP, ctx, spec) {
     if (spec.icon) items.push({ gap: ICON_W + 12 });
     items.push({ text: spec.verdict, size: 32, weight: 700, color: PAL.paper });
     if (spec.check) items.push({ gap: 12 }, { check: true });
+    if (spec.verdictNote) items.push({ gap: 18 }, { text: spec.verdictNote, size: 22, weight: 500, color: PAL.steel });
     r2 = measureRow(EP, ctx, items);
   }
   const w = Math.max(r1.w, r2 ? r2.w : 0);
@@ -207,45 +208,6 @@ function makeLabel(EP, ctx, spec) {
       if (r2) drawRow(EP, c, r2, x0, y + 34 + 46, rtl, alpha);
     },
   };
-}
-
-// ---------------------------------------------------------- label placement
-// Labels sit outside the outer ring, next to the arrow they belong to. A tiny
-// search (deterministic, same result in every frame of a picture) slides a label
-// along the ring, then outwards, until it is inside the stage, clear of the
-// wheel and clear of the labels placed before it.
-const LIM = { x0: 96, x1: 1824, y0: 286, y1: 924 };
-const overlap = (a, b, m = 12) => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
-function rectCircleDist(b) {
-  const dx = Math.max(b.x - CX, 0, CX - (b.x + b.w));
-  const dy = Math.max(b.y - CY, 0, CY - (b.y + b.h));
-  return Math.hypot(dx, dy);
-}
-function fits(b, taken) {
-  if (b.x < LIM.x0 || b.x + b.w > LIM.x1 || b.y < LIM.y0 || b.y + b.h > LIM.y1) return false;
-  if (rectCircleDist(b) < R_SEEN + 14) return false;
-  return !taken.some(o => overlap(b, o));
-}
-/** ang in degrees (clock), prefer +1 (clockwise) or -1 (anticlockwise) when it has to slide */
-function place(w, h, ang, prefer, taken, pad = 10) {
-  const offs = [0];
-  for (let d = 4; d <= 70; d += 4) offs.push(prefer * d, -prefer * d);
-  for (const rr of [R_LAB, R_LAB + 14, R_LAB + 30, R_LAB + 50, R_LAB + 74]) {
-    for (const o of offs) {
-      const a = (ang + o) * DEG;
-      const ux = Math.sin(a), uy = -Math.cos(a);
-      const px = CX + rr * ux, py = CY + rr * uy;
-      const x = ux > 0.35 ? px + pad : ux < -0.35 ? px - w - pad : px - w / 2;
-      const y = uy < -0.35 ? py - h - pad : uy > 0.35 ? py + pad : py - h / 2;
-      const b = { x, y, w, h };
-      if (fits(b, taken)) return b;
-    }
-  }
-  // last resort (should never happen, checked offline): on the ring, inside the stage
-  const a = ang * DEG;
-  const x = Math.min(LIM.x1 - w, Math.max(LIM.x0, CX + (R_LAB + 20) * Math.sin(a) - w / 2));
-  const y = Math.min(LIM.y1 - h, Math.max(LIM.y0, CY - (R_LAB + 20) * Math.cos(a) - h / 2));
-  return { x, y, w, h, lost: true };
 }
 
 // ------------------------------------------------- wheel-space drawing bits
@@ -306,7 +268,16 @@ function slivers(EP, ctx, oldDeg, newDeg, alphas) {
 // ------------------------------------------------------- stepping overlays
 const TAU = Math.PI * 2;
 const verdictKey = seen => (seen > 0.5 ? 's04.forwards' : seen < -0.5 ? 's04.backwards' : 's04.frozen');
-const drawLabel = (ctx, L, b, a) => { if (a > 0) L.draw(ctx, b.x, b.y + (1 - a) * 8, a); };
+
+// Labels live in two fixed slots on the reading-end side of the wheel (right in English and
+// French, left in Arabic). The arrows sweep around the wheel from picture to picture; the
+// labels stay where they are, so the text never jumps. Each label starts with a sample of
+// its own line style (solid, dashed, thin, patch), which ties it to its arrow.
+const SLOT_X = 1300, SLOT_Y = [486, 566];
+const slotBox = (EP, L, i) => ({ x: EP.isRTL() ? 2 * CX - SLOT_X - L.w : SLOT_X, y: SLOT_Y[i] });
+const drawSlot = (ctx, EP, L, i, a) => { if (L && a > 0) { const b = slotBox(EP, L, i); L.draw(ctx, b.x, b.y + (1 - a) * 8, a); } };
+/** where the little "what we see" glyph sits at real speed: on the label's side of the wheel */
+const glyphAt = EP => (EP.isRTL() ? 270 : 90);
 
 /**
  * The visual language of the slow motion, defined once and used in every part:
@@ -314,67 +285,58 @@ const drawLabel = (ctx, L, b, a) => { if (a > 0) L.draw(ctx, b.x, b.y + (1 - a) 
  *   solid blue arc   the real turn, from the old yellow position to the new one
  *   dashed blue arc  what we see: the old yellow position to the closest spoke of the new picture
  *   paper outline    the spoke the eye links to the old yellow spoke
- *   thin paper arc   a measure (one spoke gap, "just short"), never a motion
+ *   thin paper arc   a measure (one spoke gap), blue patch: the sliver a spoke falls short by
  */
-function stepOverlays(ctx, t, EP, m, paintA, panelBox) {
+function stepOverlays(ctx, t, EP, m, paintA) {
   const { PAL, SHADE, ease, prog, T } = EP;
   const r = m.run, s = m.s, n = m.n;
   const tEnd = r.f1 / FPS;
   const ov = 1 - prog(t, tEnd - SLOW_EDGE, tEnd, ease.inOutSine);                 // the run's overlays leave together
-  const fl = flagsFor(m.part, n);
-  const annK = m.part === 'C' ? 1 - prog(t, 28.7, 29.2, ease.inOutSine) : 1;      // part C: they leave with the paint
+  const fl = flagsFor(m.part, n), fp = n > 0 ? flagsFor(m.part, n - 1) : {};
+  const annK = m.part === 'C' ? 1 - prog(t, 28.5, 29.0, ease.inOutSine) : 1;      // part C: arrows leave with the paint
   const k = ov * annK;
   const a1 = m.angle, a0 = m.prev;                                                // new and old position of the yellow spoke
   const ang = mod(a1, 360) * DEG;
   const real = m.delta;                                                           // real turn per picture
   const seen = EP.wrapSigned(real * DEG, GAP * DEG) / DEG;                        // what we see: nearest-spoke rule
   const kStar = closestSpoke(real);
-  const taken = [panelBox];
-  const out = (v, x0, x1) => prog(s, x0, x1, ease.outCubic);
+  const out = (x0, x1) => prog(s, x0, x1, ease.outCubic);
 
   // ---- previous picture (ghost), the emphasised spoke, the old yellow spoke
   if (a0 != null) {
     const g = { x: CX, y: CY, r: R };
     EP.wheelGhost(ctx, { ...g, angle: mod(a0, 360) * DEG, color: SHADE.steelLight, opacity: 0.85 * ov, width: 2.4, dash: [8, 6] });
-    if (fl.closest) EP.wheelGhost(ctx, { ...g, angle: ang, only: kStar, color: PAL.paper, opacity: k * out(0, 0.04, 0.24), width: 4.4 });
+    if (fl.closest) EP.wheelGhost(ctx, { ...g, angle: ang, only: kStar, color: PAL.paper, opacity: k * out(0.04, 0.24), width: 4.4 });
     EP.wheelGhost(ctx, { ...g, angle: mod(a0, 360) * DEG, only: 0, color: PAL.highlight, opacity: ov * paintA, width: 3.6, dash: [8, 5] });
   }
 
   // ---- guides (extension lines) from the spokes to the arrow rings
   if (a0 != null && fl.real) {
-    const ga = k * out(0, 0.04, 0.24);
+    const ga = k * out(0.04, 0.24);
     guide(EP, ctx, a0, PAL.highlight, 0.85 * ga, [4, 6]);
     guide(EP, ctx, a1, PAL.highlight, 0.85 * ga);
     if (fl.seen && Math.abs(seen) > 0.5 && Math.abs(seen - real) > 0.5) guide(EP, ctx, a0 + seen, PAL.paper, 0.75 * ga * prog(s, 0.3, 0.5));
   }
 
-  // ---- part B: the reference "one spoke gap" (72 degrees), first picture and the first step
-  let gapA = 0;
+  // ---- part B: the reference "one spoke gap" (72 degrees): a thin arc just outside the real-turn arrow
   if (fl.gap) {
-    const ga = mod(n === 0 ? a1 : a0, 360);
-    gapA = (n === 0 ? out(0, 0.2, 0.55) : 1 - prog(s, 0.62, 0.95, ease.inOutSine)) * ov;
-    measureArc(EP, ctx, R_REAL, ga, ga + GAP, gapA, n === 0 ? out(0, 0.2, 0.7) : 1);
-    guide(EP, ctx, ga + GAP, PAL.paper, 0.6 * gapA, [4, 6]);
-    if (n === 0) guide(EP, ctx, ga, PAL.highlight, 0.85 * gapA, [4, 6]);
+    const ga = mod(n === 0 ? a1 : a0, 360);                       // the gap starts at the yellow spoke
+    const gA = (n === 0 ? out(0.2, 0.55) : 1 - prog(s, 0.62, 0.95, ease.inOutSine)) * ov;
+    measureArc(EP, ctx, R_REAL + 17, ga, ga + GAP, gA, n === 0 ? out(0.2, 0.7) : 1, 10);
+    guide(EP, ctx, ga + GAP, PAL.paper, 0.6 * gA, [4, 6]);         // where the next spoke is
+    if (n === 0) guide(EP, ctx, ga, PAL.highlight, 0.85 * gA, [4, 6]);
   }
 
   // ---- part B: every spoke lands just short of where its neighbour was (five slivers)
-  let shortA = 0;
   if (fl.short) {
     const al = [];
-    for (let j = 0; j < SPOKES; j++) al.push(ov * out(0, 0.10 + 0.08 * j, 0.30 + 0.08 * j));   // clockwise, from the yellow spoke
+    for (let j = 0; j < SPOKES; j++) al.push(ov * out(0.10 + 0.08 * j, 0.30 + 0.08 * j));   // clockwise, from the yellow spoke
     slivers(EP, ctx, a0, a1, al);
-    shortA = ov * out(0, 0.32, 0.55);
-    ctx.save();
-    ctx.strokeStyle = EP.rgba(PAL.paper, 0.5 * shortA);
-    ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-    rayLine(ctx, a1 + (GAP - real) / 2, R * 0.665, R_SEEN + 8);
-    ctx.restore();
   }
   // ---- part B: the closest match is 6 degrees BEHIND: the sliver between the emphasised spoke and the old yellow place
   if (a0 != null && fl.seen && Math.abs(seen) > 0.5 && Math.abs(seen - real) > 0.5) {
-    const wa = k * out(0, 0.30, 0.60);
-    slivers(EP, ctx, a0, a1, [0, 0, 0, 0, wa]);                       // ghost of spoke 0 = the old yellow place
+    const wa = k * out(0.30, 0.60);
+    slivers(EP, ctx, a0, a1, [0, 0, 0, 0, wa]);                    // ghost of spoke 0 = the old yellow place
     ctx.save();
     ctx.fillStyle = EP.rgba(PAL.motion, 0.3 * wa);
     sectorPath(ctx, R * 0.665, R_SEEN + 4, mod(a0, 360) + seen, mod(a0, 360));
@@ -385,44 +347,30 @@ function stepOverlays(ctx, t, EP, m, paintA, panelBox) {
   // ---- the arrows
   const a0w = a0 != null ? mod(a0, 360) : 0;
   if (a0 != null && fl.real) {
-    EP.arcArrow(ctx, CX, CY, R_REAL, a0w * DEG, (a0w + real) * DEG, { kind: 'motion', width: 6, headSize: 24, progress: out(0, 0.06, 0.36), alpha: k });
+    EP.arcArrow(ctx, CX, CY, R_REAL, a0w * DEG, (a0w + real) * DEG, { kind: 'motion', width: 6, headSize: 24, progress: out(0.06, 0.36), alpha: k });
   }
   if (a0 != null && fl.seen) {
-    const pr = out(0, 0.34, 0.64);
+    const pr = out(0.34, 0.64);
     if (Math.abs(seen) > 0.5) {
       EP.arcArrow(ctx, CX, CY, R_SEEN, a0w * DEG, (a0w + seen) * DEG, { kind: 'motion', dash: [9, 6], width: 5.5, headSize: Math.abs(seen) < 20 ? 17 : 21, progress: pr, alpha: k });
     } else {
-      seenDot(ctx, EP, a0w, k * pr);                                              // an arrow of zero length
+      seenDot(ctx, EP, a0w, k * pr);                                // an arrow of zero length
     }
   }
 
-  // ---- labels (placed next to their arrow, clear of each other and of the wheel)
+  // ---- labels: they stay while the pictures go on, and fade in the first time their arrow appears
+  const pres = (key, x0, x1) => (fl[key] ? (fp[key] ? 1 : out(x0, x1)) : fp[key] ? 1 - prog(s, 0, 0.25, ease.inOutSine) : 0) * ov;
   const deg = v => EP.num(v, 0) + '°';
-  const paperLine = { icon: 'thin', iconColor: PAL.paper, valueColor: PAL.paper };
-  const L = {}, B = {}, A = {};
-  if (fl.gap) { L.gap = makeLabel(EP, ctx, { ...paperLine, title: T('s04.gap'), value: deg(GAP) }); A.gap = gapA; }
-  if (fl.real && a0 != null) { L.real = makeLabel(EP, ctx, { icon: 'solid', title: T('s04.real'), value: signed(EP, real) }); A.real = k * out(0, 0.22, 0.44); }
-  if (fl.short) { L.short = makeLabel(EP, ctx, { icon: 'swatch', iconColor: PAL.motion, title: T('s04.short'), value: deg(GAP - real), valueColor: PAL.paper }); A.short = shortA; }
-  if (fl.seen && a0 != null) {
-    L.seen = makeLabel(EP, ctx, { icon: 'dashed', title: T('s04.seen'), value: signed(EP, seen), verdict: T(verdictKey(seen)), check: m.part === 'A' });
-    A.seen = k * out(0, 0.5, 0.72);
+  if (fl.real || fp.real) drawSlot(ctx, EP, makeLabel(EP, ctx, { icon: 'solid', title: T('s04.real'), value: signed(EP, real) }), 0, pres('real', 0.22, 0.44));
+  if (fl.gap || fp.gap) drawSlot(ctx, EP, makeLabel(EP, ctx, { icon: 'thin', iconColor: PAL.paper, valueColor: PAL.paper, title: T('s04.gap'), value: deg(GAP) }), 1, pres('gap', 0.45, 0.75));
+  if (fl.short || fp.short) drawSlot(ctx, EP, makeLabel(EP, ctx, { icon: 'swatch', iconColor: PAL.motion, valueColor: PAL.paper, title: T('s04.short'), value: deg(GAP - real) }), 1, pres('short', 0.32, 0.55));
+  if (fl.seen || fp.seen) {
+    const L = makeLabel(EP, ctx, { icon: 'dashed', title: T('s04.seen'), value: signed(EP, seen), verdict: T(verdictKey(seen)), check: m.part === 'A' });
+    drawSlot(ctx, EP, L, 1, pres('seen', 0.5, 0.72));
   }
-  const put = (key, at, prefer) => { if (!L[key]) return; B[key] = place(L[key].w, L[key].h, at, prefer, taken); taken.push(B[key]); };
-  put('gap', mod((n === 0 ? a1 : a0) + GAP + 3, 360), +1);
-  if (a0 != null) put('real', mod(a0 + real / 2, 360), +1);
-  put('short', mod(a1 + (GAP - real) / 2, 360), +1);
-  if (a0 != null) put('seen', mod(a0 + seen / 2, 360), -1);
-  for (const key of ['gap', 'real', 'short', 'seen']) if (L[key]) drawLabel(ctx, L[key], B[key], A[key]);
 
-  // ---- part C, once the paint is gone: nothing is left to anchor an arrow to, the readouts stay in fixed places
-  if (m.part === 'C') {
-    const fk = prog(t, 29.1, 29.6, ease.outCubic);
-    if (fk > 0) {
-      const sb = fixedSeen(ctx, EP, real, fk, panelBox);
-      const Lr = makeLabel(EP, ctx, { icon: 'solid', title: T('s04.real'), value: signed(EP, real) });
-      drawLabel(ctx, Lr, place(Lr.w, Lr.h, 122, +1, [panelBox, sb]), fk * ov);
-    }
-  }
+  // ---- part C: once the paint is gone the pictures ARE identical, and only then do we say "frozen"
+  if (m.part === 'C') seenFixed(ctx, EP, real, prog(t, 28.9, 29.4, ease.outCubic) * ov);
 }
 
 /** an arrow of zero length is a dot: "what we see" did not move */
@@ -440,32 +388,32 @@ function seenDot(ctx, EP, deg, a) {
 }
 
 /**
- * "What we see" with no yellow spoke to anchor it: a small dashed arrow (or a dot when
- * nothing moves) in a fixed place, with its label. Returns the label box.
+ * "What we see" without a yellow spoke to anchor it: a dashed arrow (or a dot when nothing
+ * moves) next to its label in slot 2. At real speed the arrow is only a direction glyph
+ * (6 degrees would be 32 px), so it says "not to scale".
  */
-function fixedSeen(ctx, EP, delta, alpha, panelBox) {
-  const { PAL, T } = EP;
+function seenFixed(ctx, EP, delta, alpha) {
+  if (alpha <= 0) return;
+  const { T } = EP;
   const seen = EP.wrapSigned(delta * DEG, GAP * DEG) / DEG;
-  const at = 61;                                                    // clock angle where the little arrow sits
+  const moving = Math.abs(seen) > 0.5;
+  const at = glyphAt(EP), span = 34;
   const L = makeLabel(EP, ctx, {
-    icon: 'dashed', title: T('s04.seen'), value: signed(EP, seen), note: T('s04.perpic'), verdict: T(verdictKey(seen)),
+    icon: 'dashed', title: T('s04.seen'), value: signed(EP, seen), note: T('s04.perpic'),
+    verdict: T(verdictKey(seen)), verdictNote: moving ? T('badge.notscale') : null,
   });
-  const b = place(L.w, L.h, at + seen / 2, +1, [panelBox]);
-  if (alpha > 0) {
-    if (Math.abs(seen) > 0.5) EP.arcArrow(ctx, CX, CY, R_SEEN, at * DEG, (at + seen) * DEG, { kind: 'motion', dash: [9, 6], width: 5.5, headSize: Math.abs(seen) < 20 ? 17 : 21, alpha });
-    else seenDot(ctx, EP, at, alpha);
-    drawLabel(ctx, L, b, alpha);
-  }
-  return b;
+  if (moving) EP.arcArrow(ctx, CX, CY, R_SEEN, at * DEG, (at + Math.sign(seen) * span) * DEG, { kind: 'motion', dash: [10, 7], width: 5.5, headSize: 22, alpha });
+  else seenDot(ctx, EP, at, alpha);
+  drawSlot(ctx, EP, L, 1, alpha);
 }
 
 // ---------------------------------------------------------- real speed runs
-function realOverlays(ctx, t, EP, m, panelBox) {
+function realOverlays(ctx, t, EP, m) {
   const { ease, prog } = EP;
   const r = m.run;
-  // the little "what we see" arrow: part B shows it from 22.7 s, part C already had it
-  const a = r === Br ? prog(t, 22.7, 23.2, ease.outCubic) * (1 - prog(t, r.t1 - 0.3, r.t1, ease.inOutSine)) : 1;
-  fixedSeen(ctx, EP, r.delta, a, panelBox);
+  // "what we see" is told only once the paint is gone (with paint the eye follows the yellow spoke)
+  const a = r === Br ? prog(t, 23.7, 24.2, ease.outCubic) * (1 - prog(t, r.t1 - 0.3, r.t1, ease.inOutSine)) : prog(t, 34.8, 35.3, ease.outCubic);
+  seenFixed(ctx, EP, r.delta, a);
 }
 
 // -------------------------------------------------------------------- panel
@@ -507,24 +455,29 @@ function panel(ctx, t, EP, m, PX) {
 
 // ------------------------------------------------------------------- sound
 const CUES = [];
-const cue = (t, sfx, o = {}) => CUES.push({ t: Math.round(t * 1000) / 1000, sfx, ...o });
+const ms = x => Math.round(x * 1000) / 1000;
+const cue = (t, sfx, o = {}) => CUES.push({ t: ms(t), sfx, ...o, ...(o.dur != null ? { dur: ms(o.dur) } : {}), ...(o.rate != null ? { rate: ms(o.rate) } : {}) });
 cue(1.5, 'pop', { gain: -6 });                          // "slowed down" badge
 cue(2.3, 'pop');                                        // the yellow paint
 for (const r of [A, B, C]) for (let i = 0; i < r.n; i++) cue(r.t0 + i, 'shutter');   // one per picture
 cue(A.t0 + 1.25, 'pop');                                // first "real turn" label
 cue(A.t0 + 2.5, 'pop');                                 // first "what we see" label, forwards
 cue(B.t0 + 0.45, 'pop');                                // "one spoke gap"
+cue(B.t0 + 1.3, 'pop', { gain: -6 });                   // "real turn" again, now 66 degrees
 cue(B.t0 + 5.32, 'pop');                                // "just short"
 cue(B.t0 + 9.5, 'pop');                                 // "what we see: backwards"
 cue(Br.t0, 'click');                                    // switch to real speed
 cue(Br.t0, 'whirr', { dur: Br.t1 - Br.t0, rate: turnsPerSecond(Br) });
-cue(22.7, 'glitch');                                    // backwards, at real speed
+cue(23.7, 'glitch');                                    // the paint is gone: the creep backwards is revealed
 cue(C.t0 - 0.1, 'click');                               // back to slow motion
 cue(C.t0 + 0.3, 'pop', { gain: -4 });                   // the paint comes back
-cue(C.t0 + 1.5, 'shimmer', { gain: -6, dur: 1.6 });     // the picture lands on the ghost: frozen
+cue(C.t0 + 1.3, 'pop', { gain: -6 });                   // "real turn +72"
+cue(29.0, 'shimmer', { gain: -6, dur: 1.6 });           // the paint is gone: every picture looks the same
 cue(Cr.t0, 'click');                                    // real speed again
 cue(Cr.t0, 'whirr', { dur: Cr.t1 - Cr.t0, rate: turnsPerSecond(Cr) });
-cue(35.2, 'shimmer', { dur: 3 });                       // the wheel looks frozen while it spins
+cue(35.0, 'shimmer', { dur: 3 });                       // the paint is gone: frozen while it spins
+
+CUES.sort((a, b) => a.t - b.t);
 
 const SLOW_EDGE = 0.35;   // overlays of a step run leave during its last 0.35 s
 
@@ -532,11 +485,11 @@ const SLOW_EDGE = 0.35;   // overlays of a step run leave during its last 0.35 s
 function paintAt(EP, t) {
   const { prog, ease } = EP;
   let a = prog(t, 2.2, 3.2, ease.inOutSine);              // "paint one spoke yellow"
-  if (t >= 22.5) a = 1 - prog(t, 22.5, 24.0, ease.inOutSine);   // real speed B: paint fades, only identical spokes remain
+  if (t >= 22.6) a = 1 - prog(t, 22.6, 24.1, ease.inOutSine);   // real speed B: paint fades, only identical spokes remain
   if (t >= 26.6) a = prog(t, 26.6, 27.2, ease.inOutSine);       // slow motion again: painted again
-  if (t >= 28.7) a = 1 - prog(t, 28.7, 29.3, ease.inOutSine);   // C: paint fades while still stepping: identical pictures
+  if (t >= 28.55) a = 1 - prog(t, 28.55, 29.05, ease.inOutSine);   // C: paint fades while still stepping: identical pictures
   if (t >= 32.4) a = prog(t, 32.4, 32.7, ease.inOutSine);       // real speed C: the yellow spoke shows it spins...
-  if (t >= 33.9) a = 1 - prog(t, 33.9, 35.4, ease.inOutSine);   // ...then the paint fades: perfectly still
+  if (t >= 33.5) a = 1 - prog(t, 33.5, 35.0, ease.inOutSine);   // ...then the paint fades: perfectly still
   return a;
 }
 
@@ -556,7 +509,6 @@ export default {
 
   render(ctx, t, EP, { W, H }) {
     const { PAL, ease, prog } = EP;
-    const rtl = EP.isRTL();
     EP.bg(ctx, W, H);
     const wheelA = prog(t, 0.4, 1.0, ease.outCubic);
     if (wheelA <= 0) return;
@@ -566,7 +518,11 @@ export default {
     const paintA = paintAt(EP, t);
 
     // ------------------------------------------------------------- the wheel
+    const grow = 0.95 + 0.05 * prog(t, 0.4, 1.3, ease.outCubic);          // the wheel settles in as it fades in
+    ctx.save();
+    ctx.translate(CX, CY); ctx.scale(grow, grow); ctx.translate(-CX, -CY);
     EP.wheel(ctx, { x: CX, y: CY, r: R, angle: ang, highlight: 0, highlightAlpha: paintA, opacity: wheelA });
+    ctx.restore();
     if (m.mode === 'step' && m.s < 0.12) {
       // a new picture: the spokes settle from slightly brighter in 0.12 s (not a flash)
       const k = Math.pow(1 - m.s / 0.12, 1.5);
@@ -579,10 +535,8 @@ export default {
 
     // the reading-start side of the stage belongs to the panel (badge, counter, readout)
     const PX = EP.startX(96);
-    const panelBox = { x: rtl ? W - 96 - 700 : 96, y: 286, w: 700, h: 200 };
-
-    if (m.mode === 'step') stepOverlays(ctx, t, EP, m, paintA, panelBox);
-    if (m.mode === 'real') realOverlays(ctx, t, EP, m, panelBox);
+    if (m.mode === 'step') stepOverlays(ctx, t, EP, m, paintA);
+    if (m.mode === 'real') realOverlays(ctx, t, EP, m);
     panel(ctx, t, EP, m, PX);
   },
 };

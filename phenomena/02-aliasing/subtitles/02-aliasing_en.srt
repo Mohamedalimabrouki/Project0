@@ -39,46 +39,46 @@ Between two pictures,
 the camera sees nothing at all.
 
 10
-00:00:40,600 --> 00:00:43,300
+00:00:40,600 --> 00:00:43,150
 Your brain joins the pictures together...
 
 11
-00:00:43,500 --> 00:00:47,850
+00:00:43,300 --> 00:00:47,850
 ...by linking each spoke to the
 closest spoke in the next picture.
 
 12
-00:00:48,800 --> 00:00:53,671
+00:00:48,800 --> 00:00:53,000
 Let's slow it right down,
 and paint one spoke yellow.
 
 13
-00:00:54,071 --> 00:00:58,943
+00:00:53,400 --> 00:00:58,200
 A small turn between pictures:
 it looks like it turns forwards. Correct!
 
 14
-00:00:59,343 --> 00:01:04,214
+00:00:58,600 --> 00:01:03,400
 Now it turns almost one
 spoke gap between pictures.
 
 15
-00:01:04,614 --> 00:01:09,486
+00:01:03,800 --> 00:01:09,400
 Every spoke lands just short
 of where the next one was...
 
 16
-00:01:09,886 --> 00:01:14,757
+00:01:09,800 --> 00:01:14,600
 ...so the closest match is backwards.
 The wheel seems to turn backwards!
 
 17
-00:01:15,157 --> 00:01:20,029
+00:01:15,000 --> 00:01:20,000
 Turn exactly one gap per picture,
 and every picture looks the same.
 
 18
-00:01:20,429 --> 00:01:25,300
+00:01:20,400 --> 00:01:25,800
 The wheel seems frozen,
 even though it is spinning fast.
 
@@ -113,22 +113,22 @@ Engineers call it the
 Nyquist-Shannon sampling theorem.
 
 25
-00:02:06,800 --> 00:02:11,625
+00:02:06,800 --> 00:02:11,600
 Helicopter blades can
 look frozen on video.
 
 26
-00:02:12,025 --> 00:02:16,850
+00:02:12,000 --> 00:02:16,800
 Between two pictures, each blade moves
 exactly into the next blade's place.
 
 27
-00:02:17,250 --> 00:02:22,075
+00:02:17,200 --> 00:02:22,200
 Flickering lights can play
 the same trick on machines.
 
 28
-00:02:22,475 --> 00:02:27,300
+00:02:22,600 --> 00:02:27,900
 A spinning lathe can look stopped. That
 is why workshop lights must not flicker.
 

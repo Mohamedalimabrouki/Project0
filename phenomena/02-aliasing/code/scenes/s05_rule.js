@@ -26,8 +26,20 @@
  *
  * The scene is a pure function of t: nothing is remembered between frames.
  *
- * Named exports (alias, SWEEP, FS, N_SPOKES) are only for the numerical check
- * in the report; the film uses the default export.
+ * Key moments (seconds from the start of the scene):
+ *   0.4   chapter label                1.0-4.0  axes, grid and titles build
+ *   4.0   the true diagonal (blue)     6.7  wheel and badge appear, 7.0 first equation
+ *   9.0   wheel starts to turn         13.4 green zone, 14.6 Nyquist line
+ *   16.8  marker hits 15 Hz and falls  21.0 second equation, 21.7 frozen points
+ *   22.3  frozen at 30 Hz              27.0 marker falls again at 45 Hz
+ *   29.0  key equation appears         30.4 frozen at 60 Hz, 30.8 yellow box
+ *   33.7  top of the sweep (66 Hz)     35.0-38.0 settles at 60 Hz (wheel still)
+ *   35.4  theorem named, box and green zone breathe once
+ * The four crossing times (16.8, 22.3, 27.0, 30.4 s) are computed from the
+ * sweep, not typed, and drive the sound cues and the pulses on the graph.
+ *
+ * Named exports (alias, SWEEP, GRAPH, FS, N_SPOKES) are only for the numerical
+ * check in the report; the film uses the default export.
  */
 
 // ---------------------------------------------------------------- the physics
@@ -132,9 +144,6 @@ const EQS = [
 ];
 const STEEL = '#8C96A0', YELLOW = '#F0E442';
 
-// English captions: line widths chosen so that a sentence is never split
-// leaving a lone word (French and Arabic keep the engine's default band).
-const CAPTION_WIDTH_EN = { 's05.c1': 1090, 's05.c2': 1000, 's05.c3': 1080, 's05.c4': 1270, 's05.c5': 1160 };
 const CAPTIONS = [
   { key: 's05.c1', in: 0.8, out: 6.4 },
   { key: 's05.c2', in: 6.8, out: 12.8 },
@@ -143,6 +152,41 @@ const CAPTIONS = [
   { key: 's05.c5', in: 28.8, out: 34.8 },
   { key: 's05.c6', in: 35.2, out: 39.9 },
 ];
+
+/**
+ * Caption line breaks. The engine wraps a caption greedily, which can leave a
+ * lone word on the second line ("... pass by f / times per second."). Here each
+ * caption is measured once (in the language being rendered) and given the
+ * narrowest line width that reproduces the best two-line split: a sentence end
+ * if that is reasonably balanced, otherwise the most even split (never ending
+ * a line on a little word such as "as" or "the"). A caption that
+ * fits on one line keeps the engine's default. Works for any wording, so a
+ * changed translation or English line is handled without touching this file.
+ * (50 px, weight 600 and 1560 px are the engine's default caption band.)
+ */
+function balanceCaptions(EP) {
+  if (typeof document === 'undefined') return;                    // only in the browser renderer
+  const ctx = document.createElement('canvas').getContext('2d');
+  const SIZE = 50, WEIGHT = 600, ONE_LINE = 1560;
+  const width = str => EP.measure(ctx, str, { size: SIZE, weight: WEIGHT }).w;
+  for (const c of CAPTIONS) {
+    delete c.band;
+    const str = EP.T(c.key);
+    if (width(str) <= ONE_LINE) continue;
+    const words = str.split(' ');                                // no-break spaces stay glued, as in the engine
+    let best = null;
+    for (let k = 1; k < words.length; k++) {
+      const l1 = words.slice(0, k).join(' '), l2 = words.slice(k).join(' ');
+      const w1 = width(l1), w2 = width(l2), mw = Math.max(w1, w2) + 10;
+      if (width(l1 + ' ' + words[k]) <= mw) continue;            // the engine would pull the next word up: split not reachable
+      const sentenceEnd = /[.:;!?\u2026\u061F\u061B]$/.test(words[k - 1]);
+      const shortWord = /^\p{L}{1,3}$/u.test(words[k - 1].replace(/[^\p{L}\p{N}]/gu, ''));   // "as", "the", "de", "في": a poor place to end a line
+      const cost = Math.max(w1, w2) + (sentenceEnd ? 0 : 300) + (shortWord && !sentenceEnd ? 200 : 0);
+      if (!best || cost < best.cost) best = { cost, mw };
+    }
+    if (best && best.mw < ONE_LINE) c.band = { maxWidth: Math.ceil(best.mw) };
+  }
+}
 
 let spin = null;    // wheel angle table, made once in setup()
 
@@ -232,10 +276,14 @@ function drawGraph(ctx, t, EP) {
   const zeroY = gy(0);
   const halo = 9;   // soft ink shadow so labels stay legible over faint lines
 
+  // when the caption names the theorem, the green zone and its wall breathe once
+  // (the theorem is exactly the promise of that zone); smooth, small, no flash
+  const breathe = Math.sin(Math.PI * EP.clamp((t - TM.theorem) / 1.2));
+
   // green zone: the video tells the truth, 0 <= f < 15 Hz
   const pBand = prog(t, TM.band[0], TM.band[1], ease.outCubic);
   if (pBand > 0) {
-    ctx.fillStyle = rgba(PAL.balance, 0.12);
+    ctx.fillStyle = rgba(PAL.balance, 0.12 + 0.08 * breathe);
     ctx.fillRect(x0, top, (gx(NYQ) - x0) * pBand, bot - top);
   }
 
@@ -318,7 +366,7 @@ function drawGraph(ctx, t, EP) {
   if (pN > 0) {
     ctx.save();
     ctx.strokeStyle = rgba(PAL.highlight, 0.92);
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2.5 + 1.5 * breathe;
     ctx.beginPath(); ctx.moveTo(gx(NYQ), top); ctx.lineTo(gx(NYQ), top + (bot - top) * pN); ctx.stroke();
     ctx.restore();
   }
@@ -422,7 +470,7 @@ function drawGraph(ctx, t, EP) {
   if (aSafe > 0) EP.text(ctx, EP.T('s05.safe'), { x: (x0 + gx(NYQ)) / 2 - 2, y: gy(-5.4) - 6 * (1 - aSafe), align: 'center', size: 26, weight: 600, color: PAL.balance, opacity: aSafe, maxWidth: 158, shrink: true, maxLines: 3, shadow: halo });
   const aNyq = prog(t, TM.nyqLabel, TM.nyqLabel + 0.7, ease.outCubic);
   if (aNyq > 0) {
-    const lx = gx(NYQ) + 18, ly = gy(FA_LIM) + 40 - 6 * (1 - aNyq);
+    const lx = gx(NYQ) + 26, ly = gy(FA_LIM) + 40 - 6 * (1 - aNyq);
     EP.text(ctx, EP.T('s05.nyquist'), { x: lx, y: ly, align: 'left', size: 30, weight: 700, color: PAL.highlight, opacity: aNyq, maxWidth: 260, shrink: true, maxLines: 1, shadow: halo });
     EP.math(ctx, '\\frac{f_s}{2} = 15\\ \\mathrm{Hz}', { x: lx, y: ly + 66, size: 42, color: PAL.highlight, align: 'left', anchor: 'baseline', opacity: aNyq });
   }
@@ -606,11 +654,10 @@ export default {
   ],
   music: 'explain',
 
-  setup(EP, info) {
+  setup(EP) {
     // exact wheel angle: the integral of the real turning rate f(t) / N
     spin = EP.angleTable(t => SWEEP.f(t) / N_SPOKES, 0, DURATION);
-    // English caption line breaks (other languages keep the default band)
-    if (info && info.lang === 'en') for (const c of CAPTIONS) if (CAPTION_WIDTH_EN[c.key]) c.band = { maxWidth: CAPTION_WIDTH_EN[c.key] };
+    balanceCaptions(EP);
   },
 
   render(ctx, t, EP, { W, H }) {

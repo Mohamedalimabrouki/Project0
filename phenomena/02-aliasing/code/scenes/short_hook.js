@@ -1,19 +1,23 @@
 /*
  * Short (9:16, 1080 x 1920) - scene 1: the hook (16.5 s).
  *
- * A car seen from the side, framed on its rear wheel. The car speeds up from
- * walking pace to 47 km/h. The wheel is drawn at its TRUE turning rate, one
- * exact angle per video frame, so the viewer's own screen samples it 30 times a
- * second and shows the wagon-wheel effect for real: forwards, confusion,
- * backwards, frozen at 6 turns per second, then creeping forwards.
+ * A car seen from the side, framed on its rear wheel (tyre radius 300 px, centre of the frame). The car speeds
+ * up from walking pace to 47 km/h. The wheel is drawn at its TRUE turning rate, one exact angle per video
+ * frame, so the viewer's own screen samples it 30 times a second and shows the wagon-wheel effect for real:
+ * forwards, confusion (Nyquist limit at 4.3 s), backwards, frozen at exactly 6 turns per second from 9.5 s to
+ * 12 s (72 degrees per picture), then creeping forwards.
  *
  * Everything on screen is computed:
- *   f_r(t)   wheel turns per second (smooth blend through the story knots)
+ *   f_r(t)   wheel turns per second: monotone cubic blend through the story knots (no overshoot)
  *   angle    integral of 2 pi f_r  (EP.angleTable), drawn exactly, no blur
- *   road     scrolls by  r * angle  pixels (rolling without slipping), so the
- *            road moves at exactly  v = 2 pi R f_r  metres per second, with
- *            pixels per metre = wheel radius in pixels / 0.33 m
+ *   road     scrolls by  r * angle  pixels (rolling without slipping), so the road moves at exactly
+ *            v = 2 pi R f_r  metres per second, with pixels per metre = wheel radius in pixels / 0.33 m
  *   readouts m/s, km/h and turns per second, all from f_r(t)
+ *
+ * Look: dark graphic style. The body is cropped at a crisp shoulder crease under the readouts, so it reads as a
+ * door panel with the wheel arch; the camera settles on the wheel during the first 4 s (a pure zoom of the whole
+ * picture about the wheel centre, so the road keeps its true scale). Tyre extras (sidewall rings, shoulder light)
+ * are circles or fixed, so they never betray the spin.
  */
 
 // ----------------------------------------------------------------- physics
@@ -159,7 +163,7 @@ export default {
     { key: 's01.c2', in: 4.0, out: 6.0 },
     { key: 's01.c3', in: 6.4, out: 9.0 },
     { key: 's01.c4', in: 9.4, out: 12.4 },
-    { key: 's01.c5', in: 12.8, out: 15.9 },
+    { key: 's01.c5', in: 12.8, out: 15.9, band: { maxWidth: 760 } },    // narrower, so the line breaks after "down." and "So" is not left alone
   ],
   cues: [
     { t: 0.2, sfx: 'car', dur: 16 },
@@ -190,7 +194,7 @@ export default {
     ctx.save();
     ctx.translate(CX, CY); ctx.scale(zoom, zoom); ctx.translate(-CX, -CY);
 
-    // car body: dimmed and faded into the dark around the wheel (off-screen, masked)
+    // car body (EP.car), dimmed and cropped at its shoulder crease just under the readouts: drawn off-screen, then masked
     const s = ctx.getTransform().a / zoom;               // engine pixel scale (1 for the Short)
     if (!layer || layer.canvas.width !== Math.round(W * s)) {
       const c = document.createElement('canvas');
@@ -267,32 +271,31 @@ export default {
     ctx.restore();
 
     // ---- readouts (screen space)
+    // (present from the very first frame: it is the thumbnail in the feed)
     const xs = rtl ? RIGHT : LEFT;                        // reading-start edge
-    const xe = rtl ? LEFT : RIGHT;                        // the other edge
     const al = rtl ? 'right' : 'left';
-    const aE = 1, aW = 1;                                 // present from the very first frame (it is the feed thumbnail)
 
     // speed
-    text(ctx, T('s01.speed'), { x: xs, y: 526, size: 30, weight: 700, color: PAL.steel, tracking: 0.1, caps: true, opacity: aE, align: 'start' });
+    text(ctx, T('s01.speed'), { x: xs, y: 526, size: 30, weight: 700, color: PAL.steel, tracking: 0.1, caps: true, align: 'start' });
     group(EP, ctx, xs, 626, [
       { s: num(v, 1), tab: true, size: 104, weight: 800, color: PAL.paper, gap: 14 },
       { s: 'm/s', size: 44, weight: 600, color: PAL.steel, latin: true },
-    ], al, aE);
+    ], al);
     group(EP, ctx, xs, 684, [
       { s: num(v * 3.6, 1), tab: true, size: 46, weight: 700, color: PAL.paper, gap: 10 },
       { s: 'km/h', size: 32, weight: 600, color: PAL.steel, latin: true },
-    ], al, aE);
+    ], al);
 
     // real wheel speed: solid blue forward arc (what really happens)
     const bx = rtl ? LEFT : 520;                          // block start (left edge of the block)
-    text(ctx, T('s01.wheel'), { x: rtl ? bx + 400 : bx, y: 526, size: 30, weight: 700, color: PAL.steel, tracking: 0.1, caps: true, opacity: aW, align: rtl ? 'right' : 'left', maxWidth: 400, shrink: true });
-    turnIcon(EP, ctx, rtl ? bx + 400 - 32 : bx + 32, 590, 28, +1, { alpha: aW });
+    text(ctx, T('s01.wheel'), { x: rtl ? bx + 400 : bx, y: 526, size: 30, weight: 700, color: PAL.steel, tracking: 0.1, caps: true, align: rtl ? 'right' : 'left', maxWidth: 400, shrink: true });
+    turnIcon(EP, ctx, rtl ? bx + 400 - 32 : bx + 32, 590, 28, +1);
     group(EP, ctx, rtl ? bx + 400 - 84 : bx + 84, 626, [
       { s: num(fr, 2), tab: true, size: 80, weight: 800, color: PAL.paper, gap: 0 },
-    ], rtl ? 'right' : 'left', aW);
-    text(ctx, T('unit.turns'), { x: rtl ? bx + 400 : bx, y: 684, size: 32, weight: 600, color: PAL.steel, opacity: aW, align: rtl ? 'right' : 'left', maxWidth: 400, shrink: true });
+    ], rtl ? 'right' : 'left');
+    text(ctx, T('unit.turns'), { x: rtl ? bx + 400 : bx, y: 684, size: 32, weight: 600, color: PAL.steel, align: rtl ? 'right' : 'left', maxWidth: 400, shrink: true });
 
     // honest label: this is the real thing, sampled by your own screen
-    EP.badge(ctx, T('badge.real'), { x: xs, y: 1494, align: 'start', size: 26, opacity: 1 });
+    EP.badge(ctx, T('badge.real'), { x: xs, y: 1494, align: 'start', size: 26 });
   },
 };

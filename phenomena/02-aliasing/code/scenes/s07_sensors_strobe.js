@@ -1,13 +1,14 @@
 /*
- * Scene 07 - Sensors and the strobe ("In the real world", part 2).
+ * Scene 07 - Sensors and the strobe ("In the real world", part 2), 22.5 s.
  *
- *   Part 1  0.5 - 11.9 s   A motor with a vibration sensor. The sensor voltage is a
- *                          900 Hz sine; the controller reads it 1000 times per second.
- *                          The samples trace a slow 100 Hz wave (the alias).
- *   Part 2  11.8 - 17.1 s  The fix: sensor -> anti-aliasing filter -> converter ->
- *                          controller, and the rule f_s > 2 f_max.
- *   Part 3  17.0 - 22.5 s  Aliasing on purpose: a strobe light 1 % slower than the blade
- *                          passes makes a fast fan look almost still (simulated view).
+ *   Part 1   0.5 - 12.2 s   A motor with a vibration sensor. The sensor voltage is a 900 Hz
+ *                           sine; the controller reads it 1000 times per second. The 21
+ *                           samples of the first 20 ms trace a slow 100 Hz wave (the alias).
+ *   Move     11.8 - 12.6 s  The sensor box lifts off the motor and becomes the first block.
+ *   Part 2   12.3 - 16.95 s The fix: sensor -> anti-aliasing filter -> converter ->
+ *                           controller, and the rule f_s > 2 f_max.
+ *   Part 3   16.95 - 22.5 s Aliasing on purpose: a strobe 1 % slower than the blade passes
+ *                           makes a fast 3-blade fan look almost still (simulated view).
  *
  * Every number on screen comes from the equations below. The maths is exported so it can
  * be checked in Node (see checkSamples() and strobeTable()).
@@ -15,6 +16,10 @@
  * Colours keep their meaning: purple = electrical signal, paper = sample marks, steel =
  * objects, orange = light output, blue = motion (solid = real, dashed = what we see),
  * green = "it works" (the pass band of the filter), yellow = look here.
+ *
+ * Fades: each group (motor, plot, diagram, fan panels) is drawn as one flat layer with
+ * EP.layer and faded as a whole. Captions: setup() balances their two lines (see
+ * balanceCaptions), in every language.
  */
 
 let EP = null; // the engine, handed over by the stage (the same object on every call)
@@ -185,7 +190,8 @@ function vGrad(ctx, y0, y1) {
 /**
  * Captions in the engine wrap greedily, which can leave a widow ("... a slow 100 / Hz wave.").
  * For each caption that needs two lines, find the narrowest width that still gives two lines:
- * the two lines come out about equally long, whatever the language.
+ * the two lines come out about equally long, whatever the language. The result is given to the
+ * engine as the caption's own band width (the stage reads c.band); the size is never changed.
  */
 function balanceCaptions() {
   const cv = document.createElement('canvas');
@@ -194,9 +200,12 @@ function balanceCaptions() {
     const str = EP.T(c.key);
     const base = { size: 50, weight: 600 };
     if (EP.measure(ctx, str, base).w <= 1560) { delete c.band; continue; }
+    // narrowest width that still gives two lines AND in which every line really fits
+    // (a translation may contain no-break spaces: an unbreakable chunk can be wider than the band)
     let best = 1560;
     for (let w = 1560; w >= 600; w -= 4) {
-      if (EP.measure(ctx, str, { ...base, maxWidth: w }).lines.length > 2) break;
+      const b = EP.measure(ctx, str, { ...base, maxWidth: w });
+      if (b.lines.length > 2 || b.w > w + 0.5) break;
       best = w;
     }
     c.band = { maxWidth: best + 8 };
@@ -566,6 +575,8 @@ function iconFilter(ctx, cx, cy, k) {
     ctx.fillStyle = PAL.highlight; ctx.beginPath(); ctx.arc(X(f), Y(gain(f)), 5, 0, TAU); ctx.fill();
   }
   ctx.restore();
+  const qL = clamp((k - 0.95) / 0.05);
+  if (qL > 0) EP.text(ctx, '900 Hz', { x: X(0.9), y: Y(gain(0.9)) - 20 - (1 - qL) * 5, align: 'center', size: 24, weight: 600, color: PAL.highlight, opacity: qL, latin: true });
 }
 
 function iconADC(ctx, cx, cy, k) {
@@ -665,7 +676,7 @@ function thumb(ctx, cx, cy, kind, t, a) {
 // =====================================================================================
 // 8. PART 3 - THE FAN AND THE STROBE
 // =====================================================================================
-const FV = { cxL: 560, cxR: 1360, lampY: 346, waveY: 460, fanY: 660, R: 132, yLabel: 862, yNum: 906 };
+const FV = { cxL: 584, cxR: 1384, lampY: 352, waveY: 466, fanY: 664, R: 132, yLabel: 866, yNum: 910 };
 const STROBE_HZ_ON_SCREEN = 1.5;                                   // rays and pulses: at most twice per second
 const _blade = new Map();
 function bladeShapes(R) {
@@ -891,142 +902,151 @@ export default {
     EP = EPin;
     const { PAL, ease, prog } = EP;
     EP.bg(ctx, W, H);
+    const rtl = EP.isRTL();
+    const rise = riseAt(t);
+    const aP1 = 1 - prog(t, K.p1Out[0], K.p1Out[1], ease.inOutSine);      // part 1 leaves
+    const aOut2 = 1 - prog(t, K.p2Out[0], K.p2Out[1], ease.inOutSine);    // part 2 leaves
+
+    // Every group below is drawn as one flat layer and faded as a whole (EP.layer), so that
+    // overlapping parts (shaft under the end shield, dots over the curve) never show through.
 
     // ------------------------------------------------------------------ PART 1
-    const aP1 = 1 - prog(t, K.p1Out[0], K.p1Out[1], ease.inOutSine);
     const aMotor = P(t, K.motor, K.motor + 0.8) * (1 - prog(t, 11.85, 12.35, ease.inOutSine));
-    const rise = riseAt(t);
-    if (aMotor > 0) drawMotor(ctx, MOTOR.x, MOTOR.y + rise, MS, aMotor);
-    drawWire(ctx, t, aP1);
+    EP.layer(ctx, aMotor, MOTOR.x - 170, MOTOR.y + rise - 60, 320, 150, g => drawMotor(g, MOTOR.x, MOTOR.y + rise, MS, 1));
 
-    if (aP1 > 0) {
+    EP.layer(ctx, aP1, 90, 300, 1750, 590, g => {
       const dim = prog(t, K.dim[0], K.dim[1], ease.inOutSine);
-      drawAxes(ctx, t, aP1);
-      drawGuides(ctx, t, aP1);
-      drawTicks(ctx, t, aP1);
-      drawReal(ctx, t, aP1, dim);
-      drawAlias(ctx, t, aP1);
-      drawDots(ctx, t, aP1);
-      drawPen(ctx, t, aP1);
-      // legend: real, samples, seen
-      const item = (t0, str, kind, x, y, w, extra = 1) => legendItem(ctx, { x, y, w, str, kind, a: P(t, t0, t0 + 0.4) * aP1 * extra, k: P(t, t0, t0 + 0.5) });
-      const mir = (x, w) => (EP.isRTL() ? PL.x0 + PL.x1 - (x + w) : x);   // text hugs the reading-start side
+      drawWire(g, t, 1);
+      drawAxes(g, t, 1);
+      drawGuides(g, t, 1);
+      drawTicks(g, t, 1);
+      drawReal(g, t, 1, dim);
+      drawAlias(g, t, 1);
+      drawDots(g, t, 1);
+      drawPen(g, t, 1);
+      // legend: real, samples, seen (mirrored in right-to-left languages: text hugs the reading-start side)
+      const mir = (x, w) => (rtl ? PL.x0 + PL.x1 - (x + w) : x);
+      const item = (t0, str, kind, x, y, w, extra = 1) => legendItem(g, { x, y, w, str, kind, a: P(t, t0, t0 + 0.4) * extra, k: P(t, t0, t0 + 0.5) });
       item(K.realLabel, EP.T('s07.real'), 'line', mir(LG.colA, LG.wA), LG.y1, LG.wA, 1 - 0.5 * dim);
       item(K.samplesLabel, EP.T('s07.samples'), 'dot', mir(LG.colA, LG.wA), LG.y2, LG.wA);
       item(K.aliasLabel, EP.T('s07.seen'), 'dash', mir(LG.colB, LG.wB), LG.y1, LG.wB);
+      // 900 Hz and 1000 samples per second are an illustration, not a measurement
+      EP.badge(g, EP.T('badge.example'), { x: EP.startX(96), y: 306, opacity: P(t, K.realLabel, K.realLabel + 0.5) });
+    });
+
+    // ------------------------------------------------------------------ PART 2
+    if (t >= K.morph[0] - 0.1) {
+      EP.layer(ctx, aOut2, 60, 380, 1800, 520, g => {
+        // the first block is the sensor: its frame grows around the box at the end of the move
+        const kB = P(t, K.morph[1] - 0.45, K.blocks[0] + 0.15, ease.outCubic);
+        if (kB > 0) { g.save(); g.globalAlpha *= kB; blockFrame(g, DG.cx[0], DG.y, kB); g.restore(); }
+        const names = ['s07.sensor', 's07.filter', 's07.adc', 's07.controller'];
+        for (let i = 0; i < 4; i++) {
+          const tb = K.blocks[i];
+          const kIn = Pz(t, tb, tb + 0.55, ease.outBack), aIn = P(t, tb, tb + 0.35);
+          if (i > 0 && aIn > 0) {
+            g.save();
+            g.translate(DG.cx[i], DG.y); g.scale(0.9 + 0.1 * kIn, 0.9 + 0.1 * kIn); g.translate(-DG.cx[i], -DG.y);
+            EP.layer(g, aIn, DG.cx[i] - DG.w / 2 - 6, DG.y - DG.h / 2 - 6, DG.w + 12, DG.h + 12, h => {
+              blockFrame(h, DG.cx[i], DG.y, 1);
+              const kI = P(t, tb + 0.15, tb + 0.85, ease.inOutSine);
+              if (i === 1) iconFilter(h, DG.cx[i], DG.y - 6, kI);
+              if (i === 2) iconADC(h, DG.cx[i], DG.y - 6, kI);
+              if (i === 3) iconChip(h, DG.cx[i], DG.y - 2);
+            });
+            g.restore();
+          }
+          // label under the block
+          const aL = P(t, tb + 0.1, tb + 0.6) * (i === 0 ? P(t, K.morph[1] - 0.2, K.morph[1] + 0.3) : 1);
+          if (aL > 0) EP.text(g, EP.T(names[i]), { x: DG.cx[i], y: DG.labelY + (1 - aL) * 8, align: 'center', size: 32, weight: 600, maxWidth: 400, maxLines: 2, shrink: true, opacity: aL });
+        }
+        // connections with their signal thumbnails
+        for (let i = 0; i < 3; i++) {
+          const xa = DG.cx[i] + DG.w / 2 + 6, xb = DG.cx[i + 1] - DG.w / 2 - 6, xm = (xa + xb) / 2;
+          const t0 = K.blocks[i] + 0.25;
+          const kA = P(t, t0, t0 + 0.45, ease.inOutSine);
+          if (kA > 0) EP.arrow(g, xa, DG.y, xb, DG.y, { kind: 'motion', color: PAL.field, width: 4.2, progress: kA });
+          thumb(g, xm, DG.y, ['raw', 'clean', 'dots'][i], t, P(t, t0 + 0.1, t0 + 0.5));
+        }
+        // the rule
+        const kE = P(t, K.equation[0], K.equation[1], ease.outCubic);
+        if (kE > 0) {
+          const eq = EP.math(g, 'f_s > 2\\,f_{\\max}', { x: W / 2, y: DG.eqY + (1 - kE) * 14, size: 72, opacity: kE });
+          if (eq) {
+            g.save();
+            g.globalAlpha *= kE;
+            g.fillStyle = PAL.highlight;
+            const uw = eq.w * kE;
+            g.fillRect(W / 2 - uw / 2, eq.y + eq.h + 20, uw, 4);
+            g.restore();
+          }
+        }
+      });
     }
 
     // --------------------------------------------- the sensor: box on the motor -> first block
-    const kM = prog(t, K.morph[0], K.morph[1], ease.inOutCubic);
-    const aOut2 = 1 - prog(t, K.p2Out[0], K.p2Out[1], ease.inOutSine);
-    const aSensor = P(t, K.motor + 0.25, K.motor + 0.9) * aOut2;
-    const sx = lerp(SENSOR1.x, SENSOR2.x, kM), sy = lerp(SENSOR1.y + rise, SENSOR2.y, kM), ss = lerp(SENSOR1.s, SENSOR2.s, kM);
-    if (aSensor > 0) {
-      // block frame grows around the sensor at the end of the move
-      const kB = P(t, K.morph[1] - 0.45, K.blocks[0] + 0.15, ease.outCubic);
-      if (kB > 0) {
-        ctx.save();
-        ctx.globalAlpha *= kB * aOut2;
-        blockFrame(ctx, DG.cx[0], DG.y, kB);
-        ctx.restore();
-      }
-      drawRipples(ctx, sx, sy, ss, t, aSensor * P(t, 1.6, 2.4));
-      drawSensor(ctx, sx, sy, ss, aSensor, aP1);
-    }
-    // "Sensor" label: above the box on the motor, then under its block
     {
+      const kM = prog(t, K.morph[0], K.morph[1], ease.inOutCubic);
+      const aSensor = P(t, K.motor + 0.25, K.motor + 0.9) * aOut2;
+      const sx = lerp(SENSOR1.x, SENSOR2.x, kM), sy = lerp(SENSOR1.y + rise, SENSOR2.y, kM), ss = lerp(SENSOR1.s, SENSOR2.s, kM);
+      EP.layer(ctx, aSensor, sx - 130, sy - 95, 260, 190, g => {
+        drawRipples(g, sx, sy, ss, t, P(t, 1.6, 2.4));
+        drawSensor(g, sx, sy, ss, 1, aP1);
+      });
+      // "Sensor" label: above the box on the motor (it becomes the block label under the box)
       const l1 = P(t, 1.5, 2.0) * (1 - prog(t, K.morph[0], K.morph[0] + 0.35, ease.inOutSine));
       if (l1 > 0) {
         EP.text(ctx, EP.T('s07.sensor'), { x: SENSOR1.x + 6, y: SENSOR1.y - 60 + rise, size: 28, weight: 600, color: PAL.steel, align: 'right', maxWidth: 190, shrink: true, maxLines: 1, opacity: l1 });
       }
     }
 
-    // ------------------------------------------------------------------ PART 2
-    if (t >= K.morph[0] && aOut2 > 0) {
-      const names = ['s07.sensor', 's07.filter', 's07.adc', 's07.controller'];
-      for (let i = 0; i < 4; i++) {
-        const tb = K.blocks[i];
-        const kIn = Pz(t, tb, tb + 0.55, ease.outBack), aIn = P(t, tb, tb + 0.35);
-        if (i > 0 && aIn > 0) {
-          ctx.save();
-          ctx.globalAlpha *= aIn * aOut2;
-          ctx.translate(DG.cx[i], DG.y); ctx.scale(0.9 + 0.1 * kIn, 0.9 + 0.1 * kIn); ctx.translate(-DG.cx[i], -DG.y);
-          blockFrame(ctx, DG.cx[i], DG.y, 1);
-          const kI = P(t, tb + 0.15, tb + 0.85, ease.inOutSine);
-          if (i === 1) iconFilter(ctx, DG.cx[i], DG.y - 6, kI);
-          if (i === 2) iconADC(ctx, DG.cx[i], DG.y - 6, kI);
-          if (i === 3) iconChip(ctx, DG.cx[i], DG.y - 2);
-          ctx.restore();
-        }
-        // label under the block
-        const aL = P(t, tb + 0.1, tb + 0.6) * aOut2 * (i === 0 ? P(t, K.morph[1] - 0.2, K.morph[1] + 0.3) : 1);
-        if (aL > 0) EP.text(ctx, EP.T(names[i]), { x: DG.cx[i], y: DG.labelY + (1 - aL) * 8, align: 'center', size: 32, weight: 600, maxWidth: 400, maxLines: 2, shrink: true, opacity: aL });
-      }
-      // connections with their signal thumbnails
-      for (let i = 0; i < 3; i++) {
-        const xa = DG.cx[i] + DG.w / 2 + 6, xb = DG.cx[i + 1] - DG.w / 2 - 6, xm = (xa + xb) / 2;
-        const t0 = K.blocks[i] + 0.25;
-        const kA = P(t, t0, t0 + 0.45, ease.inOutSine);
-        if (kA > 0) EP.arrow(ctx, xa, DG.y, xb, DG.y, { kind: 'motion', color: PAL.field, width: 4.2, progress: kA, alpha: aOut2 });
-        thumb(ctx, xm, DG.y, ['raw', 'clean', 'dots'][i], t, P(t, t0 + 0.1, t0 + 0.5) * aOut2);
-      }
-      // the rule
-      const kE = P(t, K.equation[0], K.equation[1], ease.outCubic);
-      if (kE > 0) {
-        const eq = EP.math(ctx, 'f_s > 2\\,f_{\\max}', { x: W / 2, y: DG.eqY + (1 - kE) * 14, size: 72, opacity: kE * aOut2 });
-        if (eq) {
-          ctx.save();
-          ctx.globalAlpha *= kE * aOut2;
-          ctx.fillStyle = PAL.highlight;
-          const uw = eq.w * kE;
-          ctx.fillRect(W / 2 - uw / 2, eq.y + eq.h + 20, uw, 4);
-          ctx.restore();
-        }
-      }
-    }
-
     // ------------------------------------------------------------------ PART 3
     if (t >= K.fansIn - 0.05) {
       const aFan = P(t, K.fansIn, K.fansIn + 0.75);
-      const kF = prog(t, K.freeze[0], K.freeze[1], ease.inOutSine);
-      const apparent = (t - K.freeze[0]) * TAU * FAN.apparent;            // clockwise, 0.25 turns per second
-      const age = t - K.strobeOn;
-      const pulse = Math.pow(0.5 + 0.5 * Math.cos(TAU * STROBE_HZ_ON_SCREEN * age), 1.6);   // 1.5 pulses per second, smooth
-      const aStrobe = Pz(t, K.strobeOn - 0.15, K.strobeOn + 0.35);
-      const rtl = EP.isRTL();
+      EP.layer(ctx, aFan, 0, 270, W, 660, g => {
+        const kF = prog(t, K.freeze[0], K.freeze[1], ease.inOutSine);
+        const apparent = (t - K.freeze[0]) * TAU * FAN.apparent;            // clockwise, 0.25 turns per second
+        const age = t - K.strobeOn;
+        const pulse = Math.pow(0.5 + 0.5 * Math.cos(TAU * STROBE_HZ_ON_SCREEN * age), 1.6);   // 1.5 pulses per second, smooth
+        const aStrobe = Pz(t, K.strobeOn - 0.15, K.strobeOn + 0.35);
 
-      // a hairline between the two situations
-      ctx.save(); ctx.globalAlpha *= aFan * 0.5;
-      ctx.strokeStyle = EP.rgba(PAL.steel, 0.22); ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(W / 2 + 0.5, 300); ctx.lineTo(W / 2 + 0.5, 910); ctx.stroke();
-      ctx.restore();
+        // a hairline between the two situations
+        g.save();
+        g.strokeStyle = EP.rgba(PAL.steel, 0.11); g.lineWidth = 1.5;
+        const mid = Math.round((FV.cxL + FV.cxR) / 2) + 0.5;
+        g.beginPath(); g.moveTo(mid, 300); g.lineTo(mid, 910); g.stroke();
+        g.restore();
 
-      // left: steady light, the fan is a blur
-      drawFanBlur(ctx, FV.cxL, FV.fanY, FV.R, aFan);
-      drawFanFrame(ctx, FV.cxL, FV.fanY, FV.R, aFan);
-      // right: the same fan; the strobe resolves it
-      drawFanBlur(ctx, FV.cxR, FV.fanY, FV.R, aFan * (1 - kF));
-      drawFanCrisp(ctx, FV.cxR, FV.fanY, FV.R, apparent + 0.5, aFan * kF);
-      drawFanFrame(ctx, FV.cxR, FV.fanY, FV.R, aFan);
+        // left: steady light, the fan is a blur
+        drawFanBlur(g, FV.cxL, FV.fanY, FV.R, 1);
+        drawFanFrame(g, FV.cxL, FV.fanY, FV.R, 1);
+        // right: the same fan; the strobe resolves it
+        drawFanBlur(g, FV.cxR, FV.fanY, FV.R, 1 - kF);
+        drawFanCrisp(g, FV.cxR, FV.fanY, FV.R, apparent + 0.5, kF);
+        drawFanFrame(g, FV.cxR, FV.fanY, FV.R, 1);
 
-      // lamp and its name (a pair, mirrored in Arabic), and the light output over time under it
-      const top = (cx, key, rays, kind, a, dy, ring = 0) => {
-        if (a <= 0) return;
-        const o = { size: 34, weight: 600, maxWidth: 250, shrink: true, maxLines: 2 };
-        const lw = EP.measure(ctx, EP.T(key), o).w;
-        const pairW = 96 + 14 + lw, left = cx - pairW / 2;
-        drawLamp(ctx, rtl ? left + pairW - 48 : left + 48, FV.lampY + dy, rays, a, ring);
-        EP.text(ctx, EP.T(key), { ...o, x: rtl ? left + pairW - 110 : left + 110, y: FV.lampY + 4 + dy, anchor: 'middle', align: rtl ? 'right' : 'left', opacity: a });
-        const guard = FV.R * 1.13;                              // the strip is as wide as the guard ring below it
-        drawLightWave(ctx, cx - guard, FV.waveY + dy, 2 * guard, kind, t, a, rtl ? -1 : 1);
-      };
-      top(FV.cxL, 's07.normal', 0.82, 'steady', aFan, 0);
-      top(FV.cxR, 's07.strobe', pulse, 'pulses', aStrobe, (1 - aStrobe) * -10, age >= 0 ? age / 0.6 : 0);
+        // lamp and its name (a pair, mirrored in Arabic), and the light output over time under it
+        const top = (cx, key, rays, kind, a, dy, ring = 0) => {
+          if (a <= 0) return;
+          EP.layer(g, a, cx - 260, FV.lampY - 90 + dy, 520, 220, h => {
+            const o = { size: 34, weight: 600, maxWidth: 230, shrink: true, maxLines: 2 };
+            const lw = EP.measure(h, EP.T(key), o).w;
+            const pairW = 96 + 14 + lw, left = cx - pairW / 2;
+            drawLamp(h, rtl ? left + pairW - 48 : left + 48, FV.lampY + dy, rays, 1, ring);
+            EP.text(h, EP.T(key), { ...o, x: rtl ? left + pairW - 110 : left + 110, y: FV.lampY + 4 + dy, anchor: 'middle', align: rtl ? 'right' : 'left' });
+            const guard = FV.R * 1.13;                              // the strip is as wide as the guard ring below it
+            drawLightWave(h, cx - guard, FV.waveY + dy, 2 * guard, kind, t, 1, rtl ? -1 : 1);
+          });
+        };
+        top(FV.cxL, 's07.normal', 0.82, 'steady', 1, 0);
+        top(FV.cxR, 's07.strobe', pulse, 'pulses', aStrobe, (1 - aStrobe) * -10, age >= 0 ? age / 0.6 : 0);
 
-      speedLine(ctx, FV.cxL, FV.yLabel, FV.yNum, 's07.realspeed', FAN.turns, 0, false, P(t, K.numL, K.numL + 0.55));
-      speedLine(ctx, FV.cxR, FV.yLabel, FV.yNum, 's07.weesee', FAN.apparent, 2, true, P(t, K.numR, K.numR + 0.55));
+        speedLine(g, FV.cxL, FV.yLabel, FV.yNum, 's07.realspeed', FAN.turns, 0, false, P(t, K.numL, K.numL + 0.55));
+        speedLine(g, FV.cxR, FV.yLabel, FV.yNum, 's07.weesee', FAN.apparent, 2, true, P(t, K.numR, K.numR + 0.55));
 
-      EP.badge(ctx, EP.T('badge.simulated'), { x: EP.startX(96), y: 312, opacity: aFan });
+        EP.badge(g, EP.T('badge.simulated'), { x: EP.startX(96), y: 312 });
+        EP.badge(g, EP.T('badge.example'), { x: EP.startX(96), y: 362 });      // 25 turns per second: an example
+      });
     }
   },
 };

@@ -31,6 +31,7 @@
  * Options
  *   --refresh        first rebuild build/<comp>_timeline.json with render.mjs
  *   --comp <name>    same as the positional composition name (default main)
+ *   --timeline <f>   read this timeline file instead of build/<comp>_timeline.json
  *   --langs en,fr,ar languages to write (default all three)
  *   --out <dir>      folder for the .srt files (default ../subtitles)
  *   --width <n>      target line length in characters (default 42)
@@ -64,12 +65,13 @@ const NAME = '02-aliasing';
 
 // ---------------------------------------------------------------- options
 function parseArgs(argv) {
-  const o = { comp: 'main', langs: ['en', 'fr', 'ar'], out: path.resolve(CODE, '../subtitles'), width: 42, refresh: false, quiet: false };
+  const o = { timeline: null, comp: 'main', langs: ['en', 'fr', 'ar'], out: path.resolve(CODE, '../subtitles'), width: 42, refresh: false, quiet: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--refresh') o.refresh = true;
     else if (a === '--quiet') o.quiet = true;
     else if (a === '--comp') o.comp = argv[++i];
+    else if (a === '--timeline') o.timeline = path.resolve(argv[++i]);
     else if (a === '--langs') o.langs = String(argv[++i]).split(',').map(s => s.trim()).filter(Boolean);
     else if (a === '--out') o.out = path.resolve(argv[++i]);
     else if (a === '--width') o.width = Number(argv[++i]);
@@ -87,7 +89,7 @@ const INVISIBLE = /[​-‏‪-‮⁦-⁩﻿]/g;
 const visLen = s => [...s.replace(INVISIBLE, '')].length;
 
 // ---------------------------------------------------------------- inputs
-const timelinePath = path.join(CODE, 'build', `${opt.comp}_timeline.json`);
+const timelinePath = opt.timeline || path.join(CODE, 'build', `${opt.comp}_timeline.json`);
 
 if (opt.refresh) {
   console.log(`refreshing ${path.relative(CODE, timelinePath)} ...`);
@@ -239,7 +241,8 @@ for (const lang of opt.langs) {
   fs.writeFileSync(file, srt, { encoding: 'utf8' });     // no BOM, LF only
   const problems = validate(file, cues.length);
   const last = cues[cues.length - 1];
-  console.log(`${path.relative(process.cwd(), file)}  ${cues.length} cues, ${stamp(cues[0].start)} to ${stamp(last.end)}`);
+  const shown = path.relative(process.cwd(), file);
+  console.log(`${shown.startsWith('../../..') ? file : shown}  ${cues.length} cues, ${stamp(cues[0].start)} to ${stamp(last.end)}`);
   for (const w of warnings) console.warn(`  warning [${lang}]: ${w}`);
   for (const p of problems) { console.error(`  INVALID [${lang}]: ${p}`); failed = true; }
   if (!opt.quiet) {

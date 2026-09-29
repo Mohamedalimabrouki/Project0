@@ -262,6 +262,7 @@ def build_score(scenes, log=print, comp="main"):
         return build_score_short(scenes, log)
     if comp != "main":
         raise ValueError(f"unknown composition {comp!r}")
+    S = Score()
     by_id = {s["id"]: s for s in scenes}
 
     def t0_of(sid, default):
@@ -281,7 +282,7 @@ def build_score(scenes, log=print, comp="main"):
         s07=t0_of("s07_sensors_strobe", 148), s08=t0_of("s08_takeaway", 170), end=FILM,
     )
     energy = {}
-    for sid in DEFAULT_MOOD:
+    for sid in [k for k in DEFAULT_MOOD if not k.startswith("short_")]:
         tag = (by_id.get(sid) or {}).get("music")
         mood, f = resolve_mood(sid, tag, log)
         energy[sid] = f
@@ -438,7 +439,7 @@ def _explain_b(S, t0, t1, en):
     S.add_pulse(t0, lift, step=E8)
     S.add_pulse(lift, lift + 8, step=E8, octave_double_db=-9.0)
     S.add_pulse(lift + 8, freeze, step=E8)
-    S.add_pulse(freeze, freeze + 4, step=E8, unify=69, db_extra=-0.5)      # A4, again and again
+    S.add_pulse(freeze, freeze + 4, step=E8, unify=72, db_extra=-0.5)      # C5, again and again
     S.add_pulse(freeze + 4, t1, step=E8)
 
     # the pickup and the lift itself
@@ -481,12 +482,12 @@ def _rule(S, t0, t1, en):
     res_bar = int(round((res - res % BAR) / BAR))
     S.bass_groove(t0, t1, sub=0.0, skip_bars=(res_bar,))
     S.bass.append(dict(t0=res - 1.0, t1=res - 0.12, midi=CH["C"]["bass"], db=0.0, att=0.02, rel=0.10, sub=0.0))
-    S.bass.append(dict(t0=res, t1=res + 1.55, midi=CH["F"]["bass"], db=2.0, att=0.02, rel=0.25, sub=0.40))
+    S.bass.append(dict(t0=res, t1=res + 1.55, midi=CH["F"]["bass"], db=0.5, att=0.02, rel=0.25, sub=0.28))
     S.marks += [(res - 1.0, "bass"), (res, "bass")]
 
     # pulse
     S.add_pulse(t0, res - 1.0, step=E8)
-    run = (60, 65, 69, 72, 77, 81, 84, 89)                     # a rising F major run, sixteenths, into 115 s
+    run = (60, 64, 67, 72, 76, 79, 84, 88)                     # a rising C major run (fits the chord), sixteenths, into 115 s
     for i, m in enumerate(run):
         t = res - 1.0 + i * S16
         S.pluck.append(dict(t=t, midi=m, db=-13.5 + i * 0.6, pan=-0.3 if i % 2 else 0.3, fc=3600, tau=0.32))
@@ -498,7 +499,7 @@ def _rule(S, t0, t1, en):
     for m, db in ((65, -16.0), (69, -17.5)):
         S.add_bell(res, m, db, pan=0.0, dur=3.5)
     S.swell.append(dict(t0=res - 2.0, t1=res - 0.02, f0=600, f1=5600, db=-21.0, curve=1.2, power=2.2, fall=0.06))
-    S.add_kick(res, -10.5)
+    S.add_kick(res, -13.5)
     S.add_hat(res, -21.0, pan=0.0, open_=True)
 
     # rhythm
@@ -588,3 +589,142 @@ def _outro(S, t0, t1, en):
     S.add_kick(arrive, -17.0)
     S.motif(arrive, "D", -12.0, dur_last=4.0)
     S.add_bell(arrive + 2.0, 86, -20.0, pan=0.25, dur=3.8)        # D6, a glassy octave above the last note
+
+
+# ================================================================================ the Short
+def build_score_short(scenes, log=print):
+    """The 45 s vertical cut: hook (0-16 s), the trick (16-38 s), the ending (38-45 s).
+
+    It reuses the ideas of the film: the same chords and motif, the tape sag when the wheel seems to
+    reverse, the suspended hush at the freeze, a lift at the real-speed reveal and the closing cadence.
+    """
+    S = Score()
+    by_id = {s["id"]: s for s in scenes}
+
+    def t0_of(sid, default):
+        sc = by_id.get(sid)
+        if sc is None:
+            log(f"warning: scene {sid} is not in the timeline, using {default:g} s")
+            return float(default)
+        t = float(sc["t0"])
+        snapped = round(t / BAR) * BAR
+        if abs(t - snapped) > 1e-6:
+            log(f"warning: scene {sid} starts at {t:g} s, which is not on a bar line: snapped to {snapped:g} s")
+        return float(snapped)
+
+    T = dict(hook=t0_of("short_hook", 0.0), trick=t0_of("short_trick", 16.0), end=t0_of("short_end", 38.0), film=45.0)
+    energy = {}
+    for sid in ("short_hook", "short_trick", "short_end"):
+        mood, f = resolve_mood(sid, (by_id.get(sid) or {}).get("music"), log)
+        energy[sid] = f
+        S.scene_moods[sid] = mood
+    _automation_short(S)
+    _short_hook(S, T["hook"], T["trick"], energy["short_hook"])
+    _short_trick(S, T["trick"], T["end"], energy["short_trick"])
+    _short_end(S, T["end"], T["film"], energy["short_end"])
+    S.chord_segs.sort()
+    S.marks.sort()
+    S.T = dict(T)
+    return S
+
+
+def _automation_short(S):
+    S.set("pad_db", [
+        (0.0, -40), (0.6, -28), (2.6, -16), (4.0, -13), (6.4, -10.5), (7.0, -9.5), (9.25, -8.5), (9.5, -11.5), (12.0, -11.0),
+        (12.05, -10.0), (12.5, -8.5), (14.0, -7.5), (15.95, -6.0),
+        (16.0, -9.5), (33.9, -9.5), (34.0, -7.5), (37.9, -8.0),
+        (38.0, -6.0), (41.0, -4.5), (43.0, -5.0), (44.0, -8.0), (45.0, -12.0),
+    ])
+    S.set("pad_fc", [
+        (0.0, 200), (2.0, 240), (4.0, 330), (5.5, 520), (6.35, 720), (6.5, 480), (6.8, 380), (6.95, 430), (7.1, 820),
+        (8.5, 1300), (9.25, 1700), (9.45, 1500), (9.6, 700), (10.5, 650), (11.95, 700), (12.1, 1000), (13.0, 1400), (15.95, 2300),
+        (16.0, 1000), (26.0, 1200), (33.9, 1300), (34.0, 2100), (37.9, 1700),
+        (38.0, 2000), (41.0, 2100), (43.0, 1500), (44.5, 700), (45.0, 600),
+    ])
+    S.set("bass_db", [
+        (0.0, -40), (0.6, -22), (2.0, -12), (2.6, -8), (4.0, -6.5), (9.25, -6.5), (9.5, -11), (12.0, -11), (12.1, -6.5),
+        (15.9, -5.0), (16.0, -8.5), (33.9, -8.5), (34.0, -5.5), (37.9, -7.5), (38.0, -6.0), (41.0, -4.5), (43.5, -6.5), (45.0, -14.0),
+    ])
+    S.set("pluck", [
+        (0.0, -26), (1.0, -26), (4.0, -22), (6.4, -15.5), (9.25, -12.5), (12.0, -26), (12.5, -18.0), (14.0, -16.0), (15.9, -12.5),
+        (16.0, -18.5), (33.9, -18.5), (34.0, -15.5), (37.9, -16.5),
+        (38.0, -20.5), (43.0, -22.0), (45.0, -26.0),
+    ])
+    S.set("pluck_fc", [
+        (0.0, 1000), (4.0, 1500), (7.0, 2600), (9.25, 3200), (12.0, 1000), (12.5, 1900), (15.9, 3800),
+        (16.0, 2400), (33.9, 2500), (34.0, 3400), (37.9, 2900), (38.0, 2600), (45.0, 1600),
+    ])
+    S.set("delay_send", [(0.0, -22), (9.25, -18), (9.5, -10), (11.9, -10), (12.1, -18), (16.0, -20), (38.0, -16), (42.0, -10)])
+
+
+def _short_hook(S, t0, t1, en):
+    """Short hook 0 - 16 s: the same curious build, with the tape sag when the wheel seems to reverse
+    (6.4 s, the glitch), the suspended hush during the freeze (9.5 - 12 s) and a short build (a question)."""
+    sag0, sag1 = 6.4, 7.0
+    freeze0, freeze1 = 9.5, 12.0
+    segs = [(0.0, 4.0, "Dm"), (4.0, sag1, "Bb"), (sag1, freeze0, "F"), (freeze0, freeze1, "Fsus2"),
+            (freeze1, 12.5, "F"), (12.5, 14.0, "Bb"), (14.0, 15.5, "C"), (15.5, t1, "Csus4")]
+    S.harmony(segs, att=0.9, rel=1.8)
+    S.bass_long(segs, sub=0.30)
+    S.bend = Bend(sag0, sag1)
+    S.add_pulse(1.0, 4.0, step=BEAT)
+    S.add_pulse(4.0, freeze0, step=E8)
+    S.add_pulse(freeze1, 12.5, step=BEAT, db_extra=-2.0)
+    S.add_pulse(12.5, 14.0, step=E8)
+    S.add_pulse(14.0, t1, step=S16)
+    for b in S.bars(6.0, freeze0):
+        for off in (0.25, 0.75, 1.25, 1.75):
+            if b + off < freeze0:
+                S.add_hat(b + off, -31 + 0.9 * (b - 6.0), pan=0.25 if off in (0.25, 1.25) else -0.25)
+    for i in range(6):                                   # eighth-note hats while the pulse returns
+        t = 12.5 + i * E8
+        S.add_hat(t, -31 + (t - 12.5) * 1.2 + (2.0 if i % 2 else 0.0), pan=0.25 if i % 2 else -0.25)
+    for i in range(16):
+        S.add_hat(14.0 + i * S16, -29.0 + i * 0.5 + (1.5 if i % 2 else 0.0), pan=0.25 if i % 2 else -0.25)
+    for i, db in enumerate((-19.0, -18.0, -17.0, -15.5)):
+        S.add_kick(14.0 + i * BEAT, db)
+    for t, db in ((15.0, -30), (15.25, -28.5), (15.5, -27), (15.625, -26), (15.75, -25), (15.875, -24)):
+        S.add_rim(t, db, pan=-0.3 if int(round(t / S16)) % 2 else 0.3)
+    S.swell.append(dict(t0=13.0, t1=t1 - 0.02, f0=450, f1=5000, db=-24.0, curve=1.3, power=2.2, fall=0.06))
+
+
+def _short_trick(S, t0, t1, en):
+    """Short trick 16 - 38 s: calm and steady while a picture is taken every second (the shutter clicks fall
+    on beats 1 and 3, so there is no kick there); a lift at 34 s when the real-speed wheel seems to creep back."""
+    lift = 34.0
+    segs = [(t0, t0 + 4, "Dm"), (t0 + 4, t0 + 8, "Bb"), (t0 + 8, t0 + 12, "F"), (t0 + 12, t0 + 16, "C"),
+            (t0 + 16, lift, "Dm"), (lift, t1, "F")]
+    S.harmony(segs, att=1.0, rel=2.0, air_db=-11.0, air_from=lift)
+    S.bass_long(segs, sub=0.28)
+    S.add_pulse(t0, lift, step=E8)
+    S.add_pulse(lift, t1, step=E8, octave_double_db=-9.0)
+    for b in S.bars(t0 + 8.0, lift):
+        for off in (0.25, 0.75, 1.25, 1.75):
+            S.add_hat(b + off, -32.0 + 3.0 * (en - 1.0), pan=0.22 if off in (0.25, 1.25) else -0.22)
+    # the lift: a rising pickup, a bell chord, a swell, kick and a firmer hat
+    for i, m in enumerate((65, 69, 72, 77, 81)):
+        S.pluck.append(dict(t=lift - 0.625 + i * S16, midi=m, db=-15.0 + i, pan=-0.3 + 0.15 * i, fc=3200, tau=0.36))
+        S.marks.append((lift - 0.625 + i * S16, "pluck"))
+    for m, db, pan in ((65, -16.0, -0.2), (72, -17.0, 0.0), (81, -18.0, 0.25)):
+        S.add_bell(lift, m, db, pan=pan, dur=3.0)
+    S.swell.append(dict(t0=lift - 1.0, t1=lift - 0.02, f0=800, f1=5000, db=-24.0, curve=1.2, power=2.0, fall=0.05))
+    for b in S.bars(lift, t1):
+        S.add_kick(b, -16.0)
+        S.add_kick(b + 1.0, -19.0)
+        S.add_rim(b + 1.5, -27.0, pan=0.3)
+        for i in range(8):
+            S.add_hat(b + i * E8, -29.0 + 3.0 * (en - 1.0) + (2.5 if i % 2 else 0.0), pan=0.24 if i % 2 else -0.24)
+
+
+def _short_end(S, t0, t1, en):
+    """Short ending 38 - 45 s: Bb - C - Dm, the motif on the tonic at 41 s, then a tail to silence."""
+    arrive = t0 + 3.0           # 41 s
+    segs = [(t0, t0 + 2, "Bb"), (t0 + 2, arrive, "C"), (arrive, arrive + 2.0, "Dm"), (arrive + 2.0, arrive + 3.5, "Dm9b")]
+    S.harmony(segs, att=1.0, rel=2.4)
+    S.bass_long(segs, sub=0.36)
+    S.add_pulse(t0, t0 + 2.0, step=E8)
+    S.add_pulse(t0 + 2.0, arrive, step=E8, db_extra=-1.0)
+    S.add_pulse(arrive, arrive + 2.0, step=BEAT, db_extra=-2.0)
+    S.add_kick(arrive, -17.0)
+    S.motif(arrive, "D", -12.0, dur_last=2.5)
+    S.add_bell(arrive + 2.0, 86, -20.0, pan=0.25, dur=2.6)

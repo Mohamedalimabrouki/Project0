@@ -38,8 +38,12 @@ def bus_eq(x):
     return signal.lfilter([b0 / a0, b1 / a0, b2 / a0], [1.0, a1 / a0, a2 / a0], y, axis=0)
 
 
-def fade_envelope(n, fade_in=0.35, out_start=177.0, out_end=179.5):
-    """1 in the middle, a raised-cosine fade in at the start, a fade out that ends in exact silence."""
+def fade_envelope(n, fade_in=0.35, out_start=None, out_end=None):
+    """1 in the middle, a raised-cosine fade in at the start, a fade out that ends in exact silence
+    (the last 0.5 s are zero; the fade starts 3 s before the end)."""
+    dur = n / SR
+    out_start = dur - 3.0 if out_start is None else out_start
+    out_end = dur - 0.5 if out_end is None else out_end
     e = np.ones(n)
     a = idx(fade_in)
     e[:a] = dsp.ramp_up(a)

@@ -29,7 +29,6 @@ sys.path.insert(0, str(HERE))
 import dsp                      # noqa: E402
 from dsp import SR              # noqa: E402
 
-FILM_S = 180.0
 GRID = 0.125                    # a sixteenth note at 120 BPM
 
 
@@ -113,116 +112,144 @@ def spectrogram_png(x, path, t0=0.0, fmax=8000, nfft=4096, hop=1024, dyn=80, wid
 
 
 # ---------------------------------------------------------------------------- onsets
-def detect_onsets(x, lo, hi, rise_db=7.0, min_gap=0.035):
-    """Times (s) where the band-passed signal jumps up quickly (a struck or plucked sound)."""
+def detect_onsets(x, lo, hi, smooth_ms=1.5, ratio=2.2, min_gap=0.03):
+    """Blind onset detector: times (s) where the level of a frequency band jumps to more than `ratio`
+    times its average of the previous 5 to 25 ms. It works well on noisy percussion (hats); for tonal
+    plucks a matched filter is used instead."""
+    from scipy import ndimage
     y = dsp.bp(x, lo, hi, 2)
-    env = np.abs(y)
-    k = int(0.0015 * SR)
-    env = np.convolve(env, np.ones(k) / k, mode="same")
-    envdb = 20 * np.log10(env + 1e-9)
-    lag = int(0.004 * SR)
-    d = envdb[lag:] - envdb[:-lag]
-    d = np.concatenate([np.zeros(lag), d])
-    floor = np.percentile(envdb, 20)
-    cand = np.where((d > rise_db) & (envdb > floor + 6))[0]
-    if len(cand) == 0:
-        return np.array([])
-    groups = np.split(cand, np.where(np.diff(cand) > int(min_gap * SR))[0] + 1)
-    times = []
-    for g in groups:
-        a = g[0]
-        b = min(len(d), g[-1] + int(0.01 * SR))
-        seg = np.diff(envdb[max(0, a - lag): b])           # steepest rise inside the group
-        times.append((max(0, a - lag) + int(np.argmax(seg)) + 0.5) / SR)
-    return np.array(times)
+    e = ndimage.uniform_filter1d(np.abs(y), max(1, int(smooth_ms * 1e-3 * SR)))
+    n = len(e)
+    cs = np.concatenate([[0.0], np.cumsum(e)])
+    i = np.arange(n)
+    a = np.clip(i - int(0.025 * SR), 0, n)
+    b = np.clip(i - int(0.005 * SR), 0, n)
+    mean = (cs[b] - cs[a]) / np.maximum(b - a, 1)
+    ok = (e > ratio * mean) & (e > 1.5 * np.percentile(e, 40))
+    edge = np.where(ok & ~np.concatenate([[False], ok[:-1]]))[0]
+    out, last = [], -10 ** 9
+    for c in edge:
+        if c - last > min_gap * SR:
+            out.append(c)
+        last = c
+    return np.array(out) / SR
+
+
+def _lag(xs, tmpl, centre, search=0.015):
+    """Where does `tmpl` sit in `xs` around sample `centre`? Returns (lag in samples, match 0..1)."""
+    a = max(0, centre - int(search * SR))
+    b = min(len(xs), centre + len(tmpl) + int(search * SR))
+    seg = xs[a:b]
+    if len(seg) < len(tmpl):
+        return None, 0.0
+    corr = signal.fftconvolve(seg, tmpl[::-1], mode="valid")
+    en = np.sqrt(np.convolve(seg ** 2, np.ones(len(tmpl)), mode="valid") * np.sum(tmpl ** 2)) + 1e-18
+    nc = corr / en
+    k = int(np.argmax(nc))
+    return (a + k) - centre, float(nc[k])
 
 
 def onset_check(music, score, log):
+    """Are the music's onsets on the beat?
+    (a) by construction: every scheduled event is a multiple of a sixteenth note (0.125 s) and every scene
+        starts on a bar line;
+    (b) measured in the finished music.wav: the noisy hats are found blind, and every kick, rim click and
+        pluck is located by sliding its own waveform along the audio (matched filter)."""
+    import instruments as ins
     mono = _mono(music)
     res = {}
     marks = {}
     for t, kind in score.marks:
         marks.setdefault(kind, []).append(t)
-    # by construction: every scheduled onset sits on the sixteenth-note grid, every scene on a bar line
     dev = []
     for kind in ("pluck", "kick", "hat", "rim", "bell", "keys", "bass"):
         for t in marks.get(kind, []):
             dev.append(abs(t / GRID - round(t / GRID)) * GRID)
     res["scheduled_events"] = int(len(dev))
     res["scheduled_max_off_grid_ms"] = float(max(dev) * 1000.0) if dev else 0.0
-    scene_off = [abs(s["t0"] / 2.0 - round(s["t0"] / 2.0)) * 2.0 for s in score.T_scenes] if hasattr(score, "T_scenes") else []
+    scene_off = [abs(s["t0"] / 2.0 - round(s["t0"] / 2.0)) * 2.0 for s in score.T_scenes]
     res["scene_starts_max_off_bar_ms"] = float(max(scene_off) * 1000.0) if scene_off else 0.0
-    # measured: kick from the low band, the rest from the mid/high band
-    bands = {"kick": (35, 140), "pluck": (900, 6000), "hat": (3000, 9000), "rim": (1200, 5000)}
     detail = {}
-    for kind, (lo, hi) in bands.items():
-        ts = np.array(marks.get(kind, []))
-        if len(ts) == 0:
-            continue
-        # isolate crowded regions: only judge marks that have no other mark of any kind within 40 ms
-        allt = np.array(sorted(t for t, k in score.marks))
-        det = detect_onsets(mono, lo, hi, rise_db=(5.0 if kind == "kick" else 7.0))
+    # (b1) hats, blind
+    if score.hat:
+        det = detect_onsets(mono, 4500, 9500)
+        ts = np.array([h["t"] for h in score.hat])
+        allm = np.array(sorted(t for t, k in score.marks))
         errs = []
         for t in ts:
-            near = allt[(np.abs(allt - t) < 0.04) & (np.abs(allt - t) > 1e-6)]
-            if len(near):
-                continue
-            j = det[np.abs(det - t) < 0.03]
+            j = det[np.abs(det - t) < 0.02]
             if len(j):
                 errs.append(float(j[np.argmin(np.abs(j - t))] - t) * 1000.0)
-        if errs:
-            e = np.array(errs)
-            detail[kind] = dict(judged=int(len(e)), of=int(len(ts)), median_ms=float(np.median(e)), p05_ms=float(np.percentile(e, 5)),
-                                p95_ms=float(np.percentile(e, 95)), max_abs_ms=float(np.abs(e).max()))
+        near = np.array([np.min(np.abs(allm - t)) for t in det]) * 1000.0
+        e = np.array(errs)
+        detail["hat (blind detector)"] = dict(found=int(len(e)), of=int(len(ts)), median_ms=float(np.median(e)), p05_ms=float(np.percentile(e, 5)),
+                                              p95_ms=float(np.percentile(e, 95)), max_abs_ms=float(np.abs(e).max()),
+                                              detections=int(len(det)), detections_within_5ms_of_an_event_pct=float(100 * np.mean(near < 5.0)))
+    # (b2) matched filter for the others
+    xh = dsp.hp(mono, 150.0, 2)
+    def run(kind, items):
+        lags, ok = [], 0
+        for t, tmpl in items:
+            lag, m = _lag(xh, tmpl, dsp.idx(t))
+            if lag is not None and m >= 0.25:
+                ok += 1
+                lags.append(lag * 1000.0 / SR)
+        if lags:
+            l = np.array(lags)
+            detail[f"{kind} (matched filter)"] = dict(found=int(ok), of=int(len(items)), median_ms=float(np.median(l)), p05_ms=float(np.percentile(l, 5)),
+                                                    p95_ms=float(np.percentile(l, 95)), max_abs_ms=float(np.abs(l).max()))
+    kw = dsp.hp(ins.kick_wave(), 150.0, 2)[: int(0.06 * SR)]
+    run("kick", [(k["t"], kw) for k in score.kick if score.bend is None or not score.bend.touches(k["t"] - 0.02, k["t"] + 0.1)])
+    rws = [dsp.hp(ins.rim_wave(v), 150.0, 2)[: int(0.03 * SR)] for v in range(3)]
+    run("rim", [(r["t"], rws[i % 3]) for i, r in enumerate(score.rim)])
+    items = []
+    for e in score.pluck:
+        if score.bend is not None and score.bend.touches(e["t"] - 0.02, e["t"] + 1.2):
+            continue
+        w = dsp.hp(ins.pluck_wave(e["midi"], e.get("fc", 2600.0), e.get("tau", 0.42)), 150.0, 2)[: int(0.05 * SR)]
+        items.append((e["t"], w))
+    run("pluck", items)
     res["by_kind"] = detail
-    # blind check: onsets found in the audio versus the nearest sixteenth-note gridline
-    det = detect_onsets(mono, 900, 6000, rise_db=8.0)
-    if len(det):
-        off = np.abs((det / GRID) - np.round(det / GRID)) * GRID * 1000.0
-        # subtract the typical detection lag of soft attacks so it is not counted as timing error
-        lagged = np.abs(((det - 0.0015) / GRID) - np.round((det - 0.0015) / GRID)) * GRID * 1000.0
-        res["blind_onsets"] = dict(count=int(len(det)), within_5ms_pct=float(100.0 * np.mean(lagged <= 5.0)),
-                                   within_10ms_pct=float(100.0 * np.mean(lagged <= 10.0)), median_off_grid_ms=float(np.median(lagged)),
-                                   raw_median_ms=float(np.median(off)))
-    # the scene starts: is there an audible event (pluck / kick / bell / bass note) on every scene start?
     starts = {}
-    for s in score.T_scenes if hasattr(score, "T_scenes") else []:
-        t = s["t0"]
+    for sc in score.T_scenes:
+        t = sc["t0"]
         near = [(k, round((tt - t) * 1000.0, 2)) for tt, k in score.marks if abs(tt - t) < 0.02]
-        starts[s["id"]] = near[:6]
+        starts[sc["id"]] = near[:6]
     res["events_on_scene_starts"] = starts
     return res
 
 
 # ---------------------------------------------------------------------------- cues
-def cue_check(sfx_stem, records, log):
-    """Independent look at every cue in the finished sfx.wav (not the bookkeeping of the renderer)."""
-    x = _mono(sfx_stem)
-    xh = dsp.hp(x, 200.0, 2)
-    env = np.sqrt(np.convolve(xh ** 2, np.ones(int(0.0005 * SR)) / int(0.0005 * SR), mode="same"))
-    out = []
-    times = sorted(r["t"] for r in records)
-    for r in records:
-        t = r["t"]
-        row = dict(t=t, sfx=r["sfx"], dur=r["dur"], gain=r["gain"], scene=r["scene"], kind=r["kind"])
-        row["placed_error_ms"] = float((r["start_sample"] + r["anchor"] - dsp.idx(t + ((r["dur"] or 0.0) if r["anchor"] else 0.0))) * 1000.0 / SR)
-        if r["kind"] == "impulse":
-            crowded = any(0 < abs(t2 - t) < 0.08 for t2 in times)
-            a, b = dsp.idx(t - 0.02), dsp.idx(t + 0.06)
-            seg = env[a:b]
-            if crowded or seg.max() <= 1e-9:
-                row["detected_onset_ms"] = None
-                row["note"] = "crowded" if crowded else "silent"
-            else:
-                thr = 0.12 * seg.max() if r["sfx"] != "hit" else 0.25 * seg.max()
-                k = int(np.argmax(seg > thr))
-                row["detected_onset_ms"] = float((a + k) / SR * 1000.0 - t * 1000.0)
-        elif r["kind"] == "swell" and r["anchor"]:
-            a, b = dsp.idx(t + (r["dur"] or 0.0) - 0.15), dsp.idx(t + (r["dur"] or 0.0) + 0.15)
-            k = int(np.argmax(env[a:b]))
-            row["detected_peak_ms_from_end"] = float((a + k) / SR * 1000.0 - (t + (r["dur"] or 0.0)) * 1000.0)
-        out.append(row)
-    return out
+def cue_check(sfx_stem, cues, records, score, log):
+    """Where is every cue really? Each sound is re-made and slid along the finished sfx.wav (a matched
+    filter): the position of the best match, within 25 ms of the intended time, is the true placement.
+    This is independent of the renderer's own bookkeeping, and not fooled by overlapping sounds."""
+    import sfx as sfxlib
+    x = dsp.hp(_mono(sfx_stem), 150.0, 2)
+    rows = []
+    for c, r in zip(cues, records):
+        snd = sfxlib.REGISTRY[c.sfx](c, score)
+        ref = dsp.hp(_mono(snd.audio), 150.0, 2)
+        start = r["start_sample"]
+        pad = int(0.025 * SR)
+        a, b = max(0, start - pad), min(len(x), start + len(ref) + pad)
+        seg = x[a:b]
+        row = dict(t=r["t"], sfx=r["sfx"], dur=r["dur"], gain=r["gain"], scene=r["scene"], kind=r["kind"],
+                   bookkeeping_error_ms=float((r["start_sample"] + r["anchor"] - dsp.idx(r["t"] + ((r["dur"] or 0.0) if r["anchor"] else 0.0))) * 1000.0 / SR))
+        if len(seg) < len(ref) or np.sum(ref ** 2) < 1e-20:
+            row.update(lag_ms=None, match=None)
+            rows.append(row)
+            continue
+        corr = signal.fftconvolve(seg, ref[::-1], mode="valid")
+        win_e = np.convolve(seg ** 2, np.ones(len(ref)), mode="valid")
+        nc = corr / (np.sqrt(win_e * np.sum(ref ** 2)) + 1e-18)
+        k = int(np.argmax(nc))
+        lag = (a + k) - start
+        row.update(lag_samples=int(lag), lag_ms=float(lag * 1000.0 / SR), match=float(nc[k]))
+        if r["kind"] == "swell" and r["anchor"]:
+            row["lands_at_s"] = float((start + lag + r["anchor"]) / SR)
+        rows.append(row)
+    return rows
 
 
 def sfx_vs_music(sfx_stem, music_stem, records):
@@ -245,54 +272,108 @@ def sfx_vs_music(sfx_stem, music_stem, records):
 
 
 # ---------------------------------------------------------------------------- tuning
-def _peak_freq(x, f_lo, f_hi, t0, dur=1.0):
-    seg = x[dsp.idx(t0): dsp.idx(t0 + dur)]
+def _peak_freq_sig(seg, f_lo, f_hi):
     seg = seg * np.hanning(len(seg))
     n = 1 << 20
-    S = np.abs(np.fft.rfft(seg, n))
+    S_ = np.abs(np.fft.rfft(seg, n))
     f = np.fft.rfftfreq(n, 1.0 / SR)
     m = (f >= f_lo) & (f <= f_hi)
-    i = np.argmax(np.where(m, S, 0))
-    # parabolic interpolation on the log magnitude
-    a, b, c = np.log(S[i - 1] + 1e-12), np.log(S[i] + 1e-12), np.log(S[i + 1] + 1e-12)
+    i = int(np.argmax(np.where(m, S_, 0)))
+    a, b, c = np.log(S_[i - 1] + 1e-12), np.log(S_[i] + 1e-12), np.log(S_[i + 1] + 1e-12)
     d = 0.5 * (a - c) / (a - 2 * b + c)
     return float(f[i] + d * (f[1] - f[0]))
 
 
-def tuning_check(music):
-    x = _mono(music)
+def _centroid(seg, f0, span_cents=60):
+    seg = seg * np.hanning(len(seg))
+    n = 1 << 20
+    S_ = np.abs(np.fft.rfft(seg, n)) ** 2
+    f = np.fft.rfftfreq(n, 1.0 / SR)
+    m = (f >= f0 * 2 ** (-span_cents / 1200)) & (f <= f0 * 2 ** (span_cents / 1200))
+    return float(np.sum(f[m] * S_[m]) / np.sum(S_[m]))
+
+
+def tuning_check(music, S):
+    """Equal temperament with A4 = 440 Hz: (1) each instrument alone, (2) a bass note inside the finished mix."""
+    import instruments as ins
     out = {}
-    # D2 bass (Dm chord, 174.6 - 175.6 s): 73.416 Hz
-    f = _peak_freq(dsp.lp(x, 200, 4), 60, 90, 174.6, 1.0)
-    out["bass_D2_hz"] = f
-    out["bass_D2_cents"] = float(1200 * np.log2(f / 73.4162))
-    # Dm chord bell D5 after the motif (176.2 - 176.8 s): 587.33 Hz
-    f = _peak_freq(x, 570, 605, 176.15, 0.6)
-    out["bell_D5_hz"] = f
-    out["bell_D5_cents"] = float(1200 * np.log2(f / 587.3295))
-    # A4 pad partial in the F major chord 19.0 - 20.0 (A4 = 440 Hz is a chord tone of F)
-    f = _peak_freq(x, 425, 455, 19.2, 0.8)
-    out["pad_A4_hz"] = f
-    out["pad_A4_cents"] = float(1200 * np.log2(f / 440.0))
+    cents = lambda f, ref: float(1200 * np.log2(f / ref))
+    a4, a1, d5 = 440.0, 55.0, 587.3295
+    w = ins.pluck_wave(69, 3000.0)[: int(0.5 * SR)]
+    out["pluck_A4_cents"] = cents(_peak_freq_sig(w, 400, 480), a4)
+    w = ins.bell_wave(69, 2.0)[: int(1.0 * SR)]
+    out["bell_A4_cents"] = cents(_centroid(w, a4, 30), a4)          # two copies detuned by -3 / +3 cents
+    w = ins.bass_note(33, 1.6, 0.0, t0=0.0)[int(0.2 * SR): int(1.4 * SR)]
+    out["bass_A1_cents"] = cents(_peak_freq_sig(w, 45, 65), a1)
+    k = ins.keys_note(69, 1.2, 0.0)[:, 0][int(0.3 * SR): int(1.0 * SR)]
+    out["keys_A4_cents"] = cents(_peak_freq_sig(k, 400, 480), a4)
+    pad = ins.render_pad([dict(t0=0.0, t1=3.0, midi=69, db=0.0, att=0.5, rel=0.5)], int(3.6 * SR)).mean(axis=1)[int(1.0 * SR): int(2.6 * SR)]
+    out["pad_A4_centroid_cents"] = cents(_centroid(pad, a4), a4)
+    out["definition_A4_hz"] = float(dsp.midi_hz(69))
+    # a bass note inside the mix: the longest one with no other bass note and no tape bend near it
+    best = None
+    for e in S.bass:
+        dur = e["t1"] - e["t0"]
+        if dur < 1.4 or e["midi"] >= 45:
+            continue
+        clash = any(o is not e and abs(o["t0"] - e["t0"]) < dur + 0.3 for o in S.bass)
+        bent = S.bend is not None and S.bend.touches(e["t0"] - 0.5, e["t1"] + 0.5)
+        if not clash and not bent and e["t0"] > 5.0:
+            best = e if best is None or dur > best["t1"] - best["t0"] else best
+    if best is not None:
+        f_ref = float(dsp.midi_hz(best["midi"]))
+        seg = _mono(music)[dsp.idx(best["t0"] + 0.3): dsp.idx(best["t0"] + 1.3)]
+        seg = dsp.lp(seg, 200, 4)
+        f = _peak_freq_sig(seg, f_ref * 0.95, f_ref * 1.05)
+        out["mix_bass_note_midi"] = int(best["midi"])
+        out["mix_bass_note_hz"] = f
+        out["mix_bass_note_cents"] = cents(f, f_ref)
     return out
 
 
+def harmony_audit(S):
+    """Every pitched note in the score against the chord that is playing: no wrong notes."""
+    from score import CH
+    extra = {2: (4, 7, 0), 10: (0,), 5: (7,), 0: (2,), 7: (9,)}   # tolerated colour tones: 9th, 11th and 7th over Dm
+    counts = dict(total=0, chord_tone=0, colour_tone=0, outside=0)
+    outside = []
+    for kind, ev, key in (("pad", S.pad, "t0"), ("pluck", S.pluck, "t"), ("bell", S.bell, "t"), ("keys", S.keys, "t0"), ("bass", S.bass, "t0")):
+        for e in ev:
+            t = e[key]
+            c = CH[S.chord_at(t + (0.01 if kind in ("pad", "keys") else 0.0))]
+            strict = {m % 12 for m in c["pad"]} | {m % 12 for m in c["pool"]} | {m % 12 for m in c["keys"]} | {c["bass"] % 12, c["root"]}
+            pc = e["midi"] % 12
+            counts["total"] += 1
+            if pc in strict:
+                counts["chord_tone"] += 1
+            elif pc in extra.get(c["root"], ()):
+                counts["colour_tone"] += 1
+            else:
+                counts["outside"] += 1
+                outside.append((round(t, 3), kind, int(e["midi"]), S.chord_at(t)))
+    counts["outside_list"] = outside[:12]
+    return counts
+
+
 # ---------------------------------------------------------------------------- main
-def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True):
+def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True, comp="main", duration=180.0,
+            names=("main.wav", "music.wav", "sfx.wav")):
     out_dir = Path(out_dir)
     rep = {}
-    main, sr = sf.read(str(out_dir / "main.wav"), dtype="float64")
-    music, _ = sf.read(str(out_dir / "music.wav"), dtype="float64")
-    sfxs, _ = sf.read(str(out_dir / "sfx.wav"), dtype="float64")
+    fmain, fmusic, fsfx = names
+    FILM_S = float(duration)
+    main, sr = sf.read(str(out_dir / fmain), dtype="float64")
+    music, _ = sf.read(str(out_dir / fmusic), dtype="float64")
+    sfxs, _ = sf.read(str(out_dir / fsfx), dtype="float64")
     S.T_scenes = timeline["scenes"]
 
     # ---- format
-    inf = sf.info(str(out_dir / "main.wav"))
+    inf = sf.info(str(out_dir / fmain))
     rep["format"] = dict(sample_rate=sr, channels=inf.channels, subtype=inf.subtype, samples=int(main.shape[0]),
                          duration_s=main.shape[0] / sr, ok=(sr == 48000 and inf.channels == 2 and inf.subtype == "PCM_24"
-                                                             and main.shape[0] == int(FILM_S * 48000)))
-    for name, x in (("music", music), ("sfx", sfxs)):
-        i2 = sf.info(str(out_dir / f"{name}.wav"))
+                                                             and main.shape[0] == int(round(FILM_S * 48000))))
+    for name, x, fn in (("music", music, fmusic), ("sfx", sfxs, fsfx)):
+        i2 = sf.info(str(out_dir / fn))
         rep["format"][f"{name}_ok"] = bool(i2.samplerate == 48000 and i2.channels == 2 and i2.subtype == "PCM_24" and x.shape[0] == main.shape[0])
     rep["finite"] = {n: bool(np.isfinite(x).all()) for n, x in (("main", main), ("music", music), ("sfx", sfxs))}
 
@@ -307,7 +388,7 @@ def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True):
     last = main[-int(0.5 * sr):]
     rep["silence_end"] = dict(last_0p5s_peak_dbfs=float(dsp.lin2db(np.max(np.abs(last)))), last_sample=[float(v) for v in main[-1]],
                               last_0p5s_all_zero=bool(not last.any()),
-                              peak_179_0_to_179_5_dbfs=float(dsp.lin2db(np.max(np.abs(main[int(179.0 * sr):int(179.5 * sr)])))))
+                              peak_1s_to_0p5s_before_end_dbfs=float(dsp.lin2db(np.max(np.abs(main[int((FILM_S - 1.0) * sr):int((FILM_S - 0.5) * sr)])))))
     rep["stems_sum_max_abs_diff"] = float(np.max(np.abs(main - (music + sfxs))))
 
     # ---- loudness and peaks
@@ -318,7 +399,7 @@ def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True):
     rep["ffmpeg"] = _run_ffmpeg(out_dir / "main.wav")
     # loudness through time (3 s windows, every 3 s) for the report
     track = []
-    for t in range(0, 180, 3):
+    for t in range(0, int(FILM_S), 3):
         seg = main[t * sr:(t + 3) * sr]
         try:
             track.append(round(float(meter.integrated_loudness(seg)), 1))
@@ -338,7 +419,7 @@ def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True):
     # ---- spectrum
     shares, centroid, f, P = band_shares(main)
     rep["spectrum_main"] = dict(band_share_pct=shares, centroid_hz=centroid,
-                                above_12k_db_rel_total=float(10 * np.log10(max(shares["12000-24000.0"], 1e-9) / 100.0)),
+                                above_12k_db_rel_total=float(10 * np.log10(max(shares["12000-24000"], 1e-9) / 100.0)),
                                 below_60_pct=shares["0-40"] + shares["40-60"])
     sm, cm, _, _ = band_shares(music)
     ss, cs, _, _ = band_shares(sfxs)
@@ -354,26 +435,31 @@ def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True):
                          below_150hz_side_to_mid_db=float(10 * np.log10((np.sum(lows ** 2) + 1e-20) / np.sum(lowm ** 2))))
 
     # ---- tuning
-    rep["tuning"] = tuning_check(music)
+    rep["tuning"] = tuning_check(music, S)
+    rep["harmony_audit"] = harmony_audit(S)
 
     # ---- music onsets and cues
     rep["music_onsets"] = onset_check(music, S, log)
-    rep["cues"] = cue_check(sfxs, cue_records, log)
+    rep["cues"] = cue_check(sfxs, cues, cue_records, S, log)
     rep["sfx_vs_music"] = sfx_vs_music(sfxs, music, cue_records)
     rep["mix_info"] = dict(layer_gain_db=info["layers"]["layer_gain_db"], contour=info["scenes"], duck_max_db=info["duck"]["max_db"],
                            duck_seconds_over_1db=info["duck"]["seconds_over_1db"], master=dict(gain_db=info["master"]["gain_db"],
                            pre_lufs=info["master"]["pre_lufs"], limiter=info["master"]["limiter"]))
-    rep["sha256"] = {n: hashlib.sha256(open(out_dir / f"{n}.wav", "rb").read()).hexdigest() for n in ("main", "music", "sfx")}
+    rep["sha256"] = {fn: hashlib.sha256(open(out_dir / fn, "rb").read()).hexdigest() for fn in names}
 
     if plots:
-        pd = out_dir / "plots"
+        pd = out_dir / ("plots" if comp == "main" else f"plots_{comp}")
         pd.mkdir(exist_ok=True)
-        spectrogram_png(main, pd / "film.png", 0.0, 12000, 4096, 4096, 80, 1700, "main.wav, whole film")
-        spectrogram_png(main[:24 * sr], pd / "hook_and_title.png", 0.0, 6000, 4096, 1024, 80, 1500, "0 to 24 s")
-        spectrogram_png(music[int(6.5 * sr):int(9 * sr)], pd / "tape_sag_music.png", 6.5, 3000, 4096, 256, 80, 1400, "music only, 6.5 to 9 s (tape sag from 7.4 s)")
-        spectrogram_png(main[int(108 * sr):int(122 * sr)], pd / "resolution_115s.png", 108.0, 8000, 4096, 512, 80, 1500, "108 to 122 s (resolution at 115 s)")
-        spectrogram_png(main[int(166 * sr):], pd / "ending.png", 166.0, 8000, 4096, 512, 80, 1500, "166 to 180 s")
-        spectrogram_png(sfxs, pd / "sfx_stem.png", 0.0, 8000, 4096, 4096, 70, 1700, "sfx.wav")
+        spectrogram_png(main, pd / "film.png", 0.0, 12000, 4096, 4096 if FILM_S > 100 else 1024, 80, 1700, f"{fmain}, whole piece")
+        if comp == "main":
+            spectrogram_png(main[:24 * sr], pd / "hook_and_title.png", 0.0, 6000, 4096, 1024, 80, 1500, "0 to 24 s")
+            spectrogram_png(music[int(6.5 * sr):int(9 * sr)], pd / "tape_sag_music.png", 6.5, 3000, 4096, 256, 80, 1400, "music only, 6.5 to 9 s (tape sag from 7.4 s)")
+            spectrogram_png(main[int(108 * sr):int(122 * sr)], pd / "resolution_115s.png", 108.0, 8000, 4096, 512, 80, 1500, "108 to 122 s (resolution at 115 s)")
+            spectrogram_png(main[int(166 * sr):], pd / "ending.png", 166.0, 8000, 4096, 512, 80, 1500, "166 to 180 s")
+        else:
+            spectrogram_png(music[int(5.5 * sr):int(8 * sr)], pd / "tape_sag_music.png", 5.5, 3000, 4096, 256, 80, 1400, "music only, 5.5 to 8 s (tape sag from 6.4 s)")
+            spectrogram_png(main[int(30 * sr):], pd / "reveal_and_ending.png", 30.0, 8000, 4096, 512, 80, 1500, "30 to 45 s")
+        spectrogram_png(sfxs, pd / "sfx_stem.png", 0.0, 8000, 4096, 4096 if FILM_S > 100 else 1024, 70, 1700, f"{fsfx}")
 
     summarise(rep, log)
     return rep
@@ -390,7 +476,7 @@ def summarise(rep, log):
     log(f"dc offset (main): {rep['dc_offset']['main'][0]:.2e}, {rep['dc_offset']['main'][1]:.2e}")
     fi, se = rep["fade_in"], rep["silence_end"]
     log(f"fade-in: first sample {fi['first_sample']}, first 10 ms peak {fi['first_10ms_peak_dbfs']:.1f} dBFS; "
-        f"end: last 0.5 s peak {se['last_0p5s_peak_dbfs']:.1f} dBFS (all zero: {se['last_0p5s_all_zero']}), 179.0-179.5 s peak {se['peak_179_0_to_179_5_dbfs']:.1f} dBFS")
+        f"end: last 0.5 s peak {se['last_0p5s_peak_dbfs']:.1f} dBFS (all zero: {se['last_0p5s_all_zero']}), the 0.5 s before that peaks at {se['peak_1s_to_0p5s_before_end_dbfs']:.1f} dBFS")
     l = rep["loudness"]
     log(f"loudness (pyloudnorm BS.1770-4): main {l['main_lufs']:.2f} LUFS, music {l['music_lufs']:.2f}, sfx {l['sfx_lufs']:.2f}")
     fm = rep["ffmpeg"]
@@ -405,28 +491,26 @@ def summarise(rep, log):
     st = rep["stereo"]
     log(f"stereo: L/R correlation {st['correlation']:.2f}, side/mid {st['side_to_mid_db']:.1f} dB, below 150 Hz side/mid {st['below_150hz_side_to_mid_db']:.1f} dB")
     t = rep["tuning"]
-    log(f"tuning: bass D2 {t['bass_D2_hz']:.2f} Hz ({t['bass_D2_cents']:+.2f} cents), bell D5 {t['bell_D5_hz']:.2f} Hz ({t['bell_D5_cents']:+.2f} c), pad A4 {t['pad_A4_hz']:.2f} Hz ({t['pad_A4_cents']:+.2f} c)")
+    log("tuning against A4 = 440 Hz (cents): " + ", ".join(f"{k.replace('_cents', '')} {v:+.2f}" for k, v in t.items() if k.endswith("cents")))
+    h = rep["harmony_audit"]
+    log(f"harmony: {h['total']} pitched notes, {h['chord_tone']} chord tones, {h['colour_tone']} colour tones (9th), {h['outside']} outside the chord {h['outside_list']}")
     o = rep["music_onsets"]
     log(f"music onsets: {o['scheduled_events']} scheduled events, largest distance from the sixteenth grid {o['scheduled_max_off_grid_ms']:.3f} ms; "
         f"scenes off bar line: {o['scene_starts_max_off_bar_ms']:.3f} ms")
     for k, v in o["by_kind"].items():
-        log(f"  {k}: {v['judged']}/{v['of']} judged, detected - scheduled: median {v['median_ms']:+.1f} ms, 5-95 % {v['p05_ms']:+.1f}..{v['p95_ms']:+.1f} ms, worst {v['max_abs_ms']:.1f} ms")
-    if "blind_onsets" in o:
-        b = o["blind_onsets"]
-        log(f"  blind check: {b['count']} onsets found in the audio, {b['within_5ms_pct']:.1f} % within 5 ms of the sixteenth grid, {b['within_10ms_pct']:.1f} % within 10 ms")
-    log(f"scene start events: " + "; ".join(f"{k.split('_')[0]}: {[e[0] for e in v]}" for k, v in o["events_on_scene_starts"].items()))
-    cues = rep["cues"]
-    worst = max((abs(c["placed_error_ms"]) for c in cues), default=0.0)
-    det = [c["detected_onset_ms"] for c in cues if c.get("detected_onset_ms") is not None]
-    log(f"cues: {len(cues)} placed; largest placement error {worst:.3f} ms; measured onsets of {len(det)} impulsive cues: "
-        + (f"within {max(abs(d) for d in det):.2f} ms of their time" if det else "n/a"))
-    for c in cues:
         extra = ""
-        if c.get("detected_onset_ms") is not None:
-            extra = f" onset {c['detected_onset_ms']:+.2f} ms"
-        if c.get("detected_peak_ms_from_end") is not None:
-            extra = f" peak {c['detected_peak_ms_from_end']:+.1f} ms from cue end"
-        log(f"  t={c['t']:8.3f}  {c['sfx']:11s} dur={c['dur']}  gain={c['gain']:+.0f}  error {c['placed_error_ms']:+.3f} ms{extra}")
+        if "detections" in v:
+            extra = f"; {v['detections']} onsets detected in total, {v['detections_within_5ms_of_an_event_pct']:.1f} % within 5 ms of a scheduled event"
+        log(f"  {k}: {v['found']}/{v['of']} found in the audio, measured - scheduled: median {v['median_ms']:+.2f} ms, 5-95 % {v['p05_ms']:+.2f}..{v['p95_ms']:+.2f} ms, worst {v['max_abs_ms']:.2f} ms{extra}")
+    log("scene start events: " + "; ".join(f"{k.split('_')[0]}: {sorted({e[0] for e in v})}" for k, v in o["events_on_scene_starts"].items()))
+    cues = rep["cues"]
+    lags = [abs(c["lag_ms"]) for c in cues if c.get("lag_ms") is not None]
+    log(f"cues: {len(cues)} placed; matched-filter position of each sound in sfx.wav: largest offset from its time {max(lags) if lags else float('nan'):.3f} ms "
+        f"(weakest match {min((c['match'] for c in cues if c.get('match') is not None), default=float('nan')):.2f}); renderer bookkeeping error {max((abs(c['bookkeeping_error_ms']) for c in cues), default=0.0):.3f} ms")
+    for c in cues:
+        lag = "n/a" if c.get("lag_ms") is None else f"{c['lag_ms']:+.3f} ms (match {c['match']:.2f})"
+        land = f", lands at {c['lands_at_s']:.3f} s" if c.get("lands_at_s") else ""
+        log(f"  t={c['t']:8.3f}  {c['sfx']:11s} dur={c['dur']}  gain={c['gain']:+.0f}  offset {lag}{land}")
     sv = rep["sfx_vs_music"]
     if sv:
         d = np.array([r["rms_vs_music_db"] for r in sv])

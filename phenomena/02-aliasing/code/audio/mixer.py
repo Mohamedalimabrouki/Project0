@@ -21,12 +21,19 @@ import instruments as ins
 import sfx as sfxlib
 from dsp import SR, idx, db2lin
 
-FILM_S = 180.0
-N_TOTAL = int(round(FILM_S * SR))
+FILM_S = 180.0                      # length of the composition being built (seconds)
+N_TOTAL = int(round(FILM_S * SR))   # ... and in samples; both are set by configure()
+
+
+def configure(duration):
+    """Set the length of the piece: 180 s for the film, 45 s for the vertical Short."""
+    global FILM_S, N_TOTAL
+    FILM_S = float(duration)
+    N_TOTAL = int(round(FILM_S * SR))
 
 # loudness of each layer relative to the pad (LU), measured while it plays
 LAYER_TARGET = {"pad": 0.0, "bass": -6.0, "pluck": -7.5, "bell": -14.0, "keys": -13.0,
-                "kick": -15.0, "hat": -18.5, "rim": -21.0, "swell": -18.0}
+                "kick": -15.0, "hat": -17.0, "rim": -20.0, "swell": -18.0}
 # how much of each layer feeds the hall reverb
 REVERB_SEND = {"pad": 0.55, "pluck": 0.38, "bell": 0.85, "keys": 0.42, "hat": 0.10, "rim": 0.32, "swell": 0.35,
                "bass": 0.0, "kick": 0.0}
@@ -34,16 +41,23 @@ REVERB_SEND = {"pad": 0.55, "pluck": 0.38, "bell": 0.85, "keys": 0.42, "hat": 0.
 # The bed sits at BED_LUFS before the master stage; text-heavy scenes stay on the bed, the others
 # rise above it. Inside each segment the arrangement keeps its own small movements.
 BED_LUFS = -19.0
-CONTOUR = [
-    (4.0, 8.0, -2.0), (8.0, 11.5, -0.2), (11.5, 13.5, -2.8), (13.5, 16.0, 0.8), (16.0, 18.0, 3.2),   # hook
-    (18.0, 21.0, 3.3), (21.0, 24.0, 1.4),                                                          # title
-    (24.0, 36.0, 0.0), (36.0, 48.0, 0.0),                                                          # snapshots
-    (48.0, 70.0, 0.0), (70.0, 78.0, 1.6), (78.0, 80.0, 0.2), (80.0, 86.0, -0.5),                   # the trick
-    (86.0, 100.0, 0.8), (100.0, 112.0, 1.2), (112.0, 115.0, 1.8), (115.0, 118.0, 3.4), (118.0, 126.0, 2.0),   # the rule
-    (126.0, 148.0, 2.4),                                                                           # real world 1
-    (148.0, 168.0, 2.7), (168.0, 170.0, 2.0),                                                      # real world 2
-    (170.0, 174.0, 1.2), (174.0, 177.5, 1.2),                                                      # takeaway
-]
+CONTOUR = {
+    "main": [
+        (4.0, 8.0, -2.0), (8.0, 11.5, -0.2), (11.5, 13.5, -2.8), (13.5, 16.0, 0.8), (16.0, 18.0, 3.2),   # hook
+        (18.0, 21.0, 3.3), (21.0, 24.0, 1.4),                                                          # title
+        (24.0, 36.0, 0.0), (36.0, 48.0, 0.0),                                                          # snapshots
+        (48.0, 70.0, 0.0), (70.0, 78.0, 1.6), (78.0, 80.0, 0.2), (80.0, 86.0, -0.5),                   # the trick
+        (86.0, 100.0, 0.8), (100.0, 112.0, 1.2), (112.0, 115.0, 1.8), (115.0, 118.0, 3.4), (118.0, 126.0, 2.0),   # the rule
+        (126.0, 148.0, 2.4),                                                                           # real world 1
+        (148.0, 168.0, 2.7), (168.0, 170.0, 2.0),                                                      # real world 2
+        (170.0, 174.0, 1.2), (174.0, 177.5, 1.2),                                                      # takeaway
+    ],
+    "short": [
+        (4.0, 6.4, -2.0), (6.4, 9.5, -0.2), (9.5, 12.0, -2.8), (12.0, 14.0, 0.8), (14.0, 16.0, 2.6),    # hook
+        (16.0, 26.0, 0.0), (26.0, 34.0, 0.0), (34.0, 38.0, 2.0),                                       # the trick
+        (38.0, 41.0, 1.2), (41.0, 43.0, 1.0),                                                          # ending
+    ],
+}
 REF_LUFS = -20.0   # pad reference
 
 DUCK_DEPTH_DB = 3.0
@@ -53,7 +67,8 @@ def _t():
     return time.time()
 
 
-def curve(points, kind="db", n=N_TOTAL):
+def curve(points, kind="db", n=None):
+    n = N_TOTAL if n is None else n
     t = np.arange(n) / SR
     tt = np.array([p[0] for p in sorted(points)])
     vv = np.array([p[1] for p in sorted(points)], dtype=float)
@@ -161,16 +176,21 @@ def mix_music(S, log, layers=None):
     music = dry + wet * 1.0
     del dry, send, wet
     music = dsp.mono_below(music, 150.0)          # everything under 150 Hz stays in the middle
+    m_, s_ = dsp.mid_side(music)                  # modest stereo width: the side signal is trimmed by 3 dB
+    music = dsp.from_mid_side(m_, s_ * 0.72)
+    # tone: a little less low-mid mud, a broad lift of the presence region (synth pads are naturally dark)
+    music = dsp.peaking(music, 300.0, -2.0, 0.8)
+    music = dsp.peaking(music, 3000.0, 3.5, 0.7)
     return music, dict(layer_gain_db=gains)
 
 
-def level_contour(music, log, passes=2):
+def level_contour(music, contour, log, passes=2):
     """Ride the level of the music so that its loudness follows CONTOUR (music alone, pre-master)."""
     meter = pyln.Meter(SR)
     report = []
     for p in range(passes):
         cs, gs, rep = [], [], []
-        for a, b, rel in CONTOUR:
+        for a, b, rel in contour:
             seg = music[idx(a): idx(b)]
             m = loudness(seg, meter)
             tgt = BED_LUFS + rel
@@ -189,8 +209,9 @@ def level_contour(music, log, passes=2):
 
 
 # --------------------------------------------------------------------------------- SFX stem
-def parse_cues(raw_cues, log, film_s=FILM_S):
+def parse_cues(raw_cues, log, film_s=None):
     """Turn timeline cues into Cue objects; unknown names are reported and skipped."""
+    film_s = FILM_S if film_s is None else film_s
     cues, counts = [], {}
     for q in raw_cues:
         name = q.get("sfx")

@@ -13,9 +13,8 @@
 
 const SPOKES = 5;
 const WHEEL_RATE = 6;                     // turns per second = 72 degrees per picture at 30 pictures per second
-const LEFT = 60, RIGHT = 920;             // text margins; the right edge stays free for the app buttons
-const CX = 505;                           // centre of the text column (the free area is x 60 to 920)
-const COL = 810;                          // widest line: 100 to 910, clear of the app buttons
+const CX = 505;                           // centre of the text column: the free area is x 60 to 920 (right edge kept clear of the app buttons)
+const COL = 810;                          // widest line: x 100 to 910
 
 /**
  * Extras on the tyre that never betray the spin: fine sidewall rings (circles look the same at every angle),

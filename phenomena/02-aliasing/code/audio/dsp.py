@@ -212,6 +212,17 @@ def _rbj(kind, f, q):
     return b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0
 
 
+def peaking(x, f0, gain_db, q=0.8, axis=0):
+    """A broad boost or cut around f0 (RBJ peaking equaliser)."""
+    A = 10 ** (gain_db / 40.0)
+    w0 = TAU * f0 / SR
+    alpha = np.sin(w0) / (2.0 * q)
+    cw = np.cos(w0)
+    b = np.array([1 + alpha * A, -2 * cw, 1 - alpha * A])
+    a = np.array([1 + alpha / A, -2 * cw, 1 - alpha / A])
+    return signal.lfilter(b / a[0], a / a[0], x, axis=axis)
+
+
 def tv_biquad(x, kind, f, q=0.8, block=32):
     """Filter with a cutoff that moves with time (f: one value per sample or a scalar).
 

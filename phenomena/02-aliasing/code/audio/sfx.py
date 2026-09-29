@@ -54,17 +54,17 @@ LEVELS = {
     "pop": ("peak", -15.0),
     "blip": ("peak", -19.0),
     "click": ("peak", -16.0),
-    "glitch": ("peak", -15.0),
-    "whoosh": ("peak", -17.0),
-    "swoosh_rev": ("peak", -16.0),
-    "riser": ("peak", -16.0),
+    "glitch": ("peak", -17.0),
+    "whoosh": ("peak", -14.5),
+    "swoosh_rev": ("peak", -13.5),
+    "riser": ("peak", -13.5),
     "hit": ("peak", -9.0),
-    "shimmer": ("rms", -31.0),
-    "whirr": ("rms", -31.0),
-    "car": ("rms", -29.0),
-    "rotor": ("rms", -28.0),
-    "hum": ("rms", -39.0),
-    "motor": ("rms", -34.0),
+    "shimmer": ("rms", -28.5),
+    "whirr": ("rms", -28.5),
+    "car": ("rms", -26.5),
+    "rotor": ("rms", -25.5),
+    "hum": ("rms", -38.0),
+    "motor": ("rms", -31.5),
 }
 
 # how strongly each sound draws attention (used to duck the music), and for how long a
@@ -372,10 +372,15 @@ def glitch(c: Cue, ctx):
 # ------------------------------------------------------------------ machines and vehicles
 
 
-def _rate_hook(t):
-    """The hook's wheel rate (turns per second) versus film time, the same monotone cubic
-    interpolation as the scene code (scenes/s01_hook.js): end slopes are zero."""
-    keys = [(0.0, 0.35), (4.5, 2.0), (6.8, 4.7), (10.2, 5.86), (11.4, 6.0), (13.4, 6.0), (16.8, 6.25), (18.5, 6.25)]
+# wheel rate (turns per second) versus time for each scene that has a car: the same keys as the scene code
+RATE_KEYS = {
+    "s01_hook": [(0.0, 0.35), (4.5, 2.0), (6.8, 4.7), (10.2, 5.86), (11.4, 6.0), (13.4, 6.0), (16.8, 6.25), (18.5, 6.25)],
+    "short_hook": [(0.0, 0.35), (3.5, 2.0), (5.5, 4.7), (8.5, 5.86), (9.5, 6.0), (12.0, 6.0), (15.0, 6.25), (17.0, 6.25)],
+}
+
+
+def _rate_curve(t, keys):
+    """The scenes' monotone cubic interpolation (Fritsch-Carlson, zero slope at both ends)."""
     xs = np.array([k[0] for k in keys])
     ys = np.array([k[1] for k in keys])
     h = np.diff(xs)
@@ -397,6 +402,16 @@ def _rate_hook(t):
             + (-2 * u3 + 3 * u2) * ys[k + 1] + (u3 - u2) * h[k] * d[k + 1])
 
 
+def _rate_for(c, t_abs):
+    """Wheel rate for a car cue: its own `rate` if given, else the ramp of its scene (film time), else
+    the hook ramp counted from the cue's own start."""
+    if c.rate:
+        return np.full(len(t_abs), float(c.rate))
+    if c.scene in RATE_KEYS:
+        return _rate_curve(t_abs, RATE_KEYS[c.scene])
+    return _rate_curve(t_abs - c.t, RATE_KEYS["s01_hook"])
+
+
 # firing frequency of the engine (Hz) = A + B * wheel rate; chosen so that the frozen moment
 # (6.0 turns/s) lands on F3 = 174.61 Hz, the root of the suspended chord the music holds there
 _ENGINE_B = 24.5
@@ -408,7 +423,7 @@ def car(c: Cue, ctx):
     dur = c.dur or DEFAULT_DUR["car"]
     n = nsamp(dur)
     t_abs = c.t + np.arange(n) / SR
-    rate = np.full(n, float(c.rate)) if c.rate else _rate_hook(t_abs)
+    rate = _rate_for(c, t_abs)
     ff = _ENGINE_A + _ENGINE_B * rate                     # firing frequency, Hz
     phi = np.cumsum(ff / SR)                              # firing-cycle phase (cycles)
     orders = [(0.5, 1.0), (1.0, 1.0), (1.5, 0.7), (2.0, 0.85), (2.5, 0.25), (3.0, 0.6), (3.5, 0.10),
