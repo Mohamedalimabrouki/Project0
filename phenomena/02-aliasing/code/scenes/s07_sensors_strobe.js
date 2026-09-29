@@ -948,7 +948,7 @@ export default {
 
     // ------------------------------------------------------------------ PART 2
     if (t >= K.morph[0] - 0.1) {
-      EP.layer(ctx, aOut2, 60, 380, 1800, 520, g => {
+      EP.layer(ctx, aOut2, 60, 380, 1800, 560, g => {                    // box down to y = 940: the rule rises from below
         // the first block is the sensor: its frame grows around the box at the end of the move
         const kB = P(t, K.morph[1] - 0.45, K.blocks[0] + 0.15, ease.outCubic);
         if (kB > 0) { g.save(); g.globalAlpha *= kB; blockFrame(g, DG.cx[0], DG.y, kB); g.restore(); }

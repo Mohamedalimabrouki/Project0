@@ -135,9 +135,12 @@ def detect_onsets(x, lo, hi, smooth_ms=1.5, ratio=2.2, min_gap=0.03):
     return np.array(out) / SR
 
 
-def _judge(det, times, detail, name, tol=0.02):
-    """Compare detected onsets with the scheduled times and store the statistics."""
+def _judge(det, times, detail, name, tol=0.02, every=None):
+    """Compare detected onsets with the scheduled times and store the statistics.
+
+    `every` = the times of all scheduled onsets of any instrument: a detection near any of them is not spurious."""
     times = np.asarray(times, dtype=float)
+    every = times if every is None else np.asarray(every, dtype=float)
     errs = []
     for t in times:
         j = det[np.abs(det - t) < tol]
@@ -146,7 +149,7 @@ def _judge(det, times, detail, name, tol=0.02):
     if not errs:
         return
     e = np.array(errs)
-    near = np.array([np.min(np.abs(times - t)) for t in det]) * 1000.0 if len(det) else np.array([0.0])
+    near = np.array([np.min(np.abs(every - t)) for t in det]) * 1000.0 if len(det) else np.array([0.0])
     detail[name] = dict(found=int(len(e)), of=int(len(times)), median_ms=float(np.median(e)), p05_ms=float(np.percentile(e, 5)),
                         p95_ms=float(np.percentile(e, 95)), max_abs_ms=float(np.abs(e).max()), detections=int(len(det)),
                         detections_within_5ms_of_an_event_pct=float(100 * np.mean(near < 5.0)))
@@ -175,11 +178,12 @@ def onset_check(music, score, log):
     scene_off = [abs(s["t0"] / 2.0 - round(s["t0"] / 2.0)) * 2.0 for s in score.T_scenes]
     res["scene_starts_max_off_bar_ms"] = float(max(scene_off) * 1000.0) if scene_off else 0.0
     detail = {}
+    every = sorted(t for t, k in score.marks)
     if score.hat:
-        _judge(detect_onsets(mono, 4500, 9500), [h["t"] for h in score.hat], detail, "hat, in the finished music.wav")
+        _judge(detect_onsets(mono, 4500, 9500), [h["t"] for h in score.hat], detail, "hat, in the finished music.wav", every=every)
     kick, hat, rim = ins.render_drums(score.kick, [], score.rim, n)
     if score.kick:
-        _judge(detect_onsets(kick, 35, 250, smooth_ms=4.0, ratio=2.0), [k["t"] for k in score.kick], detail, "kick, dry track")
+        _judge(detect_onsets(kick, 35, 250, smooth_ms=12.0, ratio=2.0), [k["t"] for k in score.kick], detail, "kick, dry track")
     if score.rim:
         _judge(detect_onsets(_mono(rim), 1200, 5000, smooth_ms=1.0), [r["t"] for r in score.rim], detail, "rim click, dry track")
     if score.pluck:

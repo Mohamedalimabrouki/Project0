@@ -96,9 +96,9 @@ function model(t) {
 
 // which annotations belong to picture n of a step run (built up over the pictures)
 function flagsFor(part, n) {
-  if (part === 'A') return { real: n >= 1, seen: n >= 2, closest: n >= 2, verdict: n >= 2, gap: false, short: false };
-  if (part === 'B') return { real: n >= 1, gap: n <= 1, short: n >= 5 && n <= 8, closest: n >= 8, seen: n >= 9, verdict: n >= 9 };
-  return { real: n >= 1, seen: false, closest: n >= 1, verdict: false, gap: false, short: false };   // C: "frozen" is told once the paint is gone (by time)
+  if (part === 'A') return { real: n >= 1, seen: n >= 2, closest: n >= 2, gap: false, short: false };
+  if (part === 'B') return { real: n >= 1, gap: n <= 1, short: n >= 5 && n <= 8, closest: n >= 8, seen: n >= 9 };
+  return { real: n >= 1, seen: false, closest: n >= 1, gap: false, short: false };   // C: "frozen" is told once the paint is gone (by time)
 }
 
 // index of the spoke (in the new picture) that is closest to where the yellow spoke was

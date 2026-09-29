@@ -206,6 +206,29 @@ class Score:
             self.add_bell(t + i * spacing, m, db - (0.0 if i == 0 else 1.5) + (1.5 if last else 0.0),
                           pan=(-0.22, 0.22, -0.12, 0.12, 0.0)[i], dur=dur_last if last else 2.4)
 
+    # ---------------------------------------------------------------- tidy-ups
+    COLOUR = {2: (4, 7, 0), 10: (0,), 5: (7,), 0: (2,), 7: (9,)}      # tolerated colour tones: 9th, 11th, 7th
+
+    def allowed_pc(self, chord_name, pc):
+        """Is this pitch class part of the chord (any of its voicings) or one of its tolerated colour tones?"""
+        c = CH[chord_name]
+        strict = {m % 12 for m in c["pad"]} | {m % 12 for m in c["pool"]} | {m % 12 for m in c["keys"]} | {c["bass"] % 12, c["root"]}
+        return pc in strict or pc in self.COLOUR.get(c["root"], ())
+
+    def finalize(self):
+        """Tidy-ups that need the whole harmony: a bell never rings on into a chord it clashes with; it is
+        shortened so that it fades out just before that chord starts."""
+        self.chord_segs.sort()
+        for e in self.bell:
+            pc = e["midi"] % 12
+            for a, b, name in self.chord_segs:
+                if a <= e["t"] + 1e-6 or a >= e["t"] + e["dur"]:
+                    continue
+                if not self.allowed_pc(name, pc):
+                    e["dur"] = max(0.3, a - e["t"] - 0.02)
+                    break
+        self.marks.sort()
+
     # ------------------------------------------------------------------- patterns
     def bars(self, t0, t1):
         b = t0
@@ -289,8 +312,7 @@ def build_score(scenes, log=print, comp="main"):
     _world_a(S, T["s06"], T["s07"], energy["s06_helicopter_lathe"])
     _world_b(S, T["s07"], T["s08"], energy["s07_sensors_strobe"])
     _outro(S, T["s08"], T["end"], energy["s08_takeaway"])
-    S.chord_segs.sort()
-    S.marks.sort()
+    S.finalize()
     S.T = T
     return S
 
@@ -498,7 +520,6 @@ def _rule(S, t0, t1, en):
     hat_db = -27.0 + 3.0 * (en - 1.0)
     for b in S.bars(t0, t1):
         rel = b - t0
-        in_pre = res - 2.0 <= b < res - 1e-6
         # kick: beat 1 and the "and" of beat 3 (steps 0 and 5 of the eighth-note bar)
         if b < res - 1.0 or b >= res + 1.0:
             S.add_kick(b, -17.0)
@@ -531,7 +552,7 @@ def _world_a(S, t0, t1, en):
     _groove(S, t0, t1, en, kick=(0.0, 1.25, 0.75), hat_db=-26.0, rim=(0.5, 1.5), rim_db=-25.0)
     _keys_comp(S, t0, t1, -20.0)
     for a, b, n in segs:
-        S.add_bell(a, CH[n]["pool"][3] + 12, -20.0, pan=0.3, dur=2.6)
+        S.add_bell(a, CH[n]["pool"][3] + 12, -20.0, pan=0.3, dur=min(2.6, b - a - 0.05))
 
 
 def _world_b(S, t0, t1, en):
@@ -544,7 +565,7 @@ def _world_b(S, t0, t1, en):
     _groove(S, t0, t1 - 2.0, en, kick=(0.0, 1.25, 0.75), hat_db=-24.5, rim=(0.5, 1.5), rim_db=-24.0, sixteenth=True)
     _keys_comp(S, t0, t1, -19.0)
     for a, b, n in segs:
-        S.add_bell(a, CH[n]["pool"][3] + 12, -19.0, pan=-0.3, dur=2.6)
+        S.add_bell(a, CH[n]["pool"][3] + 12, -19.0, pan=-0.3, dur=min(2.6, b - a - 0.05))
 
 
 def _groove(S, t0, t1, en, kick, hat_db, rim, rim_db, sixteenth=False):
@@ -614,8 +635,7 @@ def build_score_short(scenes, log=print):
     _short_hook(S, T["hook"], T["trick"], energy["short_hook"])
     _short_trick(S, T["trick"], T["end"], energy["short_trick"])
     _short_end(S, T["end"], T["film"], energy["short_end"])
-    S.chord_segs.sort()
-    S.marks.sort()
+    S.finalize()
     S.T = dict(T)
     return S
 
