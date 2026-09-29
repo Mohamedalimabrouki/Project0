@@ -1,0 +1,159 @@
+1
+00:00:00,800 --> 00:00:04,600
+Cette voiture accélère.
+
+2
+00:00:05,000 --> 00:00:07,000
+Regardez bien la roue.
+
+3
+00:00:07,400 --> 00:00:10,200
+Elle semble tourner à l’envers !
+
+4
+00:00:10,600 --> 00:00:13,200
+Et là, elle semble immobile.
+
+5
+00:00:13,600 --> 00:00:17,600
+La voiture n’a jamais ralenti.
+Alors, que se passe-t-il ?
+
+6
+00:00:18,600 --> 00:00:23,900
+Engineering Phenomena, épisode 02 : Aliasing.
+Pourquoi les roues tournent à l’envers en vidéo.
+
+7
+00:00:24,800 --> 00:00:28,800
+Une vidéo n’est pas continue.
+
+8
+00:00:29,200 --> 00:00:34,600
+C’est un folioscope :
+30 images fixes par seconde.
+
+9
+00:00:35,000 --> 00:00:40,200
+Entre deux images,
+la caméra ne voit rien du tout.
+
+10
+00:00:40,600 --> 00:00:43,300
+Votre cerveau enchaîne les images…
+
+11
+00:00:43,500 --> 00:00:47,850
+…en reliant chaque rayon au rayon le
+plus proche dans l’image suivante.
+
+12
+00:00:48,800 --> 00:00:53,671
+Ralentissons tout,
+et peignons un rayon en jaune.
+
+13
+00:00:54,071 --> 00:00:58,943
+Petite rotation entre deux images : la roue
+semble tourner dans le bon sens. Exact !
+
+14
+00:00:59,343 --> 00:01:04,214
+Maintenant, presque un écart
+entre rayons par image.
+
+15
+00:01:04,614 --> 00:01:09,486
+Chaque rayon arrive juste avant
+la place qu’occupait le suivant…
+
+16
+00:01:09,886 --> 00:01:14,757
+…donc le lien le plus court va vers l’arrière.
+La roue semble tourner à l’envers !
+
+17
+00:01:15,157 --> 00:01:20,029
+Avec exactement un écart par image,
+toutes les images sont identiques.
+
+18
+00:01:20,429 --> 00:01:25,300
+La roue semble figée, alors
+qu’elle tourne à toute vitesse.
+
+19
+00:01:26,800 --> 00:01:32,400
+On appelle cela le repliement de spectre (aliasing) :
+un mouvement rapide sous un faux nom, un alias.
+
+20
+00:01:32,800 --> 00:01:38,800
+La caméra prend 30 images par seconde.
+Les rayons passent f fois par seconde.
+
+21
+00:01:39,200 --> 00:01:46,600
+Jusqu’à 15 par seconde, la vidéo dit la
+vérité. Au-delà, le mouvement est déguisé.
+
+22
+00:01:47,000 --> 00:01:54,400
+À 30 ou 60 par seconde pile, la roue semble figée.
+Juste en dessous, elle semble tourner à l’envers.
+
+23
+00:01:54,800 --> 00:02:00,800
+La règle : échantillonnez plus de deux fois plus
+vite que le changement le plus rapide à observer.
+
+24
+00:02:01,200 --> 00:02:05,900
+On l’appelle le théorème
+d’échantillonnage de Nyquist-Shannon.
+
+25
+00:02:06,800 --> 00:02:11,625
+En vidéo, des pales
+d’hélicoptère semblent figées.
+
+26
+00:02:12,025 --> 00:02:16,850
+Entre deux images, chaque pale se place
+exactement là où était la suivante.
+
+27
+00:02:17,250 --> 00:02:22,075
+Un éclairage qui scintille peut
+jouer le même tour aux machines.
+
+28
+00:02:22,475 --> 00:02:27,300
+Un tour en marche peut sembler arrêté. C’est pourquoi
+l’éclairage d’atelier ne doit pas scintiller.
+
+29
+00:02:28,800 --> 00:02:33,800
+Les machines échantillonnent aussi : leurs
+capteurs sont lus de nombreuses fois par seconde.
+
+30
+00:02:34,200 --> 00:02:39,600
+Une vibration de 900 Hz lue 1000 fois par
+seconde ressemble à une onde lente de 100 Hz.
+
+31
+00:02:40,000 --> 00:02:44,800
+On filtre donc ce qui est trop rapide,
+puis on échantillonne plus de deux fois plus vite.
+
+32
+00:02:45,200 --> 00:02:49,900
+Et un stroboscope utilise exprès le repliement de
+spectre pour figer les machines et les inspecter.
+
+33
+00:02:50,800 --> 00:02:59,200
+Prenez des images trop lentement, et ce qui va vite
+peut sembler lent, à l’arrêt, voire à l’envers.
+

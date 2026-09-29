@@ -1,37 +1,42 @@
 {
   "s03.c1": {
     "en": "A video is not smooth motion.",
-    "fr": "",
-    "ar": ""
+    "fr": "Une vidéo n’est pas continue.",
+    "ar": "الفيديو ليس حركة متصلة."
   },
   "s03.c2": {
     "en": "It is a flip book: 30 still pictures every second.",
-    "fr": "",
-    "ar": ""
+    "fr": "C’est un folioscope\u00a0: 30\u00a0images fixes par seconde.",
+    "ar": "إنه كدفتر تُقلَّب صفحاته بسرعة: 30 صورة ثابتة في كل ثانية."
   },
   "s03.c3": {
     "en": "Between two pictures, the camera sees nothing at all.",
-    "fr": "",
-    "ar": ""
+    "fr": "Entre deux images, la caméra ne voit rien du tout.",
+    "ar": "بين صورتين، لا ترى الكاميرا شيئًا على الإطلاق."
   },
   "s03.c4": {
     "en": "Your brain joins the pictures together...",
-    "fr": "",
-    "ar": ""
+    "fr": "Votre cerveau enchaîne les images…",
+    "ar": "يربط دماغكم الصور ببعضها…"
   },
   "s03.c5": {
     "en": "...by linking each spoke to the closest spoke in the next picture.",
-    "fr": "",
-    "ar": ""
+    "fr": "…en reliant chaque rayon au rayon le plus proche dans\u00a0l’image\u00a0suivante.",
+    "ar": "…وذلك بوصل كل شعاع بأقرب شعاع إليه في الصورة التالية."
   },
   "s03.second": {
     "en": "1 second",
-    "fr": "",
-    "ar": ""
+    "fr": "1\u00a0seconde",
+    "ar": "ثانية واحدة"
   },
   "s03.unseen": {
     "en": "Not recorded",
-    "fr": "",
-    "ar": ""
+    "fr": "Non enregistré",
+    "ar": "غير مسجَّل"
+  },
+  "s03.seen": {
+    "en": "What we see",
+    "fr": "Ce qu’on voit",
+    "ar": "ما نراه"
   }
 }

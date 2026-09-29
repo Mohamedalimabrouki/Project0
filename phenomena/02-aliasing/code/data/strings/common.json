@@ -1,67 +1,67 @@
 {
   "chapter.see": {
     "en": "See it",
-    "fr": "",
-    "ar": ""
+    "fr": "Voir",
+    "ar": "شاهد"
   },
   "chapter.understand": {
     "en": "Understand it",
-    "fr": "",
-    "ar": ""
+    "fr": "Comprendre",
+    "ar": "افهم"
   },
   "chapter.real": {
     "en": "In the real world",
-    "fr": "",
-    "ar": ""
+    "fr": "Dans le monde réel",
+    "ar": "في العالم الحقيقي"
   },
   "badge.slowx": {
     "en": "Slowed down ×{n}",
-    "fr": "",
-    "ar": ""
+    "fr": "Ralenti\u00a0×{n}",
+    "ar": "حركة بطيئة \u200e×{n}"
   },
   "badge.real": {
     "en": "Real speed: 30 pictures per second",
-    "fr": "",
-    "ar": ""
+    "fr": "Vitesse réelle\u00a0: 30\u00a0images par seconde",
+    "ar": "السرعة الحقيقية: 30 صورة في الثانية"
   },
   "badge.simulated": {
     "en": "Simulated view",
-    "fr": "",
-    "ar": ""
+    "fr": "Vue simulée",
+    "ar": "عرض بالمحاكاة"
   },
   "badge.example": {
     "en": "Example values",
-    "fr": "",
-    "ar": ""
+    "fr": "Valeurs d’exemple",
+    "ar": "قيم توضيحية"
   },
   "badge.notscale": {
     "en": "Not to scale",
-    "fr": "",
-    "ar": ""
+    "fr": "Non à l’échelle",
+    "ar": "غير مرسوم بمقياس"
   },
   "unit.turns": {
     "en": "turns per second",
-    "fr": "",
-    "ar": ""
+    "fr": "tr/s",
+    "ar": "دورة في الثانية"
   },
   "unit.pictures": {
     "en": "pictures per second",
-    "fr": "",
-    "ar": ""
+    "fr": "images par seconde",
+    "ar": "صورة في الثانية"
   },
   "word.picture": {
     "en": "Picture {n}",
-    "fr": "",
-    "ar": ""
+    "fr": "Image\u00a0{n}",
+    "ar": "الصورة {n}"
   },
   "brand.series": {
     "en": "Engineering Phenomena",
-    "fr": "",
-    "ar": ""
+    "fr": "Engineering Phenomena",
+    "ar": "Engineering Phenomena"
   },
   "brand.episode": {
     "en": "Episode 02",
-    "fr": "",
-    "ar": ""
+    "fr": "Épisode\u00a002",
+    "ar": "الحلقة 02"
   }
 }

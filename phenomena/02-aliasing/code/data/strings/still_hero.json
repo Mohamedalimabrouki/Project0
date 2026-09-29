@@ -1,0 +1,22 @@
+{
+  "hero.title": {
+    "en": "Aliasing",
+    "fr": "Aliasing",
+    "ar": "التعرّج"
+  },
+  "hero.tagline": {
+    "en": "Why wheels seem to spin backwards on video",
+    "fr": "Pourquoi les roues semblent tourner à l’envers en vidéo",
+    "ar": "لماذا تبدو العجلات وكأنها تدور إلى الوراء في الفيديو"
+  },
+  "hero.real": {
+    "en": "Real",
+    "fr": "Réel",
+    "ar": "الحقيقي"
+  },
+  "hero.seen": {
+    "en": "Seen",
+    "fr": "Apparent",
+    "ar": "الظاهر"
+  }
+}

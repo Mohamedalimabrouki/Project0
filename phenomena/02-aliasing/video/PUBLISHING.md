@@ -18,11 +18,11 @@ Technical: H.264 High profile, 1920 × 1080, 30 fps, BT.709, AAC 320 kbit/s 48 k
 
 ## Title
 
-**Why wheels spin backwards on video | Aliasing | Engineering Phenomena 02**
+**Why do wheels seem to spin backwards on video? | Aliasing | Engineering Phenomena 02**
 
 ## Description
 
-A car speeds up, but on video its wheels slow down, stop, and even turn backwards. Nothing is wrong with the car: a video is a flip book of 30 still pictures per second, and a wheel that turns almost one spoke gap between two pictures fools your brain. Engineers call this aliasing.
+A car speeds up, but on video its wheels seem to slow down, stop, and even turn backwards. Nothing is wrong with the car: a video is a flip book of 30 still pictures per second, and a wheel that turns almost one spoke gap between two pictures fools your brain. Engineers call this aliasing.
 
 In this film:
 - why the wagon-wheel effect happens, shown for real on your own screen (every frame is drawn by code from the equations)
@@ -30,7 +30,7 @@ In this film:
 - frozen helicopter blades, the stroboscopic danger in workshops, sensors inside machines, and strobe lights used on purpose
 
 Chapters:
-0:00 The car speeds up, the wheel goes backwards
+0:00 The car speeds up, the wheel seems to go backwards
 0:18 Aliasing
 0:24 A video is a flip book
 0:48 The trick
@@ -45,9 +45,9 @@ Engineering Phenomena: see it, understand it. Made entirely with code: no filmed
 
 ## Short (9:16)
 
-**Why do wheels spin backwards on video? #engineering #physics**
+**Why do wheels seem to spin backwards on video? #engineering #physics**
 
-A car speeds up, its wheel seems to go backwards. The answer takes 45 seconds.
+A car speeds up, yet its wheel seems to go backwards. The answer takes 45 seconds.
 
 ## Accessibility note
 

@@ -1,0 +1,159 @@
+1
+00:00:00,800 --> 00:00:04,600
+This car is speeding up.
+
+2
+00:00:05,000 --> 00:00:07,000
+Now watch the wheel.
+
+3
+00:00:07,400 --> 00:00:10,200
+It seems to turn backwards!
+
+4
+00:00:10,600 --> 00:00:13,200
+Now it seems to stand still.
+
+5
+00:00:13,600 --> 00:00:17,600
+The car never slowed down.
+So what is going on?
+
+6
+00:00:18,600 --> 00:00:23,900
+Engineering Phenomena, episode 02: Aliasing.
+Why wheels spin backwards on video.
+
+7
+00:00:24,800 --> 00:00:28,800
+A video is not smooth motion.
+
+8
+00:00:29,200 --> 00:00:34,600
+It is a flip book:
+30 still pictures every second.
+
+9
+00:00:35,000 --> 00:00:40,200
+Between two pictures,
+the camera sees nothing at all.
+
+10
+00:00:40,600 --> 00:00:43,300
+Your brain joins the pictures together...
+
+11
+00:00:43,500 --> 00:00:47,850
+...by linking each spoke to the
+closest spoke in the next picture.
+
+12
+00:00:48,800 --> 00:00:53,671
+Let's slow it right down,
+and paint one spoke yellow.
+
+13
+00:00:54,071 --> 00:00:58,943
+A small turn between pictures:
+it looks like it turns forwards. Correct!
+
+14
+00:00:59,343 --> 00:01:04,214
+Now it turns almost one
+spoke gap between pictures.
+
+15
+00:01:04,614 --> 00:01:09,486
+Every spoke lands just short
+of where the next one was...
+
+16
+00:01:09,886 --> 00:01:14,757
+...so the closest match is backwards.
+The wheel seems to turn backwards!
+
+17
+00:01:15,157 --> 00:01:20,029
+Turn exactly one gap per picture,
+and every picture looks the same.
+
+18
+00:01:20,429 --> 00:01:25,300
+The wheel seems frozen,
+even though it is spinning fast.
+
+19
+00:01:26,800 --> 00:01:32,400
+Engineers call this aliasing: a fast motion
+that shows up under a false name, an alias.
+
+20
+00:01:32,800 --> 00:01:38,800
+The camera takes 30 pictures per second.
+The spokes pass by f times per second.
+
+21
+00:01:39,200 --> 00:01:46,600
+Up to 15 per second, the video tells the truth.
+Faster than that, the motion is disguised.
+
+22
+00:01:47,000 --> 00:01:54,400
+At exactly 30 or 60 per second the wheel
+looks frozen. Just below, it looks backwards.
+
+23
+00:01:54,800 --> 00:02:00,800
+The rule: take samples more than twice as
+fast as the fastest change you want to see.
+
+24
+00:02:01,200 --> 00:02:05,900
+Engineers call it the
+Nyquist-Shannon sampling theorem.
+
+25
+00:02:06,800 --> 00:02:11,625
+Helicopter blades can
+look frozen on video.
+
+26
+00:02:12,025 --> 00:02:16,850
+Between two pictures, each blade moves
+exactly into the next blade's place.
+
+27
+00:02:17,250 --> 00:02:22,075
+Flickering lights can play
+the same trick on machines.
+
+28
+00:02:22,475 --> 00:02:27,300
+A spinning lathe can look stopped. That
+is why workshop lights must not flicker.
+
+29
+00:02:28,800 --> 00:02:33,800
+Machines sample the world too: their
+sensors are read many times per second.
+
+30
+00:02:34,200 --> 00:02:39,600
+A 900 Hz vibration read 1000 times per
+second looks like a slow 100 Hz wave.
+
+31
+00:02:40,000 --> 00:02:44,800
+So engineers filter out what is too fast,
+then sample more than twice as fast.
+
+32
+00:02:45,200 --> 00:02:49,900
+And a strobe light uses aliasing on purpose,
+to freeze fast machines for inspection.
+
+33
+00:02:50,800 --> 00:02:59,200
+Take pictures too slowly, and fast things
+can look slow, stopped, or even backwards.
+

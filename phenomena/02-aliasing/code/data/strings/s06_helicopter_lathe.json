@@ -1,52 +1,52 @@
 {
   "s06.c1": {
     "en": "Helicopter blades can look frozen on video.",
-    "fr": "",
-    "ar": ""
+    "fr": "En vidéo, des pales d’hélicoptère semblent figées.",
+    "ar": "قد تبدو شفرات المروحية متجمّدة في الفيديو."
   },
   "s06.c2": {
     "en": "Between two pictures, each blade moves exactly into the next blade's place.",
-    "fr": "",
-    "ar": ""
+    "fr": "Entre deux images, chaque pale se place exactement là\u00a0où\u00a0était\u00a0la\u00a0suivante.",
+    "ar": "بين صورتين، تنتقل كل شفرة بالضبط إلى مكان الشفرة التالية."
   },
   "s06.c3": {
     "en": "Flickering lights can play the same trick on machines.",
-    "fr": "",
-    "ar": ""
+    "fr": "Un éclairage qui scintille peut jouer le même tour aux machines.",
+    "ar": "الأضواء الوامضة قد تخدع الآلات بالحيلة نفسها."
   },
   "s06.c4": {
     "en": "A spinning lathe can look stopped. That is why workshop lights must not flicker.",
-    "fr": "",
-    "ar": ""
+    "fr": "Un tour en marche peut sembler arrêté. C’est pourquoi l’éclairage d’atelier ne doit pas scintiller.",
+    "ar": "قد تبدو المخرطة الدوّارة متوقفة. لهذا يجب ألا تومض أضواء الورشة."
   },
   "s06.blades": {
     "en": "5 blades × 6 turns per second = 30 blade passes per second",
-    "fr": "",
-    "ar": ""
+    "fr": "5\u00a0pales\u00a0× 6\u00a0tours par seconde\u00a0= 30\u00a0passages de pale par seconde",
+    "ar": "5 شفرات × 6 دورات في الثانية = 30 شفرة تمرّ في الثانية"
   },
   "s06.match": {
     "en": "= 30 pictures per second",
-    "fr": "",
-    "ar": ""
+    "fr": "= 30\u00a0images par seconde",
+    "ar": "= 30 صورة في الثانية"
   },
   "s06.jaws": {
     "en": "4 jaws × 25 turns per second = 100 passes per second",
-    "fr": "",
-    "ar": ""
+    "fr": "4\u00a0mors\u00a0× 25\u00a0tours par seconde\u00a0= 100\u00a0passages par seconde",
+    "ar": "4 فكوك × 25 دورة في الثانية = 100 فك يمرّ في الثانية"
   },
   "s06.flicker": {
     "en": "Light flickers 100 times per second (twice the 50 Hz mains)",
-    "fr": "",
-    "ar": ""
+    "fr": "Scintillement\u00a0: 100\u00a0fois par seconde (le double des 50\u00a0Hz du secteur)",
+    "ar": "الضوء يومض 100 مرة في الثانية (ضعف تردد التيار الكهربائي \u200e50\u00a0Hz)"
   },
   "s06.really": {
     "en": "What it really does",
-    "fr": "",
-    "ar": ""
+    "fr": "En réalité",
+    "ar": "الحركة الحقيقية"
   },
   "s06.eye": {
     "en": "What the eye sees",
-    "fr": "",
-    "ar": ""
+    "fr": "Ce que l’œil voit",
+    "ar": "ما تراه العين"
   }
 }

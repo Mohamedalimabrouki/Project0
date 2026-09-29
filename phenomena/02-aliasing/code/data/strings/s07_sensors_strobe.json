@@ -1,62 +1,77 @@
 {
   "s07.c1": {
     "en": "Machines sample the world too: their sensors are read many times per second.",
-    "fr": "",
-    "ar": ""
+    "fr": "Les machines échantillonnent aussi\u00a0: leurs capteurs sont lus de\u00a0nombreuses fois par seconde.",
+    "ar": "الآلات أيضًا تأخذ عينات من العالم: تُقرأ مستشعراتها مرات كثيرة في الثانية."
   },
   "s07.c2": {
     "en": "A 900 Hz vibration read 1000 times per second looks like a slow 100 Hz wave.",
-    "fr": "",
-    "ar": ""
+    "fr": "Une vibration de 900\u00a0Hz lue 1000\u00a0fois par seconde ressemble à une onde lente de 100\u00a0Hz.",
+    "ar": "اهتزاز بتردد \u200e900\u00a0Hz يُقرأ 1000 مرة في الثانية يبدو كموجة بطيئة \u200e100\u00a0Hz."
   },
   "s07.c3": {
     "en": "So engineers filter out what is too fast, then sample more than twice as fast.",
-    "fr": "",
-    "ar": ""
+    "fr": "On filtre donc ce qui est trop rapide, puis\u00a0on\u00a0échantillonne\u00a0plus\u00a0de\u00a0deux\u00a0fois\u00a0plus\u00a0vite.",
+    "ar": "لذلك يرشّح المهندسون ما هو سريع جدًا، ثم يأخذون العينات بأكثر\u00a0من\u00a0ضعف\u00a0السرعة."
   },
   "s07.c4": {
     "en": "And a strobe light uses aliasing on purpose, to freeze fast machines for inspection.",
-    "fr": "",
-    "ar": ""
+    "fr": "Et un stroboscope utilise exprès le repliement de spectre pour figer les machines et les inspecter.",
+    "ar": "أما المصباح الوميضي فيستخدم التعرّج عمدًا لتجميد الآلات السريعة أثناء\u00a0فحصها."
   },
   "s07.real": {
     "en": "Real vibration: 900 Hz",
-    "fr": "",
-    "ar": ""
+    "fr": "Vibration réelle\u00a0: 900\u00a0Hz",
+    "ar": "الاهتزاز الحقيقي: \u200e900\u00a0Hz"
   },
   "s07.samples": {
     "en": "Samples: 1000 per second",
-    "fr": "",
-    "ar": ""
+    "fr": "Échantillons\u00a0: 1000\u00a0par seconde",
+    "ar": "العينات: 1000 في الثانية"
   },
   "s07.seen": {
     "en": "What the controller sees: 100 Hz",
-    "fr": "",
-    "ar": ""
+    "fr": "Ce que voit le contrôleur\u00a0: 100\u00a0Hz",
+    "ar": "ما يراه المتحكّم: \u200e100\u00a0Hz"
   },
   "s07.sensor": {
     "en": "Sensor",
-    "fr": "",
-    "ar": ""
+    "fr": "Capteur",
+    "ar": "مستشعر"
   },
   "s07.filter": {
     "en": "Anti-aliasing filter",
-    "fr": "",
-    "ar": ""
+    "fr": "Filtre anti-repliement",
+    "ar": "مرشّح مضاد للتعرّج"
   },
   "s07.adc": {
     "en": "Converter (ADC)",
-    "fr": "",
-    "ar": ""
+    "fr": "Convertisseur (CAN)",
+    "ar": "محوّل (ADC)"
   },
   "s07.controller": {
     "en": "Controller",
-    "fr": "",
-    "ar": ""
+    "fr": "Contrôleur",
+    "ar": "متحكّم"
   },
   "s07.strobe": {
     "en": "Strobe light",
-    "fr": "",
-    "ar": ""
+    "fr": "Stroboscope",
+    "ar": "مصباح وميضي"
+  },
+  "s07.normal": {
+    "en": "Normal light",
+    "fr": "Lumière fixe",
+    "ar": "إضاءة عادية"
+  },
+  "s07.realspeed": {
+    "en": "Real speed",
+    "fr": "Vitesse réelle",
+    "ar": "السرعة الحقيقية"
+  },
+  "s07.weesee": {
+    "en": "What we see",
+    "fr": "Ce qu’on voit",
+    "ar": "ما نراه"
   }
 }

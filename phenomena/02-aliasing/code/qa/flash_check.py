@@ -1,13 +1,23 @@
-"""Photosensitivity screen for a rendered frame sequence (WCAG 2.3.1 style).
+"""Photosensitivity screen for a rendered frame sequence.
 
-A "flash" is a pair of opposing changes in relative luminance of at least 10 %
-of the maximum, where the darker state is below 0.80. The guideline fails when
-more than 3 flashes happen within any one second over a combined area larger
-than about a quarter of a 10 degree field of view (at normal viewing distance
-roughly 10 % of a 16:9 screen; we flag anything over 2 %, to keep a margin).
+Follows the WCAG 2.3.1 "general flash" definition, measured the way analysers
+such as PEAT do it:
+  - a transition is a change in relative luminance of at least 0.10 between two
+    consecutive frames, where the darker of the two is below 0.80;
+  - a window the size of a 10 degree field of view (a third of the screen
+    width by a third of its height, like 341 x 256 px on 1024 x 768) registers
+    a transition when at least 25 % of its pixels rise together (or fall
+    together);
+  - a flash is a pair of opposing transitions; more than 3 flashes in any
+    one-second period, in any window, fails.
+It also reports the broadcast view (ITU-R BT.1702: the whole screen as one
+window, same 25 % rule).
+
+A spinning wheel changes many pixels, but half of them get brighter while the
+other half get darker in the same frame, and each frame moves only a small
+area: that is motion, not a flash, and this method treats it that way.
 
 Usage: python3 qa/flash_check.py build/main_en/frames [fps]
-Works on a downscaled copy (480 x 270) for speed. Prints the worst window.
 """
 import glob
 import sys
@@ -18,8 +28,8 @@ from PIL import Image
 frames_dir = sys.argv[1]
 fps = int(sys.argv[2]) if len(sys.argv) > 2 else 30
 files = sorted(glob.glob(f"{frames_dir}/f*.png"))
-if not files:
-    sys.exit("no frames")
+if len(files) < 2:
+    sys.exit("not enough frames")
 
 
 def rel_lum(path):
@@ -31,29 +41,57 @@ def rel_lum(path):
     return 0.2126 * lin[..., 0] + 0.7152 * lin[..., 1] + 0.0722 * lin[..., 2]
 
 
+def box_sums(mask, wh, ww, stride):
+    ii = np.pad(mask.astype(np.int32).cumsum(0).cumsum(1), ((1, 0), (1, 0)))
+    ys = np.arange(0, mask.shape[0] - wh + 1, stride)
+    xs = np.arange(0, mask.shape[1] - ww + 1, stride)
+    Y, X = np.meshgrid(ys, xs, indexing="ij")
+    return ii[Y + wh, X + ww] - ii[Y, X + ww] - ii[Y + wh, X] + ii[Y, X]
+
+
 prev = rel_lum(files[0])
-shape = prev.shape
-last_dir = np.zeros(shape, np.int8)       # direction of the last significant change
-ref = prev.copy()                          # luminance at the last significant change
-events = []                                # per frame: map of completed opposing changes
+H, W = prev.shape
+wh, ww = H // 3, W // 3
+area = wh * ww
+trans_win, trans_full, worst_frac = [], [], 0.0
 for f in files[1:]:
     cur = rel_lum(f)
-    d = cur - ref
-    sig = (np.abs(d) >= 0.10) & (np.minimum(cur, ref) < 0.80)
-    new_dir = np.sign(d).astype(np.int8)
-    half = sig & (last_dir != 0) & (new_dir != last_dir)
-    events.append(half)
-    last_dir = np.where(sig, new_dir, last_dir)
-    ref = np.where(sig, cur, ref)
+    d = cur - prev
+    ok = np.minimum(cur, prev) < 0.80
+    rise = (d >= 0.10) & ok
+    fall = (d <= -0.10) & ok
+    r, fl = box_sums(rise, wh, ww, 10) / area, box_sums(fall, wh, ww, 10) / area
+    worst_frac = max(worst_frac, float(r.max()), float(fl.max()))
+    t = np.where(r >= 0.25, 1, 0) + np.where(fl >= 0.25, -1, 0)
+    trans_win.append(t.astype(np.int8))
+    fr, ff = rise.mean(), fall.mean()
+    trans_full.append(1 if fr >= 0.25 else -1 if ff >= 0.25 else 0)
+    prev = cur
 
-ev = np.stack(events).astype(np.uint8)
-cs = np.concatenate([np.zeros((1,) + shape, np.int32), np.cumsum(ev, axis=0, dtype=np.int32)])
-worst, worst_at = 0.0, 0
-for i in range(0, len(events) - fps + 1):
-    count = cs[i + fps] - cs[i]            # opposing changes in this 1 s window
-    area = float(np.mean(count >= 7))      # 7 opposing changes = more than 3 flashes
-    if area > worst:
-        worst, worst_at = area, i
-print(f"frames: {len(files)}  worst 1-second window starts at frame {worst_at + 1} "
-      f"({(worst_at + 1) / fps:.2f} s): {100 * worst:.2f} % of the screen flashes more than 3 times")
-print("RESULT:", "PASS" if worst <= 0.02 else "CHECK" if worst <= 0.10 else "FAIL")
+
+def worst_flash_rate(seq):
+    """seq: (n, ...) transitions per frame pair. Returns the largest number of
+    flashes (opposing transition pairs) in any 1 s window, per window cell."""
+    seq = np.asarray(seq)
+    n = seq.shape[0]
+    last = np.zeros(seq.shape[1:], np.int8)
+    flash_at = np.zeros(seq.shape, np.uint8)
+    for i in range(n):
+        s = seq[i]
+        completes = (s != 0) & (last != 0) & (s != last)
+        flash_at[i] = completes
+        last = np.where(s != 0, s, last)
+    cs = np.concatenate([np.zeros((1,) + seq.shape[1:], np.int32), flash_at.cumsum(0, dtype=np.int32)])
+    best = 0
+    for i in range(0, max(1, n - fps + 1)):
+        best = max(best, int((cs[min(n, i + fps)] - cs[i]).max()))
+    return best
+
+
+wf = worst_flash_rate(trans_win)
+ff = worst_flash_rate(np.array(trans_full)[:, None])
+print(f"frames: {len(files)}")
+print(f"largest share of a 10-degree window changing together in one frame: {100 * worst_frac:.1f} % (flash needs 25 %)")
+print(f"most flashes in any 1 s, any 10-degree window (WCAG): {wf} (limit 3)")
+print(f"most flashes in any 1 s, whole screen (ITU-R BT.1702): {ff} (limit 3)")
+print("RESULT:", "PASS" if wf <= 3 and ff <= 3 else "FAIL")
