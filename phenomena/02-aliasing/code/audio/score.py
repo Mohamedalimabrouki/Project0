@@ -230,7 +230,8 @@ MOOD_ALIASES = {"engineering": "rule", "understand": "rule", "real": "world", "r
                 "closing": "outro", "intro": "hook", "opening": "title", "cold-open": "hook"}
 DEFAULT_MOOD = {"s01_hook": "hook", "s02_title": "title", "s03_snapshots": "explain", "s04_trick": "explain",
                 "s05_rule": "rule", "s06_helicopter_lathe": "world", "s07_sensors_strobe": "world",
-                "s08_takeaway": "outro"}
+                "s08_takeaway": "outro",
+                "short_hook": "hook", "short_trick": "explain", "short_end": "outro"}
 
 
 def resolve_mood(scene_id, tag, log):
@@ -252,9 +253,15 @@ def resolve_mood(scene_id, tag, log):
 
 
 # ---------------------------------------------------------------------------------------
-def build_score(scenes, log=print):
-    """Compose the whole film. `scenes` is the list from the timeline (id, t0, t1, music)."""
-    S = Score()
+def build_score(scenes, log=print, comp="main"):
+    """Compose the music of one composition ('main' = the 3-minute film, 'short' = the 45 s vertical cut).
+
+    `scenes` is the list from the timeline (id, t0, t1, music).
+    """
+    if comp == "short":
+        return build_score_short(scenes, log)
+    if comp != "main":
+        raise ValueError(f"unknown composition {comp!r}")
     by_id = {s["id"]: s for s in scenes}
 
     def t0_of(sid, default):

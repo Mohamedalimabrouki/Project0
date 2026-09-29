@@ -438,18 +438,26 @@ function drawAlias(ctx, t, a) {
   ctx.save();
   ctx.globalAlpha *= a;
   ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
-  const tip = tracePath(ctx, ALIAS_X, ALIAS_Y, k);
+  tracePath(ctx, ALIAS_X, ALIAS_Y, k);
   // a dark halo with the same dashes keeps the dashed wave readable over the thin one
   ctx.setLineDash([15, 10]);
   ctx.strokeStyle = rgba(PAL.ink, 0.75); ctx.lineWidth = 8; ctx.stroke();
   ctx.strokeStyle = PAL.field; ctx.lineWidth = 4.2; ctx.stroke();
   ctx.setLineDash([]);
-  // yellow marker at the drawing tip ("look here"), gone when the wave is complete
-  const m = (1 - P(t, K.alias[1], K.alias[1] + 0.35, EP.ease.inOutSine));
-  if (m > 0) {
-    ctx.fillStyle = rgba(PAL.ink, 0.8 * m); ctx.beginPath(); ctx.arc(tip[0], tip[1], 9.5, 0, TAU); ctx.fill();
-    ctx.fillStyle = rgba(PAL.highlight, m); ctx.beginPath(); ctx.arc(tip[0], tip[1], 6, 0, TAU); ctx.fill();
-  }
+  ctx.restore();
+}
+
+/** Yellow marker at the drawing tip of the alias ("look here"); on top of the dots, gone when the wave is complete. */
+function drawPen(ctx, t, a) {
+  const { PAL, rgba } = EP;
+  const k = P(t, K.alias[0], K.alias[1], EP.ease.inOutSine);
+  const m = (1 - P(t, K.alias[1], K.alias[1] + 0.35, EP.ease.inOutSine)) * a;
+  if (k <= 0 || m <= 0) return;
+  const f = k * N_ALIAS, i = Math.min(Math.floor(f), N_ALIAS - 1), r = f - i;
+  const tx = ALIAS_X[i] + (ALIAS_X[i + 1] - ALIAS_X[i]) * r, ty = ALIAS_Y[i] + (ALIAS_Y[i + 1] - ALIAS_Y[i]) * r;
+  ctx.save();
+  ctx.fillStyle = rgba(PAL.ink, 0.8 * m); ctx.beginPath(); ctx.arc(tx, ty, 9.5, 0, TAU); ctx.fill();
+  ctx.fillStyle = rgba(PAL.highlight, m); ctx.beginPath(); ctx.arc(tx, ty, 6, 0, TAU); ctx.fill();
   ctx.restore();
 }
 
@@ -469,7 +477,7 @@ function drawDots(ctx, t, a) {
       ctx.strokeStyle = rgba(PAL.paper, 0.55 * (1 - ping)); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(d.x, d.y, 7 + 15 * ping, 0, TAU); ctx.stroke();
     }
-    ctx.fillStyle = PAL.ink; ctx.beginPath(); ctx.arc(d.x, d.y, r + 2.6, 0, TAU); ctx.fill();
+    ctx.fillStyle = PAL.ink; ctx.beginPath(); ctx.arc(d.x, d.y, r + 2.6 * clamp(q * 4), 0, TAU); ctx.fill();   // halo grows with the dot
     ctx.fillStyle = PAL.paper; ctx.beginPath(); ctx.arc(d.x, d.y, r, 0, TAU); ctx.fill();
   }
   ctx.restore();
@@ -899,6 +907,7 @@ export default {
       drawReal(ctx, t, aP1, dim);
       drawAlias(ctx, t, aP1);
       drawDots(ctx, t, aP1);
+      drawPen(ctx, t, aP1);
       // legend: real, samples, seen
       const item = (t0, str, kind, x, y, w, extra = 1) => legendItem(ctx, { x, y, w, str, kind, a: P(t, t0, t0 + 0.4) * aP1 * extra, k: P(t, t0, t0 + 0.5) });
       const mir = (x, w) => (EP.isRTL() ? PL.x0 + PL.x1 - (x + w) : x);   // text hugs the reading-start side

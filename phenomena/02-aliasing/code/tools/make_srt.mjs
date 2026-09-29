@@ -20,20 +20,32 @@
  *
  *     node tools/make_srt.mjs --refresh
  *
+ * The Short (9:16) has its own captions and timing:
+ *
+ *     node tools/make_srt.mjs short --refresh
+ *
+ * reads build/short_timeline.json and writes ../subtitles/02-aliasing_9x16_en.srt, _fr.srt, _ar.srt
+ *
+ * Usage:  node tools/make_srt.mjs [main|short] [options]
+ *
  * Options
- *   --refresh        first rebuild build/main_timeline.json with render.mjs
- *   --comp <name>    composition to read (default main). Any other name adds it to the
- *                    file names, e.g. --comp short writes 02-aliasing_short_en.srt
+ *   --refresh        first rebuild build/<comp>_timeline.json with render.mjs
+ *   --comp <name>    same as the positional composition name (default main)
  *   --langs en,fr,ar languages to write (default all three)
  *   --out <dir>      folder for the .srt files (default ../subtitles)
  *   --width <n>      target line length in characters (default 42)
  *   --quiet          only print problems
  *
+ * File names: main -> 02-aliasing_<lang>.srt, short -> 02-aliasing_9x16_<lang>.srt,
+ * any other composition -> 02-aliasing_<comp>_<lang>.srt
+ *
  * Rules (the same for every language)
  *   - the text of a caption comes from the string table (data/strings/*.json), for the
  *     language; if it is empty the English text is used and a warning is printed
  *   - at most 2 lines per subtitle, about 42 characters per line, balanced, broken after
- *     punctuation when possible; a no-break space (U+00A0) is never a place to break
+ *     punctuation when possible. A typographic no-break space (after a digit, before
+ *     : ; ! ? ») is never a place to break; the extra no-break spaces that only steer the
+ *     layout of the big burned-in captions become plain spaces in the .srt
  *   - Arabic: every line starts with U+200F (right-to-left mark), so players show the
  *     line right to left even when it starts with a number or a Latin word
  *   - UTF-8 without BOM, LF line ends everywhere
@@ -61,6 +73,7 @@ function parseArgs(argv) {
     else if (a === '--langs') o.langs = String(argv[++i]).split(',').map(s => s.trim()).filter(Boolean);
     else if (a === '--out') o.out = path.resolve(argv[++i]);
     else if (a === '--width') o.width = Number(argv[++i]);
+    else if (!a.startsWith('-')) o.comp = a;                // positional: the composition
     else { console.error(`unknown option ${a}`); process.exit(2); }
   }
   return o;
@@ -217,7 +230,8 @@ if (!captions.length) {
   process.exit(0);
 }
 fs.mkdirSync(opt.out, { recursive: true });
-const suffix = opt.comp === 'main' ? '' : `_${opt.comp}`;
+const SUFFIX = { main: '', short: '_9x16' };
+const suffix = opt.comp in SUFFIX ? SUFFIX[opt.comp] : `_${opt.comp}`;
 let failed = false;
 for (const lang of opt.langs) {
   const { cues, warnings, srt } = build(lang);

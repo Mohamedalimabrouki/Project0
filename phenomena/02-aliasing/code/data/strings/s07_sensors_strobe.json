@@ -11,8 +11,8 @@
   },
   "s07.c3": {
     "en": "So engineers filter out what is too fast, then sample more than twice as fast.",
-    "fr": "On filtre donc ce qui est trop rapide, puis\u00a0on\u00a0échantillonne\u00a0plus\u00a0de\u00a0deux\u00a0fois\u00a0plus\u00a0vite.",
-    "ar": "لذلك يرشّح المهندسون ما هو سريع جدًا، ثم يأخذون العينات بأكثر\u00a0من\u00a0ضعف\u00a0السرعة."
+    "fr": "On filtre donc ce qui est trop rapide, puis\u00a0on\u00a0échantillonne\u00a0bien\u00a0plus\u00a0de\u00a0deux\u00a0fois\u00a0plus\u00a0vite.",
+    "ar": "لذلك يرشّح المهندسون ما هو سريع جدًا، ثم يأخذون العينات بأكثر\u00a0من\u00a0ضعف\u00a0السرعة\u00a0بكثير."
   },
   "s07.c4": {
     "en": "And a strobe light uses aliasing on purpose, to freeze fast machines for inspection.",

@@ -11,8 +11,8 @@
   },
   "s03.c3": {
     "en": "Between two pictures, the camera sees nothing at all.",
-    "fr": "Entre deux images, la caméra ne voit rien du tout.",
-    "ar": "بين صورتين، لا ترى الكاميرا شيئًا على الإطلاق."
+    "fr": "Entre deux images, rien n’est enregistré.",
+    "ar": "بين صورتين، لا يُسجَّل شيء."
   },
   "s03.c4": {
     "en": "Your brain joins the pictures together...",
@@ -21,8 +21,8 @@
   },
   "s03.c5": {
     "en": "...by linking each spoke to the closest spoke in the next picture.",
-    "fr": "…en reliant chaque rayon au rayon le plus proche dans\u00a0l’image\u00a0suivante.",
-    "ar": "…وذلك بوصل كل شعاع بأقرب شعاع إليه في الصورة التالية."
+    "fr": "…d’habitude en reliant chaque rayon au rayon le plus proche dans\u00a0l’image\u00a0suivante.",
+    "ar": "…وذلك غالبًا بوصل كل شعاع بأقرب شعاع إليه في الصورة التالية."
   },
   "s03.second": {
     "en": "1 second",

@@ -11,8 +11,8 @@
   },
   "s05.c3": {
     "en": "Up to 15 per second, the video tells the truth. Faster than that, the motion is disguised.",
-    "fr": "Jusqu’à 15\u00a0par seconde, la vidéo dit la vérité. Au-delà,\u00a0le\u00a0mouvement\u00a0est\u00a0déguisé.",
-    "ar": "حتى 15 مرة في الثانية، يقول الفيديو الحقيقة. أما فوق ذلك، فتتنكّر الحركة."
+    "fr": "En dessous de 15\u00a0par seconde, la vidéo dit la vérité. Au-delà,\u00a0le\u00a0mouvement\u00a0est\u00a0déguisé.",
+    "ar": "أقل من 15 مرة في الثانية، يقول الفيديو الحقيقة. أما فوق ذلك، فتتنكّر الحركة."
   },
   "s05.c4": {
     "en": "At exactly 30 or 60 per second the wheel looks frozen. Just below, it looks backwards.",
@@ -21,8 +21,8 @@
   },
   "s05.c5": {
     "en": "The rule: take samples more than twice as fast as the fastest change you want to see.",
-    "fr": "La règle\u00a0: échantillonnez plus de deux fois plus vite que\u00a0le\u00a0changement le plus rapide à observer.",
-    "ar": "القاعدة: أخذ العينات بسرعة تفوق ضعف سرعة أسرع تغيّر تريد رؤيته."
+    "fr": "La règle\u00a0: échantillonnez plus de deux fois plus vite que\u00a0la\u00a0variation la plus rapide.",
+    "ar": "القاعدة: أخذ العينات بسرعة تفوق ضعف سرعة أسرع تغيّر."
   },
   "s05.c6": {
     "en": "Engineers call it the Nyquist-Shannon sampling theorem.",

@@ -16,8 +16,8 @@
   },
   "s06.c4": {
     "en": "A spinning lathe can look stopped. That is why workshop lights must not flicker.",
-    "fr": "Un tour en marche peut sembler arrêté. L’éclairage d’atelier ne doit donc pas scintiller.",
-    "ar": "قد تبدو المخرطة الدوّارة متوقفة. لهذا يجب ألا تومض أضواء الورشة."
+    "fr": "Un tour en marche peut sembler arrêté. L’éclairage d’atelier ne devrait donc pas scintiller.",
+    "ar": "قد تبدو المخرطة الدوّارة متوقفة. لهذا ينبغي ألا تومض أضواء الورشة."
   },
   "s06.blades": {
     "en": "5 blades × 6 turns per second = 30 blade passes per second",
@@ -36,8 +36,8 @@
   },
   "s06.flicker": {
     "en": "Light flickers 100 times per second (twice the 50 Hz mains)",
-    "fr": "Scintillement\u00a0: 100\u00a0fois par seconde (le double des 50\u00a0Hz du secteur)",
-    "ar": "الضوء يومض 100 مرة في الثانية (ضعف تردد التيار الكهربائي \u200e50\u00a0Hz)"
+    "fr": "Cette lampe scintille 100\u00a0fois par seconde (le double des 50\u00a0Hz du secteur)",
+    "ar": "هذا المصباح يومض 100 مرة في الثانية (ضعف تردد التيار الكهربائي \u200e50\u00a0Hz)"
   },
   "s06.really": {
     "en": "What it really does",
@@ -48,5 +48,15 @@
     "en": "What the eye sees",
     "fr": "Ce que l’œil voit",
     "ar": "ما تراه العين"
+  },
+  "s06.marker": {
+    "en": "Marked blade: it jumps {n}° every picture",
+    "fr": "Pale marquée\u00a0: bond de\u00a0{n}° à chaque image",
+    "ar": "الشفرة ذات العلامة: تقفز {n}° في كل صورة"
+  },
+  "s06.steady": {
+    "en": "Steady light",
+    "fr": "Lumière fixe",
+    "ar": "إضاءة ثابتة"
   }
 }

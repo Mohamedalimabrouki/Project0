@@ -35,10 +35,10 @@ const GAP = 72;          // degrees between two neighbouring spokes
 const SPOKES = 5;
 
 // stage geometry (px). Caption band is y 64..260, bottom band starts at y 930.
-const CX = 960, CY = 606, R = 236;
-const R_REAL = R + 26;   // ring of the solid "real turn" arrow
-const R_SEEN = R + 54;   // ring of the dashed "what we see" arrow
-const R_LAB = R + 78;    // labels start outside this ring
+const CX = 960, CY = 606, R = 250;
+const R_REAL = R + 22;   // ring of the solid "real turn" arrow
+const R_SEEN = R + 60;   // ring of the dashed "what we see" arrow
+const R_LAB = R + 84;    // labels start outside this ring
 
 // ------------------------------------------------------------------ the runs
 // Step run: picture i shows spoke 0 at  base + delta * i  (degrees, unwrapped),
@@ -121,14 +121,14 @@ function arcPath(ctx, r, d0, d1) {
 // in English and French, right to left in Arabic; numbers stay left to right).
 //   { text, size, weight, color, latin }   { line: 'solid'|'dashed'|'thin', color }
 //   { check }   { gap: px }
-const ICON_W = 40, CHECK_W = 30;
+const ICON_W = 40, CHECK_W = 30;   // width of a line sample / a tick
 
 function measureRow(EP, ctx, items) {
   let w = 0;
   const out = items.map(it => {
     let iw;
     if (it.gap != null) iw = it.gap;
-    else if (it.line) iw = ICON_W;
+    else if (it.line || it.swatch) iw = ICON_W;
     else if (it.check) iw = CHECK_W;
     else iw = EP.measure(ctx, it.text, { size: it.size, weight: it.weight, latin: !!it.latin }).w;
     w += iw;
@@ -153,6 +153,13 @@ function drawRow(EP, ctx, row, x0, base, rtl, alpha) {
       if (it.line === 'dashed') ctx.setLineDash(it.lw ? [8, 6] : [9, 7]);
       ctx.beginPath(); ctx.moveTo(left + 3, base - 11); ctx.lineTo(left + ICON_W - 3, base - 11); ctx.stroke();
       ctx.restore();
+    } else if (it.swatch) {
+      ctx.save();
+      ctx.globalAlpha *= alpha;
+      ctx.fillStyle = EP.rgba(it.swatch, 0.75);
+      EP.roundRect(ctx, left + 3, base - 21, ICON_W - 6, 20, 3);
+      ctx.fill();
+      ctx.restore();
     } else if (it.check) {
       ctx.save();
       ctx.globalAlpha *= alpha;
@@ -175,7 +182,8 @@ function makeLabel(EP, ctx, spec) {
   const rtl = EP.isRTL();
   const paper = EP.rgba(PAL.paper, 0.94);
   const row1 = [];
-  if (spec.icon) row1.push({ line: spec.icon, color: spec.iconColor || PAL.motion }, { gap: 12 });
+  if (spec.icon === 'swatch') row1.push({ swatch: spec.iconColor || PAL.motion }, { gap: 12 });
+  else if (spec.icon) row1.push({ line: spec.icon, color: spec.iconColor || PAL.motion }, { gap: 12 });
   row1.push({ text: spec.title, size: 28, weight: 600, color: paper });
   if (spec.value != null) row1.push({ gap: 14 }, { text: spec.value, size: 40, weight: 800, color: spec.valueColor || PAL.motion, latin: true });
   if (spec.note) row1.push({ gap: 12 }, { text: spec.note, size: 26, weight: 500, color: PAL.steel });
@@ -266,19 +274,32 @@ function measureArc(EP, ctx, r, d0, d1, alpha, progress = 1, tick = 9) {
   if (progress >= 0.999) rayLine(ctx, d1, r - tick, r + tick);
   ctx.restore();
 }
-/** the "spoke landed short" mark on the tyre: a tiny arc between a new spoke and the old place of the next one */
-function shortMark(EP, ctx, deg, span, alpha) {
-  if (alpha <= 0) return;
-  const rb = R * 0.855;
+/** annular sector between two clock angles (used for the "what we see" wedge) */
+function sectorPath(ctx, r0, r1, d0, d1) {
+  ctx.beginPath();
+  ctx.arc(CX, CY, r1, d0 * DEG - Math.PI / 2, d1 * DEG - Math.PI / 2, d1 < d0);
+  ctx.arc(CX, CY, r0, d1 * DEG - Math.PI / 2, d0 * DEG - Math.PI / 2, d1 > d0);
+  ctx.closePath();
+}
+/**
+ * "Just short": the slivers left between each new spoke and the old place of the next one.
+ * Each ghost spoke is filled, then the new spokes are cut out of it, so only the sliver stays.
+ * alphas[j] fades sliver j in (sliver j is the ghost of spoke j+1, just clockwise of new spoke j).
+ */
+function slivers(EP, ctx, oldDeg, newDeg, alphas) {
+  const on = alphas.some(a => a > 0);
+  if (!on) return;
   ctx.save();
-  ctx.globalAlpha *= alpha;
-  ctx.strokeStyle = EP.PAL.paper;
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  arcPath(ctx, rb, deg, deg + span); ctx.stroke();
-  ctx.lineWidth = 2.4;
-  rayLine(ctx, deg, rb - 11, rb + 11);
-  rayLine(ctx, deg + span, rb - 11, rb + 11);
+  ctx.translate(CX, CY);
+  const cut = new Path2D();
+  cut.rect(-2000, -2000, 4000, 4000);
+  for (let i = 0; i < SPOKES; i++) cut.addPath(EP.spokePath(R, i, mod(newDeg, 360) * DEG, SPOKES));
+  ctx.clip(cut, 'evenodd');
+  for (let j = 0; j < SPOKES; j++) {
+    if (alphas[j] <= 0) continue;
+    ctx.fillStyle = EP.rgba(EP.PAL.motion, 0.8 * alphas[j]);
+    ctx.fill(EP.spokePath(R, (j + 1) % SPOKES, mod(oldDeg, 360) * DEG, SPOKES));
+  }
   ctx.restore();
 }
 
@@ -337,15 +358,27 @@ function stepOverlays(ctx, t, EP, m, paintA, panelBox) {
     if (n === 0) guide(EP, ctx, ga, PAL.highlight, 0.85 * gapA, [4, 6]);
   }
 
-  // ---- part B: every spoke lands just short of where its neighbour was
+  // ---- part B: every spoke lands just short of where its neighbour was (five slivers)
   let shortA = 0;
   if (fl.short) {
-    for (let j = 0; j < SPOKES; j++) shortMark(EP, ctx, mod(a1 + GAP * j, 360), GAP - real, ov * out(0, 0.10 + 0.08 * j, 0.30 + 0.08 * j));
+    const al = [];
+    for (let j = 0; j < SPOKES; j++) al.push(ov * out(0, 0.10 + 0.08 * j, 0.30 + 0.08 * j));   // clockwise, from the yellow spoke
+    slivers(EP, ctx, a0, a1, al);
     shortA = ov * out(0, 0.32, 0.55);
     ctx.save();
-    ctx.strokeStyle = EP.rgba(PAL.paper, 0.55 * shortA);
-    ctx.lineWidth = 1.8; ctx.lineCap = 'round';
-    rayLine(ctx, a1 + (GAP - real) / 2, R * 0.855 + 14, R_SEEN + 6);
+    ctx.strokeStyle = EP.rgba(PAL.paper, 0.5 * shortA);
+    ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    rayLine(ctx, a1 + (GAP - real) / 2, R * 0.665, R_SEEN + 8);
+    ctx.restore();
+  }
+  // ---- part B: the closest match is 6 degrees BEHIND: the sliver between the emphasised spoke and the old yellow place
+  if (a0 != null && fl.seen && Math.abs(seen) > 0.5 && Math.abs(seen - real) > 0.5) {
+    const wa = k * out(0, 0.30, 0.60);
+    slivers(EP, ctx, a0, a1, [0, 0, 0, 0, wa]);                       // ghost of spoke 0 = the old yellow place
+    ctx.save();
+    ctx.fillStyle = EP.rgba(PAL.motion, 0.3 * wa);
+    sectorPath(ctx, R * 0.665, R_SEEN + 4, mod(a0, 360) + seen, mod(a0, 360));
+    ctx.fill();
     ctx.restore();
   }
 
@@ -357,7 +390,7 @@ function stepOverlays(ctx, t, EP, m, paintA, panelBox) {
   if (a0 != null && fl.seen) {
     const pr = out(0, 0.34, 0.64);
     if (Math.abs(seen) > 0.5) {
-      EP.arcArrow(ctx, CX, CY, R_SEEN, a0w * DEG, (a0w + seen) * DEG, { kind: 'motion', dash: [9, 6], width: 5, headSize: 21, progress: pr, alpha: k });
+      EP.arcArrow(ctx, CX, CY, R_SEEN, a0w * DEG, (a0w + seen) * DEG, { kind: 'motion', dash: [9, 6], width: 5.5, headSize: Math.abs(seen) < 20 ? 17 : 21, progress: pr, alpha: k });
     } else {
       seenDot(ctx, EP, a0w, k * pr);                                              // an arrow of zero length
     }
@@ -369,7 +402,7 @@ function stepOverlays(ctx, t, EP, m, paintA, panelBox) {
   const L = {}, B = {}, A = {};
   if (fl.gap) { L.gap = makeLabel(EP, ctx, { ...paperLine, title: T('s04.gap'), value: deg(GAP) }); A.gap = gapA; }
   if (fl.real && a0 != null) { L.real = makeLabel(EP, ctx, { icon: 'solid', title: T('s04.real'), value: signed(EP, real) }); A.real = k * out(0, 0.22, 0.44); }
-  if (fl.short) { L.short = makeLabel(EP, ctx, { ...paperLine, title: T('s04.short'), value: deg(GAP - real) }); A.short = shortA; }
+  if (fl.short) { L.short = makeLabel(EP, ctx, { icon: 'swatch', iconColor: PAL.motion, title: T('s04.short'), value: deg(GAP - real), valueColor: PAL.paper }); A.short = shortA; }
   if (fl.seen && a0 != null) {
     L.seen = makeLabel(EP, ctx, { icon: 'dashed', title: T('s04.seen'), value: signed(EP, seen), verdict: T(verdictKey(seen)), check: m.part === 'A' });
     A.seen = k * out(0, 0.5, 0.72);
@@ -419,7 +452,7 @@ function fixedSeen(ctx, EP, delta, alpha, panelBox) {
   });
   const b = place(L.w, L.h, at + seen / 2, +1, [panelBox]);
   if (alpha > 0) {
-    if (Math.abs(seen) > 0.5) EP.arcArrow(ctx, CX, CY, R_SEEN, at * DEG, (at + seen) * DEG, { kind: 'motion', dash: [9, 6], width: 5, headSize: 21, alpha });
+    if (Math.abs(seen) > 0.5) EP.arcArrow(ctx, CX, CY, R_SEEN, at * DEG, (at + seen) * DEG, { kind: 'motion', dash: [9, 6], width: 5.5, headSize: Math.abs(seen) < 20 ? 17 : 21, alpha });
     else seenDot(ctx, EP, at, alpha);
     drawLabel(ctx, L, b, alpha);
   }
