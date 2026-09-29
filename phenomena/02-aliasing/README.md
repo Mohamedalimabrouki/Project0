@@ -4,7 +4,7 @@
 
 | Field | Status | Formats planned |
 |---|---|---|
-| Vibrations and waves · Mechatronics (sampling) | In production: script, storyboard, code engine done | Full 16:9 (EN, FR, AR), Hero still, Thumbnail |
+| Vibrations and waves · Mechatronics (sampling) | Finished: all finals exported | Full 16:9 and Short 9:16 in EN, FR, AR; hero still; thumbnail; subtitles |
 
 This piece is made **entirely with code**: every frame is drawn by a small program from the equations (see [`code/`](code/)). Nothing is animated by eye. That matters here more than anywhere, because a video is itself a sampling machine: when the film shows a wheel turning at 5.5 turns per second, your own screen shows it creeping backwards. The demonstrations are real, not simulated.
 
@@ -111,12 +111,12 @@ Neighbouring scenes cross-fade over 0.5 s.
 - [x] Explanation fact-checked (see `sources/README.md`)
 - [x] Storyboard done
 - [x] Code engine built (replaces the Blender scene for this piece)
-- [ ] Scenes built
-- [ ] Renders done
-- [ ] Edit and sound done
-- [ ] Subtitles: EN / FR / AR
-- [ ] Finals exported to `video/` and `renders/`
-- [ ] Main README status updated
+- [x] Scenes built (8 scenes, plus 3 for the Short and 2 stills)
+- [x] Renders done (every frame drawn by code; flash check passed on all six videos)
+- [x] Edit and sound done (synthesised score and effects, −14.0 LUFS, true peak −1.5 dBTP)
+- [x] Subtitles: EN / FR / AR (film and Short)
+- [x] Finals exported to `video/` and `renders/`
+- [x] Main README status updated
 
 ## Sources
 
@@ -136,6 +136,6 @@ Sources 8 to 35 (Nyquist 1928, anti-aliasing practice, apparent motion, lamp fli
 |---|---|
 | `code/` | The program that draws every frame, the scenes, the sound and the subtitle tools. How to render: `code/README.md` |
 | `renders/` | `02-aliasing_hero.png`, `02-aliasing_thumb.png` |
-| `video/` | `02-aliasing_16x9_en.mp4`, `02-aliasing_16x9_fr.mp4`, `02-aliasing_16x9_ar.mp4` |
-| `subtitles/` | `02-aliasing_en.srt`, `02-aliasing_fr.srt`, `02-aliasing_ar.srt` |
+| `video/` | Full film `02-aliasing_16x9_en.mp4`, `_fr`, `_ar` (3:00); Short `02-aliasing_9x16_en.mp4`, `_fr`, `_ar` (0:45); publishing kit `PUBLISHING.md` |
+| `subtitles/` | `02-aliasing_en.srt`, `_fr.srt`, `_ar.srt` (film); `02-aliasing_9x16_en.srt`, `_fr.srt`, `_ar.srt` (Short) |
 | `sources/` | References and notes |

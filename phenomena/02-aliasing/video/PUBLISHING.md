@@ -13,8 +13,9 @@ Everything needed to upload the finals. Upload the language version that matches
 | `../renders/02-aliasing_thumb.png` | YouTube thumbnail (1280 × 720) |
 | `../renders/02-aliasing_hero.png` | Poster, post image (3840 × 2160) |
 | `../subtitles/02-aliasing_en.srt` (and `_fr`, `_ar`) | Subtitles of the full video |
+| `../subtitles/02-aliasing_9x16_en.srt` (and `_fr`, `_ar`) | Subtitles of the Short |
 
-Technical: H.264 High profile, 1920 × 1080, 30 fps, BT.709, AAC 320 kbit/s 48 kHz, loudness about −14 LUFS (streaming target).
+Technical: H.264 High profile, 30 fps, BT.709 (film 1920 × 1080, Short 1080 × 1920), AAC 320 kbit/s 48 kHz. Measured on the final files: −14.0 LUFS integrated, true peak −1.5 dBTP (the streaming target).
 
 ## Title
 
