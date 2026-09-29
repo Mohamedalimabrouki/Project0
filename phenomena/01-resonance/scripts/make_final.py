@@ -18,15 +18,38 @@ PIECE = os.path.abspath(os.path.join(HERE, ".."))
 BUILD = tl.BUILD
 
 
+FPS = 30
+
+
+def chunk_plan(chunks):
+    """Each chunk is named after its first frame. Check that they cover every frame exactly once
+    and that each file really holds that many frames, so the join can never drop or overlap any."""
+    n_frames = int(round(tl.total_duration() * FPS))
+    starts = [int(os.path.basename(c)[6:11]) for c in chunks]
+    ends = starts[1:] + [n_frames]
+    if starts[0] != 0 or any(b <= a for a, b in zip(starts, ends)):
+        raise SystemExit(f"picture chunks do not cover frames 0-{n_frames}: {starts}")
+    plan = []
+    for c, a, b in zip(chunks, starts, ends):
+        got = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", c],
+                                   capture_output=True, text=True, check=True).stdout)
+        if abs(got - (b - a) / FPS) > 1.5 / FPS:
+            raise SystemExit(f"{os.path.basename(c)} lasts {got:.2f} s but should hold frames {a}-{b} "
+                             f"({(b - a) / FPS:.2f} s): re-render it with render_video.py video {a} {b}")
+        plan.append((c, b - a))
+    return plan
+
+
 def main():
     chunks = sorted(glob.glob(os.path.join(BUILD, "video_chunks", "chunk_*.mkv")))
     if not chunks:
         raise SystemExit("no picture chunks: run render_video.py video first")
     out = os.path.join(PIECE, "video", "01-resonance_16x9_en.mp4")
     lst = os.path.join(BUILD, "chunks.txt")
+    plan = chunk_plan(chunks)
     with open(lst, "w") as f:
-        for c in chunks:
-            f.write(f"file '{c}'\n")
+        for c, n in plan:
+            f.write(f"file '{c}'\nduration {n / FPS:.6f}\n")
     subs = [("en", "English"), ("fr", "Français"), ("ar", "العربية")]
     # chapters (shown by most players, and listed for YouTube in video/01-resonance_youtube.txt)
     S = tl.scenes()
@@ -65,7 +88,9 @@ def main():
             "-metadata", "title=Engineering Phenomena 01 - Resonance",
             "-metadata", "artist=Engineering Phenomena",
             "-metadata", "comment=Why tiny pushes make huge movements. Physics computed, not animated by eye.",
-            "-movflags", "+faststart", "-shortest", out]
+            # stop at the picture's exact length: "-shortest" would also count the subtitle tracks,
+            # which end with the last spoken line and so would cut off the closing music and end card
+            "-movflags", "+faststart", "-t", f"{sum(n for _, n in plan) / FPS:.3f}", out]
     subprocess.run(cmd, check=True)
     print("final:", out, f"{os.path.getsize(out) / 1e6:.1f} MB")
     # a ready-to-paste YouTube description with the chapters

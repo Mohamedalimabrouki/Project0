@@ -4,9 +4,11 @@
 
 | Field | Status | Formats planned |
 |---|---|---|
-| Vibrations | Video v1 in production (16:9, 2 min 58 s): everything built, final 3D renders running | Full 16:9, Short 9:16, Hero still |
+| Vibrations | Video v1 done (16:9, 2 min 58 s), hero still and thumbnail done | Full 16:9, Short 9:16, Hero still |
 
-**Watch:** [`video/01-resonance_16x9_en.mp4`](video/01-resonance_16x9_en.mp4). The file has three subtitle tracks (English, French, Arabic) that you can switch on in any player; the same subtitles are also in [`subtitles/`](subtitles/) as `.srt` files for YouTube, and [`video/01-resonance_youtube.txt`](video/01-resonance_youtube.txt) is a ready-to-paste description with chapters.
+**Watch online:** [Resonance watch page](https://claude.ai/artifact/31GxzS3ZE9nbHfE3jAPS91) (1080p, chapters, subtitles; private until you share it from the page's Share menu).
+
+**Video file:** [`video/01-resonance_16x9_en.mp4`](video/01-resonance_16x9_en.mp4). The file has three subtitle tracks (English, French, Arabic) that you can switch on in any player; the same subtitles are also in [`subtitles/`](subtitles/) as `.srt` files for YouTube, and [`video/01-resonance_youtube.txt`](video/01-resonance_youtube.txt) is a ready-to-paste description with chapters.
 
 > The video and the Blender files are big files, stored with Git LFS. This version was made in a cloud session that could not reach GitHub's LFS server, so they were delivered directly instead: see [Adding the big files](#adding-the-big-files).
 
@@ -148,10 +150,10 @@ Copy `01-resonance_16x9_en.mp4` into `video/` and the four `.blend` files into `
 - [x] Explanation fact-checked (sources below; figures corrected where needed)
 - [x] Storyboard done (as made, above)
 - [x] Blender scene built (`blender/`: swings, single swing, mass-spring, Taipei 101 damper)
-- [ ] Renders done (Cycles, 1920 × 1080, 30 fps): running
+- [x] Renders done (Cycles, 1920 × 1080, 30 fps; hero still 3840 × 2160)
 - [x] Edit and sound done (original music, synthesised effects, -14 LUFS)
 - [x] Subtitles: EN / FR / AR (Arabic draft: have a native speaker read it before publishing)
-- [ ] Finals exported to `video/` and `renders/`
+- [x] Finals exported to `video/` and `renders/` (the MP4 and `.blend` files wait for Git LFS, see [Adding the big files](#adding-the-big-files))
 - [x] Main README status updated
 
 ## Sources
@@ -184,5 +186,5 @@ Copy `01-resonance_16x9_en.mp4` into `video/` and the four `.blend` files into `
 | `video/` | `01-resonance_16x9_en.mp4` (1920 × 1080, 30 fps, H.264, AAC, subtitles EN / FR / AR) |
 | `subtitles/` | `01-resonance_en.srt`, `01-resonance_fr.srt`, `01-resonance_ar.srt` |
 | `scripts/` | Everything that builds the video (see the table above) |
-| `renders/` | Hero still and thumbnail (to do) |
+| `renders/` | `01-resonance_hero.png` (hero still, 3840 × 2160), `01-resonance_thumb.png` (thumbnail, 1280 × 720) |
 | `sources/` | References (links above) |

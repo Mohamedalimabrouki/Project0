@@ -21,7 +21,7 @@ The rule that makes it professional: **beautiful, but never wrong.** Every anima
 
 | # | Phenomenon | Field | Status |
 |---|---|---|---|
-| 01 | [Resonance](phenomena/01-resonance/) | Vibrations | Video v1 in production: script, physics, 3D scenes, graphics, sound and subtitles (EN / FR / AR) done; final renders running |
+| 01 | [Resonance](phenomena/01-resonance/) | Vibrations | Video v1 done (2 min 58 s, subtitles EN / FR / AR), hero still and thumbnail done; next: the 9:16 Short |
 
 The full list of planned subjects is in the [backlog](docs/BACKLOG.md).
 

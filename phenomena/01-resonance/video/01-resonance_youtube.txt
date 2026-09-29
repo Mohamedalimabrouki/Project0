@@ -1,0 +1,17 @@
+Resonance: why tiny pushes make huge movements | Engineering Phenomena 01
+
+Push something at its favourite rhythm, and tiny pushes make huge movements. Two swings, a steel mass on a spring, the London Millennium Bridge and the 660-tonne ball inside Taipei 101: every motion in this film is computed from the equations, not animated by eye.
+
+0:00 Two swings
+0:20 Resonance
+0:24 A natural rhythm
+0:36 The engineer's model
+0:50 Pushing at every rhythm
+1:23 Damping
+1:50 The Millennium Bridge
+2:24 Taipei 101
+2:47 The takeaway
+
+Subtitles: English, French, Arabic.
+Sources and the full engineering notes: phenomena/01-resonance/README.md in the project repository.
+Voice: Kokoro-82M (Apache 2.0). Music: original, played with the MuseScore General soundfont (MIT).
