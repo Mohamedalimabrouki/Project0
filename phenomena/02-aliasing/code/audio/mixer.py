@@ -245,6 +245,8 @@ def render_sfx(cues, S, log):
         mode, tgt = sfxlib.LEVELS[c.sfx]
         a = sfxlib.normalise_level(snd.audio, mode, tgt + c.gain)
         a = dsp.to_stereo(a, c.pan)
+        if snd.anchor == 0:
+            a = dsp.fade_edges(a, 0.0, min(0.006, 0.2 * a.shape[0] / SR))     # never end with a step
         # the moment of a swell (swoosh_rev, riser) is its end: it must land on t + dur
         start = idx(c.t) if snd.anchor == 0 else idx(c.t + (c.dur or snd.duration)) - snd.anchor
         dsp.place(dry, a, start)

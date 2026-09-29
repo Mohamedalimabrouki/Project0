@@ -1,6 +1,7 @@
 """The instruments of the underscore, each one a small synthesiser written from scratch.
 
-  pad     soft analogue-style pad: detuned band-limited saws, slow attack, wide stereo
+  pad     soft analogue-style pad: four detuned band-limited saws per voice, legato (each voice glides
+          to its next chord tone, so neighbouring notes never rub against each other), wide stereo
   pluck   marimba / kalimba-like pulse: a harmonic series whose upper partials die first
   bell    glassy bell for the motif: four harmonic partials, two detuned copies
   keys    warm electric-piano chords (2-operator FM with matching 1:1 ratio)

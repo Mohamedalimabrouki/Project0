@@ -1,23 +1,23 @@
 {
   "s07.c1": {
-    "en": "Machines sample the world too: their sensors are read many times per second.",
-    "fr": "Les machines échantillonnent aussi : leurs capteurs sont lus de nombreuses fois par seconde.",
-    "ar": "الآلات أيضًا تأخذ عينات من العالم: تُقرأ مستشعراتها مرات كثيرة في الثانية."
+    "en": "Machines sample too: their sensors are read many times per second.",
+    "fr": "Les machines aussi : leurs capteurs sont lus de nombreuses fois par seconde.",
+    "ar": "الآلات أيضًا تأخذ عينات: تُقرأ مستشعراتها مرات كثيرة في الثانية."
   },
   "s07.c2": {
-    "en": "A 900 Hz vibration read 1000 times per second looks like a slow 100 Hz wave.",
-    "fr": "Une vibration de 900 Hz lue 1000 fois par seconde ressemble à une onde lente de 100 Hz.",
-    "ar": "اهتزاز بتردد ‎900 Hz يُقرأ 1000 مرة في الثانية يبدو كموجة بطيئة ‎100 Hz."
+    "en": "A 900 Hz vibration read 1000 times per second looks like 100 Hz.",
+    "fr": "Une vibration de 900 Hz lue 1000 fois par seconde ressemble à du 100 Hz.",
+    "ar": "اهتزاز بتردد ‎900 Hz يُقرأ 1000 مرة في الثانية يبدو كأنه ‎100 Hz."
   },
   "s07.c3": {
-    "en": "So engineers filter out what is too fast, then sample well over twice as fast.",
-    "fr": "On filtre donc ce qui est trop rapide, puis on échantillonne bien plus de deux fois plus vite.",
-    "ar": "لذلك يرشّح المهندسون ما هو سريع جدًا، ثم يأخذون العينات بأكثر من ضعف السرعة بكثير."
+    "en": "The fix: filter out the fast part, then sample well over twice as fast.",
+    "fr": "La solution : filtrer d’abord, puis échantillonner à bien plus du double.",
+    "ar": "الحل: ترشيح الجزء السريع أولًا، ثم أخذ العينات بأكثر من ضعف السرعة بكثير."
   },
   "s07.c4": {
-    "en": "And a strobe light uses aliasing on purpose, to freeze fast machines for inspection.",
-    "fr": "Un stroboscope utilise exprès le repliement de spectre pour figer et inspecter les machines.",
-    "ar": "أما المصباح الوميضي فيستخدم التعرّج عمدًا لتجميد الآلات السريعة أثناء فحصها."
+    "en": "A strobe light uses aliasing on purpose, to inspect fast machines.",
+    "fr": "Le stroboscope exploite ce repliement pour inspecter les machines en marche.",
+    "ar": "أما المصباح الوميضي فيستخدم التعرّج عمدًا لفحص الآلات السريعة."
   },
   "s07.real": {
     "en": "Real vibration: 900 Hz",

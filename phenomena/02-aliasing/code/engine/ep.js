@@ -669,12 +669,21 @@ export function layer(ctx, alpha, x0, y0, w, h, draw) {
     return;
   }
   const pad = 2;
-  const dx = Math.floor(m.e + x0 * m.a) - pad, dy = Math.floor(m.f + y0 * m.d) - pad;
-  const pw = Math.ceil(m.e + (x0 + w) * m.a) + pad - dx, ph = Math.ceil(m.f + (y0 + h) * m.d) + pad - dy;
+  const cw = ctx.canvas.width, ch = ctx.canvas.height;
+  // only the visible part of the box, in device pixels
+  const dx = Math.max(0, Math.floor(m.e + x0 * m.a) - pad), dy = Math.max(0, Math.floor(m.f + y0 * m.d) - pad);
+  const pw = Math.min(cw, Math.ceil(m.e + (x0 + w) * m.a) + pad) - dx;
+  const ph = Math.min(ch, Math.ceil(m.f + (y0 + h) * m.d) + pad) - dy;
   if (pw <= 0 || ph <= 0) return;
+  // one scratch canvas per nesting level, as big as the frame from its first use:
+  // the same canvas size every time keeps the pixels identical in any frame order
   let c = _layers[_depth];
-  if (!c) c = _layers[_depth] = document.createElement('canvas');
-  if (c.width < pw || c.height < ph) { c.width = Math.max(c.width, pw); c.height = Math.max(c.height, ph); }
+  if (!c || c.width < cw || c.height < ch) {
+    const nw = Math.max(cw, c ? c.width : 0), nh = Math.max(ch, c ? c.height : 0);
+    c = _layers[_depth] = document.createElement('canvas');
+    c.width = nw;
+    c.height = nh;
+  }
   const g = c.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.globalAlpha = 1;

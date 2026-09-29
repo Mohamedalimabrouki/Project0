@@ -72,7 +72,21 @@ class Logger:
             self.warnings.append(msg)
 
 
+def timeline_is_stale(path: Path) -> bool:
+    """True if the timeline file is older than the scenes, strings or composition list it was made from."""
+    if not path.exists():
+        return True
+    newest = 0.0
+    for pattern in ("scenes/*.js", "data/comps.json", "data/strings/*.json"):
+        for f in CODE.glob(pattern):
+            newest = max(newest, f.stat().st_mtime)
+    return newest > path.stat().st_mtime
+
+
 def load_timeline(comp: str, path: Path, refresh: bool, log):
+    if not refresh and path.exists() and timeline_is_stale(path):
+        log("the timeline file is older than the scenes: refreshing it (the sound cues may have changed)")
+        refresh = True
     if refresh or not path.exists():
         cmd = ["node", "render.mjs", "--comp", comp, "--lang", "en", "--timeline"]
         log("running: " + " ".join(cmd))

@@ -49,27 +49,35 @@ def band_shares(x, sr=SR):
 
 
 def _run_ffmpeg(path):
+    """Loudness, loudness range and true peak as seen by ffmpeg (ebur128 filter and loudnorm filter)."""
     res = {}
     try:
-        r = subprocess.run(["ffmpeg", "-nostats", "-hide_banner", "-i", str(path), "-af", "ebur128=peak=true", "-f", "null", "-"],
-                           capture_output=True, text=True, timeout=300)
-        txt = r.stderr
-        tail = txt[txt.rfind("Summary:"):] if "Summary:" in txt else txt[-1500:]
-        m = re.search(r"I:\s+(-?[\d.]+) LUFS", tail)
+        for attempt in range(2):                     # one retry: a busy machine can make a run come back empty
+            r = subprocess.run(["ffmpeg", "-nostats", "-hide_banner", "-i", str(path), "-af", "ebur128=peak=true", "-f", "null", "-"],
+                               capture_output=True, text=True, timeout=600)
+            txt = r.stderr
+            tail = txt[txt.rfind("Summary:"):] if "Summary:" in txt else txt[-1500:]
+            m = re.search(r"I:\s+(-?[\d.]+) LUFS", tail)
+            if m:
+                break
         res["ebur128_integrated_lufs"] = float(m.group(1)) if m else None
         m = re.search(r"LRA:\s+(-?[\d.]+) LU", tail)
         res["ebur128_lra_lu"] = float(m.group(1)) if m else None
         m = re.search(r"True peak:\s*\n\s*Peak:\s+(-?[\d.]+) dBFS", tail)
         res["ebur128_true_peak_dbtp"] = float(m.group(1)) if m else None
+        if res["ebur128_integrated_lufs"] is None:
+            res["ffmpeg_stderr_tail"] = txt[-400:]
         r = subprocess.run(["ffmpeg", "-nostats", "-hide_banner", "-i", str(path), "-af",
                             "loudnorm=I=-14:TP=-1:LRA=11:print_format=json", "-f", "null", "-"],
-                           capture_output=True, text=True, timeout=300)
+                           capture_output=True, text=True, timeout=600)
         m = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", r.stderr, re.S)
         if m:
             j = json.loads(m.group(0))
             res["loudnorm_input_i"] = float(j["input_i"])
             res["loudnorm_input_tp"] = float(j["input_tp"])
             res["loudnorm_input_lra"] = float(j["input_lra"])
+        else:
+            res["loudnorm_stderr_tail"] = r.stderr[-400:]
     except Exception as e:                      # ffmpeg missing
         res["ffmpeg_error"] = str(e)
     return res
@@ -112,20 +120,22 @@ def spectrogram_png(x, path, t0=0.0, fmax=8000, nfft=4096, hop=1024, dyn=80, wid
 
 
 # ---------------------------------------------------------------------------- onsets
-def detect_onsets(x, lo, hi, smooth_ms=1.5, ratio=2.2, min_gap=0.03):
-    """Blind onset detector: times (s) where the level of a frequency band jumps to more than `ratio`
-    times its average of the previous 5 to 25 ms. It works well on noisy percussion (hats); for tonal
-    plucks a matched filter is used instead."""
-    from scipy import ndimage
+def detect_onsets(x, lo, hi, smooth_ms=1.5, ratio=2.0, min_gap=0.03):
+    """Blind onset detector: times (s) at which the level of a frequency band jumps to more than `ratio`
+    times its average over the previous 5 to 25 ms. The level is a trailing average of the rectified band
+    (so it cannot start rising before the sound does). Works well on isolated or noisy percussion."""
     y = dsp.bp(x, lo, hi, 2)
-    e = ndimage.uniform_filter1d(np.abs(y), max(1, int(smooth_ms * 1e-3 * SR)))
-    n = len(e)
-    cs = np.concatenate([[0.0], np.cumsum(e)])
+    a = np.abs(y)
+    n = len(a)
+    k = max(1, int(smooth_ms * 1e-3 * SR))
+    cs0 = np.concatenate([[0.0], np.cumsum(a)])
     i = np.arange(n)
-    a = np.clip(i - int(0.025 * SR), 0, n)
-    b = np.clip(i - int(0.005 * SR), 0, n)
-    mean = (cs[b] - cs[a]) / np.maximum(b - a, 1)
-    ok = (e > ratio * mean) & (e > 1.5 * np.percentile(e, 40))
+    e = (cs0[i + 1] - cs0[np.maximum(i + 1 - k, 0)]) / k
+    cs = np.concatenate([[0.0], np.cumsum(e)])
+    lo_i = np.clip(i - int(0.025 * SR), 0, n)
+    hi_i = np.clip(i - int(0.005 * SR), 0, n)
+    mean = (cs[hi_i] - cs[lo_i]) / np.maximum(hi_i - lo_i, 1)
+    ok = (e > ratio * mean) & (e > 1.5 * np.percentile(e, 40) + 1e-9)
     edge = np.where(ok & ~np.concatenate([[False], ok[:-1]]))[0]
     out, last = [], -10 ** 9
     for c in edge:
@@ -180,16 +190,16 @@ def onset_check(music, score, log):
     detail = {}
     every = sorted(t for t, k in score.marks)
     if score.hat:
-        _judge(detect_onsets(mono, 4500, 9500), [h["t"] for h in score.hat], detail, "hat, in the finished music.wav", every=every)
+        _judge(detect_onsets(mono, 4500, 9500, smooth_ms=1.5, ratio=2.2), [h["t"] for h in score.hat], detail, "hat, in the finished music.wav", every=every)
     kick, hat, rim = ins.render_drums(score.kick, [], score.rim, n)
     if score.kick:
-        _judge(detect_onsets(kick, 35, 250, smooth_ms=12.0, ratio=2.0), [k["t"] for k in score.kick], detail, "kick, dry track")
+        _judge(detect_onsets(kick, 35, 250, smooth_ms=4.0, ratio=2.0), [k["t"] for k in score.kick], detail, "kick, dry track")
     if score.rim:
-        _judge(detect_onsets(_mono(rim), 1200, 5000, smooth_ms=1.0), [r["t"] for r in score.rim], detail, "rim click, dry track")
+        _judge(detect_onsets(_mono(rim), 1200, 5000, smooth_ms=1.0, ratio=2.0), [r["t"] for r in score.rim], detail, "rim click, dry track")
     if score.pluck:
         pl = _mono(ins.render_pluck(score.pluck, n, score.bend))
         # the octave doublings and the pickup notes are separate notes on the same grid: judge all of them
-        _judge(detect_onsets(pl, 700, 6000, smooth_ms=1.5, ratio=1.8), sorted({round(e["t"], 6) for e in score.pluck}), detail, "pluck, dry track")
+        _judge(detect_onsets(pl, 700, 6000, smooth_ms=2.0, ratio=2.0), sorted({round(e["t"], 6) for e in score.pluck}), detail, "pluck, dry track")
     res["by_kind"] = detail
     starts = {}
     for sc in score.T_scenes:
@@ -297,16 +307,19 @@ def tuning_check(music, S):
     pad = ins.render_pad([dict(layer="main", voice=0, t0=0.0, t1=3.0, midi=69, db=0.0, att=0.5, rel=0.5)], int(3.6 * SR)).mean(axis=1)[int(1.0 * SR): int(2.6 * SR)]
     out["pad_A4_centroid_cents"] = cents(_centroid(pad, a4), a4)
     out["definition_A4_hz"] = float(dsp.midi_hz(69))
-    # a bass note inside the mix: the longest one with no other bass note and no tape bend near it
+    # a bass note inside the mix: one that lasts long enough, with no tape bend near it, and with no bass
+    # note of a different pitch sounding during the 1 s that is measured
     best = None
     for e in S.bass:
         dur = e["t1"] - e["t0"]
-        if dur < 1.4 or e["midi"] >= 45:
+        if dur < 1.4 or e["midi"] >= 45 or e["t0"] < 5.0:
             continue
-        clash = any(o is not e and abs(o["t0"] - e["t0"]) < dur + 0.3 for o in S.bass)
+        w0, w1 = e["t0"] + 0.3, e["t0"] + 1.3
+        other = any(o["midi"] != e["midi"] and o["t0"] < w1 + 0.2 and o["t1"] + o.get("rel", 0.12) > w0 - 0.2 for o in S.bass if o is not e)
         bent = S.bend is not None and S.bend.touches(e["t0"] - 0.5, e["t1"] + 0.5)
-        if not clash and not bent and e["t0"] > 5.0:
-            best = e if best is None or dur > best["t1"] - best["t0"] else best
+        if not other and not bent:
+            best = e
+            break
     if best is not None:
         f_ref = float(dsp.midi_hz(best["midi"]))
         seg = _mono(music)[dsp.idx(best["t0"] + 0.3): dsp.idx(best["t0"] + 1.3)]
@@ -321,23 +334,30 @@ def tuning_check(music, S):
 def harmony_audit(S):
     """Every pitched note in the score against the chord that is playing: no wrong notes."""
     from score import CH
-    extra = {2: (4, 7, 0), 10: (0,), 5: (7,), 0: (2,), 7: (9,)}   # tolerated colour tones: 9th, 11th and 7th over Dm
     counts = dict(total=0, chord_tone=0, colour_tone=0, outside=0)
     outside = []
     for kind, ev, key in (("pad", S.pad, "t0"), ("pluck", S.pluck, "t"), ("bell", S.bell, "t"), ("keys", S.keys, "t0"), ("bass", S.bass, "t0")):
         for e in ev:
             t = e[key]
-            c = CH[S.chord_at(t + (0.01 if kind in ("pad", "keys") else 0.0))]
+            name = S.chord_at(t + (0.01 if kind in ("pad", "keys") else 0.0))
+            c = CH[name]
             strict = {m % 12 for m in c["pad"]} | {m % 12 for m in c["pool"]} | {m % 12 for m in c["keys"]} | {c["bass"] % 12, c["root"]}
             pc = e["midi"] % 12
             counts["total"] += 1
             if pc in strict:
                 counts["chord_tone"] += 1
-            elif pc in extra.get(c["root"], ()):
+            elif S.allowed_pc(name, pc):
                 counts["colour_tone"] += 1
             else:
                 counts["outside"] += 1
-                outside.append((round(t, 3), kind, int(e["midi"]), S.chord_at(t)))
+                outside.append((round(t, 3), kind, int(e["midi"]), name))
+    # a bell must also stop before it can ring into a chord it does not belong to
+    ring = 0
+    for e in S.bell:
+        for a, b, name in S.chord_segs:
+            if e["t"] + 1e-6 < a < e["t"] + e["dur"] - 0.02 and not S.allowed_pc(name, e["midi"] % 12):
+                ring += 1
+    counts["bells_ringing_into_a_clashing_chord"] = ring
     counts["outside_list"] = outside[:12]
     return counts
 
@@ -383,7 +403,7 @@ def run_all(out_dir, S, timeline, cue_records, cues, info, log, plots=True, comp
     rep["loudness"] = dict(main_lufs=float(meter.integrated_loudness(main)), music_lufs=float(meter.integrated_loudness(music)),
                            sfx_lufs=float(meter.integrated_loudness(sfxs)))
     rep["true_peak_own_8x_dbtp"] = dict(main=dsp.true_peak_db(main), music=dsp.true_peak_db(music), sfx=dsp.true_peak_db(sfxs))
-    rep["ffmpeg"] = _run_ffmpeg(out_dir / "main.wav")
+    rep["ffmpeg"] = _run_ffmpeg(out_dir / fmain)
     # loudness through time (3 s windows, every 3 s) for the report
     track = []
     for t in range(0, int(FILM_S), 3):
@@ -480,7 +500,8 @@ def summarise(rep, log):
     t = rep["tuning"]
     log("tuning against A4 = 440 Hz (cents): " + ", ".join(f"{k.replace('_cents', '')} {v:+.2f}" for k, v in t.items() if k.endswith("cents")))
     h = rep["harmony_audit"]
-    log(f"harmony: {h['total']} pitched notes, {h['chord_tone']} chord tones, {h['colour_tone']} colour tones (9th), {h['outside']} outside the chord {h['outside_list']}")
+    log(f"harmony: {h['total']} pitched notes, {h['chord_tone']} chord tones, {h['colour_tone']} colour tones (9th, 11th, 7th), {h['outside']} outside the chord {h['outside_list']}; "
+        f"bells ringing into a clashing chord: {h['bells_ringing_into_a_clashing_chord']}")
     o = rep["music_onsets"]
     log(f"music onsets: {o['scheduled_events']} scheduled events, largest distance from the sixteenth grid {o['scheduled_max_off_grid_ms']:.3f} ms; "
         f"scenes off bar line: {o['scene_starts_max_off_bar_ms']:.3f} ms")
@@ -508,10 +529,8 @@ def summarise(rep, log):
 
 
 if __name__ == "__main__":
-    # stand-alone: re-measure the files that are already on disk (uses the score for the onset check)
-    import score as scorelib
-    code = HERE.parent
-    tl = json.load(open(code / "build" / "main_timeline.json"))
-    S = scorelib.build_score(tl["scenes"], print)
-    print("stand-alone verification is available through make_audio.py (it needs the cue bookkeeping); "
-          "run: python3 audio/make_audio.py")
+    # stand-alone: measure the .wav files already in build/audio/ (python3 audio/verify.py [--comp short])
+    import make_audio
+    if "--verify-only" not in sys.argv:
+        sys.argv.append("--verify-only")
+    make_audio.main()

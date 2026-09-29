@@ -64,44 +64,49 @@ def _true_peak_track(seg, os=8):
     return y[: (len(y) // os) * os].reshape(-1, os).max(axis=1)
 
 
-def limiter_gain(x, ceiling_db=CEILING_DB, half_width=2400, iterations=4, os=8):
-    """Gain curve (one value per sample) that keeps the true peak of x * gain under the ceiling.
+def limiter_gain(signals, gain, ceiling_db=CEILING_DB, half_width=2400, iterations=4, os=8):
+    """Gain curve (one value per sample) that keeps the true peak of every signal, multiplied by
+    `gain` and by this curve, under the ceiling.
 
-    Wherever the oversampled signal pokes above the ceiling, a smooth raised-cosine dip (50 ms each
-    side) is pressed into the gain, just deep enough. Elsewhere the gain is exactly 1.
+    `signals` is a list of (n, 2) arrays (here: the mix and its two stems, so that all three files stay
+    under the ceiling). Wherever an oversampled signal pokes above it, a smooth raised-cosine dip (50 ms
+    each side) is pressed into the gain, just deep enough. Elsewhere the gain is exactly 1.
     """
     ceil = 10 ** (ceiling_db / 20.0)
-    n = x.shape[0]
+    n = signals[0].shape[0]
     g = np.ones(n)
+    pk0 = np.maximum.reduce([np.max(np.abs(x), axis=1) for x in signals]) * gain
     win = 0.5 * (1.0 + np.cos(np.pi * np.arange(-half_width, half_width + 1) / half_width))
-    stats = dict(passes=0, dips=0, max_reduction_db=0.0)
+    stats = dict(passes=0, dips=0, max_reduction_db=0.0, events=[])
     for _ in range(iterations):
-        y = x * g[:, None]
-        pk = np.max(np.abs(y), axis=1)
+        pk = pk0 * g
         cand = np.where(pk > ceil * 0.70)[0]
         if len(cand) == 0:
             break
-        # group candidates into regions
         cuts = np.where(np.diff(cand) > 4096)[0]
         starts = np.r_[cand[0], cand[cuts + 1]]
         ends = np.r_[cand[cuts], cand[-1]]
         changed = False
         for a, b in zip(starts, ends):
             a0, b0 = max(0, a - 96), min(n, b + 97)
-            tp = _true_peak_track(y[a0:b0], os)[: b0 - a0]
+            seg = np.concatenate([x[a0:b0] * (gain * g[a0:b0])[:, None] for x in signals], axis=1)
+            tp = _true_peak_track(seg, os)[: b0 - a0]
             peaks, _ = signal.find_peaks(tp, height=ceil)
             for p in peaks:
                 need = ceil / tp[p]
                 c = a0 + p
                 lo, hi = max(0, c - half_width), min(n, c + half_width + 1)
                 dip = 1.0 - (1.0 - need * 0.9995) * win[lo - (c - half_width): hi - (c - half_width)]
-                g[lo:hi] = np.minimum(g[lo:hi], dip * (g[lo:hi] > 0))
+                g[lo:hi] = np.minimum(g[lo:hi], dip)
                 stats["dips"] += 1
-                stats["max_reduction_db"] = max(stats["max_reduction_db"], -20 * np.log10(need))
+                red = -20 * np.log10(need)
+                stats["max_reduction_db"] = max(stats["max_reduction_db"], red)
+                stats["events"].append((round(c / SR, 3), round(float(red), 2)))
                 changed = True
         stats["passes"] += 1
         if not changed:
             break
+    stats["events"] = sorted(stats["events"], key=lambda e: -e[1])[:12]
     return g, stats
 
 
@@ -118,9 +123,8 @@ def master(music, sfx, log, target=TARGET_LUFS, ceiling_db=CEILING_DB):
     info = dict(pre_lufs=float(lufs0), iterations=[])
     lim = np.ones(tot.shape[0])
     for it in range(8):
-        y = tot * g
-        lim, st = limiter_gain(y, ceiling_db)
-        z = y * lim[:, None]
+        lim, st = limiter_gain([tot, m, s], g, ceiling_db)
+        z = tot * g * lim[:, None]
         L = integrated_lufs(z)
         info["iterations"].append(dict(gain_db=float(20 * np.log10(g)), lufs=float(L), limiter=st))
         log(f"  master pass {it + 1}: gain {20 * np.log10(g):+.2f} dB -> {L:.2f} LUFS, limiter dips {st['dips']}, max reduction {st['max_reduction_db']:.2f} dB")
@@ -130,5 +134,7 @@ def master(music, sfx, log, target=TARGET_LUFS, ceiling_db=CEILING_DB):
         g *= 10 ** (err / 20.0)
     info["gain_db"] = float(20 * np.log10(g))
     info["limiter"] = st
+    if st["events"]:
+        log("  limiter: largest reductions (time s, dB): " + ", ".join(f"{t:g} s {r:.2f}" for t, r in st["events"][:6]))
     main = tot * g * lim[:, None]
     return main, m * g * lim[:, None], s * g * lim[:, None], info

@@ -415,6 +415,7 @@ def _title(S, t0, t1, en):
     segs = [(t0, t0 + 2.0, "F"), (t0 + 2.0, t0 + 4.0, "Dm"), (t0 + 4.0, t0 + 5.0, "Bb"), (t0 + 5.0, t1, "C")]
     S.harmony(segs, att=0.9, rel=2.2)
     S.bass_long(segs, sub=0.32)
+    S.add_kick(t0, -14.0)                                          # the build lands on the downbeat
     S.add_bell(t0 + 0.5, 77, -14.0, pan=0.0, dur=3.2)             # F5, on the beat where the swoosh lands
     S.motif(t0 + 1.0, "F", -12.5, dur_last=2.2)                    # C5 F5 A5 G5 F5
     S.add_pulse(t0 + 2.0, t0 + 4.0, step=BEAT)

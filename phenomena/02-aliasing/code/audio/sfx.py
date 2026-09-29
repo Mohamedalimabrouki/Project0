@@ -299,6 +299,7 @@ def hit(c: Cue, ctx):
     y = sub + body + air
     y = dsp.lp(y, 5000, 2)
     y[: nsamp(0.0015)] *= np.linspace(0, 1, nsamp(0.0015))
+    y[-nsamp(0.6):] *= ramp_down(nsamp(0.6))                # the tail dies away smoothly, never cut
     return _mono(y, send=0.30, kind="impulse", duration=3.0)
 
 
@@ -460,48 +461,65 @@ def car(c: Cue, ctx):
 
 
 def whirr(c: Cue, ctx):
-    """A spinning machine: filtered noise plus harmonics of the rotation rate."""
+    """A spinning machine: filtered noise plus harmonics of the rotation rate.
+
+    A wheel with five identical spokes repeats itself five times per turn, so its sound is periodic at
+    five times the rotation rate (the same "N times f_r" as in the film). The tone is therefore a comb of
+    lines spaced 5 x rate apart (plus a weaker comb at the rotation rate itself, for the small
+    differences between spokes), with random but fixed phases and a smooth spectral shape. No single
+    line stands out, so the whirr is a soft rough hum with no pitch of its own to clash with the music.
+    """
     dur = c.dur or DEFAULT_DUR["whirr"]
     n = nsamp(dur)
     t = np.arange(n) / SR
     r = float(c.rate) if c.rate else 5.0
     r_to = float(c.extra.get("rate_to", r))
     rr = r + (r_to - r) * np.clip(t / dur, 0, 1)
-    phase = np.cumsum(rr / SR)                              # turns
-    # bring the rate up by whole octaves until its harmonics sit in the audible band (90 - 180 Hz)
-    octs = int(max(0, np.ceil(np.log2(90.0 / max(r, 0.05)))))
-    mult = 2 ** octs
-    tone = np.zeros(n)
-    for k in range(1, 13):
-        fk = k * mult * rr
-        a = k ** -0.9 / np.sqrt(1.0 + (fk / 1500.0) ** 4)
-        tone += a * (fk < 0.45 * SR) * np.sin(dsp.TAU * k * mult * phase)
-    tone /= np.std(tone) + 1e-12
+    phase = np.cumsum(rr / SR)                               # turns
     rng = rng_for("whirr", c.index)
+    tone = np.zeros(n)
+    f0 = 300.0                                                # centre of the soft spectral hump
+    kmax = int(min(1500.0, 0.4 * SR) / max(r, 0.05) / 1.0)
+    kmax = min(kmax, 400)
+    for k in range(1, kmax + 1):
+        fk = k * rr                                           # harmonic k of the rotation rate
+        spoke = (k % 5 == 0)
+        w = (fk / f0) / (1.0 + (fk / f0) ** 2) ** 1.2         # hump: weak at very low pitch, gentle fall above
+        a_k = w * (1.0 if spoke else 0.28) * (fk < 1500.0)
+        if not np.any(a_k > 1e-4):
+            continue
+        tone += a_k * np.sin(dsp.TAU * k * phase + rng.uniform(0, dsp.TAU))
+    tone = dsp.hp(tone, 45, 2)
+    tone /= np.std(tone) + 1e-12
     nz = dsp.bp(dsp.pink(n, rng), 380, 1900, 2)
     nz /= np.std(nz) + 1e-12
-    # the rotation shows up as a gentle pulsing at the turning rate (and at 5x for five spokes)
-    pulse = 1.0 + 0.22 * np.cos(dsp.TAU * phase) + 0.07 * np.cos(dsp.TAU * 5 * phase + 0.6)
-    y = (0.95 * tone + 0.30 * nz) * pulse
+    # the rotation also shows up as a gentle pulsing at the turning rate (and at 5x for five spokes)
+    pulse = 1.0 + 0.20 * np.cos(dsp.TAU * phase) + 0.07 * np.cos(dsp.TAU * 5 * phase + 0.6)
+    y = (0.80 * tone + 0.42 * nz) * pulse
     y = dsp.hp(y, 45, 2) * _env_cos(n, 0.28, 0.40)
-    l = y + 0.10 * dsp.lp(dsp.pink(n, rng_for("whirr-l", c.index)), 1300, 2) * _env_cos(n, 0.28, 0.4)
-    rgt = y + 0.10 * dsp.lp(dsp.pink(n, rng_for("whirr-r", c.index)), 1300, 2) * _env_cos(n, 0.28, 0.4)
+    e = _env_cos(n, 0.28, 0.4)
+    l = y + 0.10 * dsp.lp(dsp.pink(n, rng_for("whirr-l", c.index)), 1300, 2) * e
+    rgt = y + 0.10 * dsp.lp(dsp.pink(n, rng_for("whirr-r", c.index)), 1300, 2) * e
     return _stereo(l, rgt, send=0.06, kind="bed", duration=dur)
 
 
 def rotor(c: Cue, ctx):
-    """Helicopter rotor chop: a train of low thumps and blade slaps at the blade-pass rate."""
+    """Helicopter rotor chop: a train of low thumps and blade slaps at the blade-pass rate.
+
+    Each pass is a short broad "thump" (a damped 150 Hz burst) plus a noisy slap. Everything under 100 Hz
+    is left out on purpose: the rate itself (30 passes per second) and its first harmonics would beat
+    with the bass notes of the music, and the chop is carried by 120 Hz upwards anyway.
+    """
     dur = c.dur or DEFAULT_DUR["rotor"]
     n = nsamp(dur)
     rate = float(c.rate) if c.rate else 30.0
     rng = rng_for("rotor", c.index)
-    klen = nsamp(0.16)
+    klen = nsamp(0.12)
     t = np.arange(klen) / SR
-    kern = (0.85 * np.sin(dsp.TAU * 80.0 * t) * np.exp(-t / 0.030)
-            + 0.55 * np.sin(dsp.TAU * 162.0 * t + 0.4) * np.exp(-t / 0.020)
-            + 0.34 * np.sin(dsp.TAU * 245.0 * t + 1.1) * np.exp(-t / 0.013))
-    slap = dsp.bp(rng.standard_normal(klen + 64), 240, 1500, 2)[64:]
-    kern += 0.62 * slap / (np.std(slap) + 1e-12) * np.exp(-t / 0.0070)
+    kern = (0.90 * np.sin(dsp.TAU * 150.0 * t + 0.3) * np.exp(-t / 0.011)
+            + 0.45 * np.sin(dsp.TAU * 310.0 * t + 1.0) * np.exp(-t / 0.008))
+    slap = dsp.bp(rng.standard_normal(klen + 64), 260, 1500, 2)[64:]
+    kern += 0.75 * slap / (np.std(slap) + 1e-12) * np.exp(-t / 0.0060)
     kern *= np.minimum(1.0, np.arange(klen) / (0.0012 * SR))          # soft attack
     train = np.zeros(n)
     k = 0
@@ -509,17 +527,16 @@ def rotor(c: Cue, ctx):
         i = int(round(k / rate * SR))
         if i >= n:
             break
-        turn = k / rate
-        train[i] += 1.0 + 0.10 * np.sin(dsp.TAU * turn * rate / 5.0)   # blade-to-blade variation
+        train[i] += 1.0 + 0.10 * np.sin(dsp.TAU * (k / rate) * rate / 5.0)   # blade-to-blade variation
         k += 1
     y = signal.fftconvolve(train, kern)[:n]
     # a soft rush of air under the chop, pulsing with it
-    wind = dsp.lp(dsp.pink(n, rng_for("rotor-wind", c.index)), 700, 2)
+    wind = dsp.bp(dsp.pink(n, rng_for("rotor-wind", c.index)), 110, 700, 2)
     wind /= np.std(wind) + 1e-12
     pulse = 0.65 + 0.35 * np.cos(dsp.TAU * rate * np.arange(n) / SR)
     y = y / (np.std(y) + 1e-12) + 0.28 * wind * pulse
     y = dsp.lp(y, 2000, 2)
-    y = dsp.hp(y, 28, 2) * _env_cos(n, 0.35, 0.50)
+    y = dsp.hp(y, 100, 4) * _env_cos(n, 0.35, 0.50)
     return _mono(y, send=0.08, kind="bed", duration=dur)
 
 
