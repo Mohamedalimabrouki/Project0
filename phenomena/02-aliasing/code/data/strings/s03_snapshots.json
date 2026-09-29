@@ -1,0 +1,37 @@
+{
+  "s03.c1": {
+    "en": "A video is not smooth motion.",
+    "fr": "",
+    "ar": ""
+  },
+  "s03.c2": {
+    "en": "It is a flip book: 30 still pictures every second.",
+    "fr": "",
+    "ar": ""
+  },
+  "s03.c3": {
+    "en": "Between two pictures, the camera sees nothing at all.",
+    "fr": "",
+    "ar": ""
+  },
+  "s03.c4": {
+    "en": "Your brain joins the pictures together...",
+    "fr": "",
+    "ar": ""
+  },
+  "s03.c5": {
+    "en": "...by linking each spoke to the closest spoke in the next picture.",
+    "fr": "",
+    "ar": ""
+  },
+  "s03.second": {
+    "en": "1 second",
+    "fr": "",
+    "ar": ""
+  },
+  "s03.unseen": {
+    "en": "Not recorded",
+    "fr": "",
+    "ar": ""
+  }
+}

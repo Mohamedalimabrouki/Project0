@@ -1,0 +1,67 @@
+{
+  "s04.c1": {
+    "en": "Let's slow it right down, and paint one spoke yellow.",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.c2": {
+    "en": "A small turn between pictures: it looks like it turns forwards. Correct!",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.c3": {
+    "en": "Now it turns almost one spoke gap between pictures.",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.c4": {
+    "en": "Every spoke lands just short of where the next one was...",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.c5": {
+    "en": "...so the closest match is backwards. The wheel seems to turn backwards!",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.c6": {
+    "en": "Turn exactly one gap per picture, and every picture looks the same.",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.c7": {
+    "en": "The wheel seems frozen, even though it is spinning fast.",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.real": {
+    "en": "Real turn",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.seen": {
+    "en": "What we see",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.gap": {
+    "en": "One spoke gap",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.forwards": {
+    "en": "Forwards",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.backwards": {
+    "en": "Backwards",
+    "fr": "",
+    "ar": ""
+  },
+  "s04.frozen": {
+    "en": "Frozen",
+    "fr": "",
+    "ar": ""
+  }
+}

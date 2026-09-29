@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="32" viewBox="0 0 300 32" role="img" aria-labelledby="t">
+  <title id="t">Engineering Phenomena - series mark</title>
+  <!-- Series mark: bottom-right corner of every piece, about 60 % opacity on the ink background.
+       The glyph is a resonance curve (damping ratio 0.12) with its peak marked in highlight yellow. -->
+  <path d="M0.00,17.44 L0.85,17.33 L1.70,17.21 L2.55,17.06 L3.40,16.88 L4.25,16.67 L5.10,16.43 L5.95,16.13 L6.80,15.78 L7.65,15.35 L8.50,14.84 L9.35,14.20 L10.20,13.41 L11.05,12.41 L11.90,11.15 L12.75,9.56 L13.60,7.62 L14.45,5.57 L15.30,4.16 L16.15,4.38 L17.00,6.25 L17.85,8.70 L18.70,10.94 L19.55,12.76 L20.40,14.17 L21.25,15.28 L22.10,16.15 L22.95,16.85 L23.80,17.42 L24.65,17.90 L25.50,18.29 L26.35,18.63 L27.20,18.92 L28.05,19.17 L28.90,19.38 L29.75,19.58 L30.60,19.74 L31.45,19.89 L32.30,20.03 L33.15,20.15 L34.00,20.26" fill="none" stroke="#F4F3EF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="15.63" cy="4" r="3" fill="#F0E442"/>
+  <text x="46" y="24" fill="#F4F3EF" font-family="Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="2.1">ENGINEERING PHENOMENA</text>
+</svg>

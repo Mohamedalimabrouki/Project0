@@ -1,0 +1,62 @@
+{
+  "s07.c1": {
+    "en": "Machines sample the world too: their sensors are read many times per second.",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.c2": {
+    "en": "A 900 Hz vibration read 1000 times per second looks like a slow 100 Hz wave.",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.c3": {
+    "en": "So engineers filter out what is too fast, then sample more than twice as fast.",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.c4": {
+    "en": "And a strobe light uses aliasing on purpose, to freeze fast machines for inspection.",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.real": {
+    "en": "Real vibration: 900 Hz",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.samples": {
+    "en": "Samples: 1000 per second",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.seen": {
+    "en": "What the controller sees: 100 Hz",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.sensor": {
+    "en": "Sensor",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.filter": {
+    "en": "Anti-aliasing filter",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.adc": {
+    "en": "Converter (ADC)",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.controller": {
+    "en": "Controller",
+    "fr": "",
+    "ar": ""
+  },
+  "s07.strobe": {
+    "en": "Strobe light",
+    "fr": "",
+    "ar": ""
+  }
+}

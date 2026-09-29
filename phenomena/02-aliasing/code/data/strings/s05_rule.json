@@ -1,0 +1,77 @@
+{
+  "s05.c1": {
+    "en": "Engineers call this aliasing: a fast motion that shows up under a false name, an alias.",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.c2": {
+    "en": "The camera takes 30 pictures per second. The spokes pass by f times per second.",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.c3": {
+    "en": "Up to 15 per second, the video tells the truth. Faster than that, the motion is disguised.",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.c4": {
+    "en": "At exactly 30 or 60 per second the wheel looks frozen. Just below, it looks backwards.",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.c5": {
+    "en": "The rule: take samples more than twice as fast as the fastest change you want to see.",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.c6": {
+    "en": "Engineers call it the Nyquist-Shannon sampling theorem.",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.axis_x": {
+    "en": "Real spoke frequency",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.axis_y": {
+    "en": "Frequency seen on video",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.truth": {
+    "en": "Truth",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.alias": {
+    "en": "Alias",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.nyquist": {
+    "en": "Nyquist limit",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.frozen": {
+    "en": "Frozen",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.backwards": {
+    "en": "Backwards",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.forwards": {
+    "en": "Forwards",
+    "fr": "",
+    "ar": ""
+  },
+  "s05.safe": {
+    "en": "The video tells the truth",
+    "fr": "",
+    "ar": ""
+  }
+}

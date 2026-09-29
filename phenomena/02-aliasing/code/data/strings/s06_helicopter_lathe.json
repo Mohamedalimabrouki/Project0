@@ -1,0 +1,52 @@
+{
+  "s06.c1": {
+    "en": "Helicopter blades can look frozen on video.",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.c2": {
+    "en": "Between two pictures, each blade moves exactly into the next blade's place.",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.c3": {
+    "en": "Flickering lights can play the same trick on machines.",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.c4": {
+    "en": "A spinning lathe can look stopped. That is why workshop lights must not flicker.",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.blades": {
+    "en": "5 blades × 6 turns per second = 30 blade passes per second",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.match": {
+    "en": "= 30 pictures per second",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.jaws": {
+    "en": "4 jaws × 25 turns per second = 100 passes per second",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.flicker": {
+    "en": "Light flickers 100 times per second (twice the 50 Hz mains)",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.really": {
+    "en": "What it really does",
+    "fr": "",
+    "ar": ""
+  },
+  "s06.eye": {
+    "en": "What the eye sees",
+    "fr": "",
+    "ar": ""
+  }
+}

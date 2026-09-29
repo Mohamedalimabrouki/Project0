@@ -1,0 +1,67 @@
+{
+  "chapter.see": {
+    "en": "See it",
+    "fr": "",
+    "ar": ""
+  },
+  "chapter.understand": {
+    "en": "Understand it",
+    "fr": "",
+    "ar": ""
+  },
+  "chapter.real": {
+    "en": "In the real world",
+    "fr": "",
+    "ar": ""
+  },
+  "badge.slowx": {
+    "en": "Slowed down ×{n}",
+    "fr": "",
+    "ar": ""
+  },
+  "badge.real": {
+    "en": "Real speed: 30 pictures per second",
+    "fr": "",
+    "ar": ""
+  },
+  "badge.simulated": {
+    "en": "Simulated view",
+    "fr": "",
+    "ar": ""
+  },
+  "badge.example": {
+    "en": "Example values",
+    "fr": "",
+    "ar": ""
+  },
+  "badge.notscale": {
+    "en": "Not to scale",
+    "fr": "",
+    "ar": ""
+  },
+  "unit.turns": {
+    "en": "turns per second",
+    "fr": "",
+    "ar": ""
+  },
+  "unit.pictures": {
+    "en": "pictures per second",
+    "fr": "",
+    "ar": ""
+  },
+  "word.picture": {
+    "en": "Picture {n}",
+    "fr": "",
+    "ar": ""
+  },
+  "brand.series": {
+    "en": "Engineering Phenomena",
+    "fr": "",
+    "ar": ""
+  },
+  "brand.episode": {
+    "en": "Episode 02",
+    "fr": "",
+    "ar": ""
+  }
+}

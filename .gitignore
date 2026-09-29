@@ -13,3 +13,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Code-rendered pieces: dependencies and build output (frames, intermediate audio)
+node_modules/
+phenomena/*/code/build/

@@ -1,0 +1,42 @@
+{
+  "s01.c1": {
+    "en": "This car is speeding up.",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.c2": {
+    "en": "Now watch the wheel.",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.c3": {
+    "en": "It seems to turn backwards!",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.c4": {
+    "en": "Now it seems to stand still.",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.c5": {
+    "en": "The car never slowed down. So what is going on?",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.speed": {
+    "en": "Speed",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.wheel": {
+    "en": "Real wheel speed",
+    "fr": "",
+    "ar": ""
+  },
+  "s01.fps": {
+    "en": "You are watching 30 pictures per second",
+    "fr": "",
+    "ar": ""
+  }
+}
