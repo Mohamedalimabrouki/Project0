@@ -149,8 +149,8 @@ const EQS = [
 const STEEL = '#8C96A0', YELLOW = '#F0E442';
 
 const CAPTIONS = [
-  { key: 's05.c1', in: 0.8, out: 6.4 },
-  { key: 's05.c2', in: 6.8, out: 12.8 },
+  { key: 's05.c1', in: 0.6, out: 6.6 },
+  { key: 's05.c2', in: 7.0, out: 12.8 },
   { key: 's05.c3', in: 13.2, out: 20.6 },
   { key: 's05.c4', in: 21.0, out: 28.4 },
   { key: 's05.c5', in: 28.8, out: 34.8 },
