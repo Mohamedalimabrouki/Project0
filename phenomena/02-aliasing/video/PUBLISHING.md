@@ -1,5 +1,7 @@
 # Publishing kit - 02 · Aliasing
 
+Watch everything first in the private [screening room](https://claude.ai/artifact/1xw1csgRjBgJTzGaF5U8VZ) (all versions, chapters, subtitles; only you can open it until you share it).
+
 Everything needed to upload the finals. Upload the language version that matches the channel or post, and add the other two subtitle files from `../subtitles/` as extra caption tracks.
 
 ## Files
@@ -16,6 +18,10 @@ Everything needed to upload the finals. Upload the language version that matches
 | `../subtitles/02-aliasing_9x16_en.srt` (and `_fr`, `_ar`) | Subtitles of the Short |
 
 Technical: H.264 High profile, 30 fps, BT.709 (film 1920 × 1080, Short 1080 × 1920), AAC 320 kbit/s 48 kHz. Measured on the final files: −14.0 LUFS integrated, true peak −1.5 dBTP (the streaming target).
+
+### Narrated versions
+
+Once the voice is recorded (see `../voice/README.md`), the same folder gets `02-aliasing_16x9_<lang>_narrated.mp4` and `02-aliasing_9x16_<lang>_narrated.mp4`, with `../subtitles/02-aliasing_narrated_<lang>.srt` and `02-aliasing_9x16_narrated_<lang>.srt`. Use the narrated film for YouTube (with its subtitles as caption tracks) and the narrated Short for Shorts, Reels and TikTok. Keep the music-only film for screens without sound (exhibitions, presentations).
 
 ## Title
 

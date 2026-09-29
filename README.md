@@ -22,7 +22,7 @@ The rule that makes it professional: **beautiful, but never wrong.** Every anima
 | # | Phenomenon | Field | Status |
 |---|---|---|---|
 | 01 | [Resonance](phenomena/01-resonance/) | Vibrations | Script written, storyboard drafted, art not started |
-| 02 | [Aliasing](phenomena/02-aliasing/) | Vibrations and waves · Mechatronics | Finished: full video (EN, FR, AR), Short (9:16), hero still, thumbnail, subtitles. Made entirely with code |
+| 02 | [Aliasing](phenomena/02-aliasing/) | Vibrations and waves · Mechatronics | Finished: full video (EN, FR, AR), Short (9:16), hero still, thumbnail, subtitles. Made entirely with code. [Screening room](https://claude.ai/artifact/1xw1csgRjBgJTzGaF5U8VZ) (private). Narration script ready to record |
 
 The full list of planned subjects is in the [backlog](docs/BACKLOG.md).
 

@@ -4,7 +4,9 @@
 
 | Field | Status | Formats planned |
 |---|---|---|
-| Vibrations and waves · Mechatronics (sampling) | Finished: all finals exported | Full 16:9 and Short 9:16 in EN, FR, AR; hero still; thumbnail; subtitles |
+| Vibrations and waves · Mechatronics (sampling) | Finished: all finals exported. Narration: script and finishing tools ready, recording to do | Full 16:9 and Short 9:16 in EN, FR, AR; hero still; thumbnail; subtitles; narrated versions once the voice is recorded |
+
+**Watch it:** the private [screening room](https://claude.ai/artifact/1xw1csgRjBgJTzGaF5U8VZ) (all three language versions, chapters, subtitles, the Short). Only you can open it until you share it from the page's Share menu.
 
 This piece is made **entirely with code**: every frame is drawn by a small program from the equations (see [`code/`](code/)). Nothing is animated by eye. That matters here more than anywhere, because a video is itself a sampling machine: when the film shows a wheel turning at 5.5 turns per second, your own screen shows it creeping backwards. The demonstrations are real, not simulated.
 
@@ -90,7 +92,7 @@ Exactly at *f*<sub>s</sub> = 2·*f*<sub>max</sub> the direction is ambiguous (th
 
 ## Storyboard
 
-30 fps, 1920 × 1080. Music at 120 beats per minute: every scene starts on a bar line. Narration is on-screen text in the caption band at the top (the bottom stays free for platform subtitles). Total 3:00.
+30 fps, 1920 × 1080. Music at 120 beats per minute: every scene starts on a bar line. Narration is on-screen text in the caption band at the top (the bottom stays free for platform subtitles). Total 3:00. The narrated version replaces the caption band with a recorded human voice saying the same lines (see [`voice/`](voice/)).
 
 | # | Scene | Time | What we see | What is said (on screen) | Duration |
 |---|---|---|---|---|---|
@@ -117,6 +119,8 @@ Neighbouring scenes cross-fade over 0.5 s.
 - [x] Subtitles: EN / FR / AR (film and Short)
 - [x] Finals exported to `video/` and `renders/`
 - [x] Main README status updated
+- [x] Narration script (EN / FR / AR) and automatic finishing ready (`voice/`, `code/audio/voice.py`)
+- [ ] Narration recorded in EN / FR / AR, narrated versions built
 
 ## Sources
 
@@ -139,3 +143,4 @@ Sources 8 to 35 (Nyquist 1928, anti-aliasing practice, apparent motion, lamp fli
 | `video/` | Full film `02-aliasing_16x9_en.mp4`, `_fr`, `_ar` (3:00); Short `02-aliasing_9x16_en.mp4`, `_fr`, `_ar` (0:45); publishing kit `PUBLISHING.md` |
 | `subtitles/` | `02-aliasing_en.srt`, `_fr.srt`, `_ar.srt` (film); `02-aliasing_9x16_en.srt`, `_fr.srt`, `_ar.srt` (Short) |
 | `sources/` | References and notes |
+| `voice/` | The narration: `SCRIPT.md` (the lines to read, in three languages), `README.md` (how to record), `script.json` (the source of the script) |

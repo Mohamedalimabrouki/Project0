@@ -1,0 +1,709 @@
+<title>Aliasing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..800;1,14..32,400..600&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+/* Layout: the series' screening room (same as 01 Resonance). The film first, its chapter strip as a ruler, the notes below in the two house layers; the whole page switches between the three language versions. */
+:root {
+  /* colour: the house palette (assets/palette/palette.json); each colour keeps its meaning */
+  --ink: #12161C;        /* house background */
+  --surface: #181D25;    /* ink, one step up, blue-biased */
+  --rule: rgba(140, 150, 160, 0.22);
+  --paper: #F4F3EF;      /* text on dark */
+  --steel: #8C96A0;      /* secondary text, structures */
+  --look: #F0E442;       /* highlight: look here */
+  --motion: #0072B2;     /* motion */
+  --balance: #009E73;    /* it works */
+  --black: #000000;      /* behind the video */
+  /* type: the house faces */
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --arabic: "IBM Plex Sans Arabic", "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif;
+  --t-xs: 0.75rem; --t-s: 0.875rem; --t-m: 1rem; --t-l: 1.25rem; --t-xl: 1.75rem;
+  --t-hero: clamp(3.25rem, 9vw, 6.5rem);
+  --gutter: clamp(16px, 4vw, 48px);
+  color-scheme: dark;
+}
+body { background: var(--ink); color: var(--paper); font-family: var(--sans); font-size: var(--t-m); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+[lang="ar"] { font-family: var(--arabic); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: var(--gutter); padding-block: clamp(20px, 4vw, 44px) 56px; display: grid; gap: clamp(28px, 4vw, 44px); }
+.eyebrow { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--look); margin: 0; font-family: var(--sans); }
+.muted { color: var(--steel); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.m { unicode-bidi: isolate; direction: ltr; white-space: nowrap; }
+.m i { font-style: italic; font-family: var(--sans); }
+
+/* title block */
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; }
+.head .name { display: grid; gap: 10px; min-width: 0; }
+h1 { font-size: var(--t-hero); font-weight: 800; font-variation-settings: "opsz" 32; letter-spacing: -0.035em; line-height: 0.92; }
+[lang="ar"] h1 { letter-spacing: 0; line-height: 1.15; }
+.tag { margin: 0; font-size: var(--t-xl); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+[lang="ar"] .tag { letter-spacing: 0; line-height: 1.45; }
+.tag span { display: block; }
+.tag .hi { color: var(--look); }
+.side { display: grid; gap: 14px; justify-items: end; min-width: 0; }
+[dir="rtl"] .side { justify-items: start; }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 18px; font-size: var(--t-s); color: var(--steel); font-variant-numeric: tabular-nums; }
+[dir="rtl"] .facts { justify-content: flex-start; }
+.facts b { color: var(--paper); font-weight: 600; }
+
+/* segmented controls: film version and subtitles */
+.seg-ctl { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg-ctl button { font: inherit; font-family: var(--sans); font-size: var(--t-s); color: var(--steel); background: transparent; border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.seg-ctl button:hover { color: var(--paper); }
+.seg-ctl button[aria-pressed="true"] { background: var(--paper); color: var(--ink); font-weight: 600; }
+.seg-ctl button:focus-visible { outline: 2px solid var(--look); outline-offset: 2px; }
+.seg-ctl [lang="ar"] { font-family: var(--arabic); }
+.ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ctl > span { font-size: var(--t-xs); letter-spacing: 0.16em; text-transform: uppercase; color: var(--steel); }
+[lang="ar"] .ctl > span { letter-spacing: 0; font-size: var(--t-s); }
+
+/* the screen */
+.screen { display: grid; gap: 14px; }
+.frame { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: var(--black); border-radius: 4px; overflow: hidden; box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--rule); }
+video { display: block; width: 100%; height: 100%; background: var(--black); }
+video::cue { font-family: "Inter", "IBM Plex Sans Arabic", system-ui, sans-serif; font-size: 0.9em; line-height: 1.35; color: var(--paper); background: rgba(18, 22, 28, 0.78); }
+.note { position: absolute; inset: auto 12px 12px 12px; margin: 0; padding: 10px 14px; background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; font-size: var(--t-s); }
+
+/* chapter strip: widths are the real chapter lengths (always left to right, like the film's time) */
+.strip { display: flex; gap: 3px; height: 34px; align-items: stretch; }
+.seg { position: relative; min-width: 6px; padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; align-items: flex-end; }
+.seg::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(140, 150, 160, 0.28); border-radius: 2px; transition: height 0.15s; }
+.seg i { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--paper); border-radius: 2px; transform-origin: left center; transform: scaleX(0); transition: height 0.15s; }
+.seg:hover::before, .seg:hover i, .seg:focus-visible::before, .seg:focus-visible i { height: 8px; }
+.seg.on i { background: var(--look); }
+.seg:focus-visible { outline: 2px solid var(--look); outline-offset: 3px; border-radius: 2px; }
+.seg span { position: absolute; left: 0; bottom: 12px; font-size: 11px; color: var(--steel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-variant-numeric: tabular-nums; }
+.seg.on span { color: var(--look); }
+[lang="ar"] .seg span { font-size: 12px; direction: rtl; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; }
+.now { font-size: var(--t-s); color: var(--steel); margin: 0; font-variant-numeric: tabular-nums; min-width: 0; }
+.now b { color: var(--paper); font-weight: 600; }
+
+/* section headings */
+.sect { display: grid; gap: 18px; }
+.sect-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; border-top: 1px solid var(--rule); padding-top: 18px; }
+h2 { font-size: var(--t-l); font-weight: 700; letter-spacing: -0.01em; }
+[lang="ar"] h2 { letter-spacing: 0; }
+
+/* chapters: eight, in film order */
+.chapters { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.chapters li { background: var(--ink); min-width: 0; }
+.chapters button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 3.2em minmax(0, 1fr); gap: 2px 12px; width: 100%; height: 100%; padding: 14px 16px; cursor: pointer; font-family: inherit; }
+.chapters button:hover { background: var(--surface); }
+.chapters button:focus-visible { outline: 2px solid var(--look); outline-offset: -2px; }
+.chapters time { font-family: var(--sans); font-size: var(--t-s); color: var(--steel); font-variant-numeric: tabular-nums; padding-top: 1px; direction: ltr; }
+.chapters b { font-weight: 600; }
+.chapters small { grid-column: 2; font-size: var(--t-s); color: var(--steel); line-height: 1.45; }
+.chapters .on time, .chapters .on b { color: var(--look); }
+
+/* the two layers */
+.layers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); }
+.layer { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.layer h3 { font-size: var(--t-xs); letter-spacing: 0.2em; text-transform: uppercase; color: var(--steel); font-weight: 600; }
+[lang="ar"] .layer h3 { letter-spacing: 0; font-size: var(--t-s); }
+.layer p { margin: 0; max-width: 62ch; }
+.lead { font-size: var(--t-l); line-height: 1.5; letter-spacing: -0.005em; }
+.eq { font-size: clamp(1.4rem, 3.2vw, 1.9rem); font-weight: 500; letter-spacing: 0.01em; padding: 16px 18px; background: var(--surface); border-radius: 4px; overflow-x: auto; white-space: nowrap; font-variation-settings: "opsz" 32; direction: ltr; text-align: left; font-family: var(--sans); }
+.eq i { font-style: italic; }
+[dir="rtl"] .eq { text-align: right; }
+.mo { color: var(--motion); }
+dl.rows { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 18px; font-size: var(--t-s); }
+dl.rows dt { color: var(--steel); }
+dl.rows dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; }
+dl.rows i { font-style: italic; }
+.key { color: var(--look); font-weight: 600; }
+
+/* the real cases */
+.cases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.case { background: var(--surface); border-radius: 4px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.case h3 { font-size: var(--t-l); font-weight: 700; }
+.case p { margin: 0; color: var(--steel); font-size: var(--t-s); }
+.fixed { color: var(--balance); font-weight: 600; }
+
+/* the Short */
+.short { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: clamp(20px, 3vw, 40px); align-items: center; }
+.frame.tall { aspect-ratio: 9 / 16; }
+.short-text { display: grid; gap: 12px; align-content: center; min-width: 0; }
+.short-text p { margin: 0; max-width: 52ch; }
+
+.body { display: grid; gap: inherit; }
+.body[hidden] { display: none; }
+
+footer { border-top: 1px solid var(--rule); padding-top: 18px; display: grid; gap: 6px; font-size: var(--t-s); color: var(--steel); }
+footer p { margin: 0; max-width: 80ch; }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.92em; direction: ltr; unicode-bidi: isolate; }
+
+@media (max-width: 960px) {
+  .chapters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .layers, .cases { grid-template-columns: minmax(0, 1fr); }
+  .short { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .short .frame { width: min(300px, 100%); }
+  .side { justify-items: start; }
+  .facts { justify-content: flex-start; }
+}
+@media (max-width: 560px) {
+  .chapters { grid-template-columns: minmax(0, 1fr); }
+  .seg span { display: none; }
+  .strip { height: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg::before, .seg i { transition: none; }
+}
+</style>
+
+<main class="wrap" id="app" lang="en" dir="ltr">
+  <header class="head">
+    <div class="name">
+      <p class="eyebrow" dir="ltr">Engineering Phenomena · 02</p>
+      <h1 data-t="title">Aliasing</h1>
+      <p class="tag" data-h="tag"><span>The car speeds up.</span><span class="hi">The wheel seems to go backwards.</span></p>
+    </div>
+    <div class="side">
+      <div class="ctl" role="group" aria-label="Language of the film">
+        <span data-t="versionLabel">Version</span>
+        <div class="seg-ctl" id="langs">
+          <button type="button" id="lang-en" data-lang="en" lang="en" aria-pressed="true">English</button>
+          <button type="button" id="lang-fr" data-lang="fr" lang="fr" aria-pressed="false">Français</button>
+          <button type="button" id="lang-ar" data-lang="ar" lang="ar" aria-pressed="false">العربية</button>
+        </div>
+      </div>
+      <ul class="facts" data-h="facts" aria-label="About this film"><li><b>3 min 00 s</b></li><li>1080p · 30 fps</li><li>Versions <b>EN FR AR</b></li><li>Every frame drawn from the equations</li></ul>
+    </div>
+  </header>
+
+  <section class="screen" aria-label="The film">
+    <div class="frame" dir="ltr">
+      <video id="film" controls playsinline preload="metadata" poster="hls/en/poster.jpg" aria-label="Aliasing, a film of 3 minutes"></video>
+      <p class="note" id="play-note" data-t="note" hidden>This browser could not stream the film here. Open this page in Chrome, Safari or Edge.</p>
+    </div>
+
+    <div class="strip" id="strip" dir="ltr" aria-label="Chapters, drawn to length">
+      <button class="seg" style="flex: 18" data-i="0"><i></i><span></span></button>
+      <button class="seg" style="flex: 6" data-i="1"><i></i><span></span></button>
+      <button class="seg" style="flex: 24" data-i="2"><i></i><span></span></button>
+      <button class="seg" style="flex: 38" data-i="3"><i></i><span></span></button>
+      <button class="seg" style="flex: 40" data-i="4"><i></i><span></span></button>
+      <button class="seg" style="flex: 22" data-i="5"><i></i><span></span></button>
+      <button class="seg" style="flex: 22" data-i="6"><i></i><span></span></button>
+      <button class="seg" style="flex: 10" data-i="7"><i></i><span></span></button>
+    </div>
+
+    <div class="controls">
+      <p class="now" id="now"><b>0:00</b> / 3:00</p>
+      <div class="ctl" role="group" aria-label="Subtitles">
+        <span data-t="subsLabel">Subtitles</span>
+        <div class="seg-ctl" id="subs">
+          <button type="button" id="sub-off" data-sub="" aria-pressed="true" data-t="off">Off</button>
+          <button type="button" id="sub-en" data-sub="en" lang="en" aria-pressed="false">English</button>
+          <button type="button" id="sub-fr" data-sub="fr" lang="fr" aria-pressed="false">Français</button>
+          <button type="button" id="sub-ar" data-sub="ar" lang="ar" aria-pressed="false">العربية</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== English ===================== -->
+  <div class="body" data-lang="en" lang="en">
+    <section class="sect" aria-labelledby="h-ch-en">
+      <div class="sect-h"><h2 id="h-ch-en">Chapters</h2><span class="muted">Tap one to jump there</span></div>
+      <ol class="chapters">
+        <li><button type="button" data-i="0"><time>0:00</time><b>Backwards?</b><small>A car speeds up to 47 km/h. Drawn at their true rate, its wheels seem to slow down, stop and even turn backwards.</small></button></li>
+        <li><button type="button" data-i="1"><time>0:18</time><b>Aliasing</b><small>Episode 02: why wheels seem to spin backwards on video.</small></button></li>
+        <li><button type="button" data-i="2"><time>0:24</time><b>A flip book</b><small>A video is 30 still pictures every second. Between two pictures, nothing is recorded.</small></button></li>
+        <li><button type="button" data-i="3"><time>0:48</time><b>The trick</b><small>At 66° per picture each spoke lands 6° short of the next one, so the closest match is backwards. At 72°, every picture is the same.</small></button></li>
+        <li><button type="button" data-i="4"><time>1:26</time><b>The rule</b><small>Below 15 per second the video tells the truth; faster, the motion is disguised. Sample more than twice as fast.</small></button></li>
+        <li><button type="button" data-i="5"><time>2:06</time><b>Helicopters and lathes</b><small>A 5-blade rotor at 6 turns per second looks frozen on video. Under light pulsing 100 times per second, a lathe can look stopped.</small></button></li>
+        <li><button type="button" data-i="6"><time>2:28</time><b>Sensors and strobes</b><small>Read 1000 times per second, a 900 Hz vibration looks like 100 Hz, so machines filter first. A strobe uses aliasing on purpose.</small></button></li>
+        <li><button type="button" data-i="7"><time>2:50</time><b>The takeaway</b><small>Take pictures too slowly, and fast things can look slow, stopped, or even backwards.</small></button></li>
+      </ol>
+    </section>
+
+    <section class="sect" aria-labelledby="h-ly-en">
+      <div class="sect-h"><h2 id="h-ly-en">Two ways in</h2><span class="muted">One for everyone, one for engineers</span></div>
+      <div class="layers">
+        <div class="layer">
+          <h3>See it</h3>
+          <p class="lead">A video is a flip book: 30 still pictures every second.</p>
+          <p class="muted">If a wheel turns almost one spoke gap between two pictures, each spoke lands just short of where its neighbour was. Your brain links it to the closest spoke, so the wheel seems to turn slowly backwards. Engineers call this aliasing.</p>
+        </div>
+        <div class="layer">
+          <h3>Understand it</h3>
+          <p class="eq" aria-label="f a equals f minus f s times round of f over f s"><i>f</i><sub>a</sub> = <i class="mo">f</i> − <i>f</i><sub>s</sub>&#8201;round(<i class="mo">f</i>&#8201;/&#8201;<i>f</i><sub>s</sub>)</p>
+          <dl class="rows">
+            <dt>Spoke frequency</dt><dd><span class="m"><i class="mo">f</i> = <i>N</i>&#8201;<i>f</i><sub>r</sub></span>: <i>N</i> identical spokes, <i>f</i><sub>r</sub> turns per second</dd>
+            <dt>Frequency seen</dt><dd><span class="m"><i>f</i><sub>a</sub></span> stays between <span class="m">−<i>f</i><sub>s</sub>/2</span> and <span class="m">+<i>f</i><sub>s</sub>/2</span>; negative means the motion seems reversed</dd>
+            <dt>The rule</dt><dd><span class="key m"><i>f</i><sub>s</sub> &gt; 2&#8201;<i>f</i><sub>max</sub></span>: sample more than twice as fast as the fastest change (Nyquist-Shannon)</dd>
+            <dt>In the film</dt><dd><span class="m"><i>N</i> = 5</span>, tyre radius 0.33 m, <span class="m"><i>f</i><sub>s</sub> = 30 Hz</span>. Frozen at 6 turns per second (44.8 km/h). At 5.5 turns per second, 6° backwards per picture (41.1 km/h)</dd>
+            <dt>Why we are fooled</dt><dd>the eye links each spoke to the nearest one in the next picture</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="sect" aria-labelledby="h-cs-en">
+      <div class="sect-h"><h2 id="h-cs-en">Where it shows up</h2><span class="muted">Checked against published sources</span></div>
+      <div class="cases">
+        <article class="case">
+          <h3>Helicopter rotors</h3>
+          <dl class="rows">
+            <dt>Condition</dt><dd>blade passes per second = pictures per second, or a whole multiple</dd>
+            <dt>Example</dt><dd>5 blades × 6 turns per second = 30 passes per second, filmed at 30 fps</dd>
+            <dt>Result</dt><dd>the rotor looks frozen while the helicopter flies</dd>
+          </dl>
+          <p>Example values: real rotor speeds depend on the aircraft.</p>
+        </article>
+        <article class="case">
+          <h3>Workshop lathes</h3>
+          <dl class="rows">
+            <dt>Light</dt><dd>some lamps pulse 100 times per second, twice the 50 Hz mains</dd>
+            <dt>Chuck</dt><dd>4 jaws × 25 turns per second (1500 rpm) = 100 passes per second</dd>
+            <dt>Risk</dt><dd>the spinning chuck can look stopped</dd>
+            <dt>Guidance</dt><dd class="fixed">lighting rules warn against it (HSE HSG38, EN 12464-1)</dd>
+          </dl>
+          <p>High-frequency ballasts and good LED drivers remove most of the ripple.</p>
+        </article>
+        <article class="case">
+          <h3>Sensors in machines</h3>
+          <dl class="rows">
+            <dt>Signal</dt><dd>a 900 Hz vibration</dd>
+            <dt>Sampling</dt><dd>1000 readings per second</dd>
+            <dt>Seen</dt><dd>a 100 Hz wave, phase reversed</dd>
+            <dt>Fix</dt><dd class="fixed">low-pass filter first, then sample about 2.5 to 10 times faster</dd>
+          </dl>
+          <p>An encoder read too slowly miscounts the same way, and can even count backwards.</p>
+        </article>
+        <article class="case">
+          <h3>Strobes, on purpose</h3>
+          <dl class="rows">
+            <dt>Stroboscope</dt><dd>flashes at the rotation rate, or a whole fraction of it</dd>
+            <dt>Timing light</dt><dd>flashes each time cylinder 1 fires, once every two crank turns</dd>
+            <dt>Use</dt><dd class="fixed">inspect fast machines while they run</dd>
+          </dl>
+          <p>Slightly off the rate, the part seems to creep slowly.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== Français ===================== -->
+  <div class="body" data-lang="fr" lang="fr" hidden>
+    <section class="sect" aria-labelledby="h-ch-fr">
+      <div class="sect-h"><h2 id="h-ch-fr">Chapitres</h2><span class="muted">Touchez-en un pour y aller</span></div>
+      <ol class="chapters">
+        <li><button type="button" data-i="0"><time>0:00</time><b>À l’envers ?</b><small>Une voiture accélère jusqu’à 47 km/h. Dessinées à leur vraie vitesse, ses roues semblent ralentir, s’arrêter et même tourner à l’envers.</small></button></li>
+        <li><button type="button" data-i="1"><time>0:18</time><b>Aliasing</b><small>Épisode 02 : pourquoi les roues semblent tourner à l’envers en vidéo.</small></button></li>
+        <li><button type="button" data-i="2"><time>0:24</time><b>Un folioscope</b><small>Une vidéo, c’est 30 images fixes par seconde. Entre deux images, rien n’est enregistré.</small></button></li>
+        <li><button type="button" data-i="3"><time>0:48</time><b>L’astuce</b><small>À 66° par image, chaque rayon s’arrête 6° avant la place du suivant : la correspondance la plus proche est en arrière. À 72°, toutes les images sont identiques.</small></button></li>
+        <li><button type="button" data-i="4"><time>1:26</time><b>La règle</b><small>En dessous de 15 par seconde, la vidéo dit la vérité ; au-delà, le mouvement est déguisé. Échantillonnez plus de deux fois plus vite.</small></button></li>
+        <li><button type="button" data-i="5"><time>2:06</time><b>Hélicoptères et tours</b><small>Un rotor à 5 pales qui fait 6 tours par seconde semble figé en vidéo. Sous une lumière qui pulse 100 fois par seconde, un tour peut sembler arrêté.</small></button></li>
+        <li><button type="button" data-i="6"><time>2:28</time><b>Capteurs et stroboscopes</b><small>Lue 1000 fois par seconde, une vibration de 900 Hz ressemble à du 100 Hz : on filtre d’abord. Le stroboscope exploite ce repliement exprès.</small></button></li>
+        <li><button type="button" data-i="7"><time>2:50</time><b>À retenir</b><small>Prenez des images trop lentement, et ce qui va vite peut sembler lent, à l’arrêt, voire à l’envers.</small></button></li>
+      </ol>
+    </section>
+
+    <section class="sect" aria-labelledby="h-ly-fr">
+      <div class="sect-h"><h2 id="h-ly-fr">Deux façons d’entrer</h2><span class="muted">Une pour tous, une pour les ingénieurs</span></div>
+      <div class="layers">
+        <div class="layer">
+          <h3>Voir</h3>
+          <p class="lead">Une vidéo est un folioscope : 30 images fixes par seconde.</p>
+          <p class="muted">Si une roue tourne presque d’un écart entre rayons entre deux images, chaque rayon s’arrête juste avant la place de son voisin. Le cerveau le relie au rayon le plus proche, et la roue semble tourner lentement à l’envers. Les ingénieurs appellent cela le repliement de spectre (aliasing).</p>
+        </div>
+        <div class="layer">
+          <h3>Comprendre</h3>
+          <p class="eq" aria-label="f a égale f moins f s fois l’arrondi de f sur f s"><i>f</i><sub>a</sub> = <i class="mo">f</i> − <i>f</i><sub>s</sub>&#8201;round(<i class="mo">f</i>&#8201;/&#8201;<i>f</i><sub>s</sub>)</p>
+          <dl class="rows">
+            <dt>Fréquence des rayons</dt><dd><span class="m"><i class="mo">f</i> = <i>N</i>&#8201;<i>f</i><sub>r</sub></span> : <i>N</i> rayons identiques, <i>f</i><sub>r</sub> tours par seconde</dd>
+            <dt>Fréquence vue</dt><dd><span class="m"><i>f</i><sub>a</sub></span> reste entre <span class="m">−<i>f</i><sub>s</sub>/2</span> et <span class="m">+<i>f</i><sub>s</sub>/2</span> ; négative, le mouvement semble inversé</dd>
+            <dt>La règle</dt><dd><span class="key m"><i>f</i><sub>s</sub> &gt; 2&#8201;<i>f</i><sub>max</sub></span> : échantillonner plus de deux fois plus vite que la variation la plus rapide (Nyquist-Shannon)</dd>
+            <dt>Dans le film</dt><dd><span class="m"><i>N</i> = 5</span>, rayon du pneu 0,33 m, <span class="m"><i>f</i><sub>s</sub> = 30 Hz</span>. Figée à 6 tours par seconde (44,8 km/h). À 5,5 tours par seconde, 6° en arrière par image (41,1 km/h)</dd>
+            <dt>Pourquoi on s’y trompe</dt><dd>l’œil relie chaque rayon au plus proche dans l’image suivante</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="sect" aria-labelledby="h-cs-fr">
+      <div class="sect-h"><h2 id="h-cs-fr">Où on le rencontre</h2><span class="muted">Vérifié dans des sources publiées</span></div>
+      <div class="cases">
+        <article class="case">
+          <h3>Rotors d’hélicoptère</h3>
+          <dl class="rows">
+            <dt>Condition</dt><dd>passages de pales par seconde = images par seconde, ou un multiple entier</dd>
+            <dt>Exemple</dt><dd>5 pales × 6 tours par seconde = 30 passages par seconde, filmés à 30 images/s</dd>
+            <dt>Résultat</dt><dd>le rotor semble figé pendant que l’hélicoptère vole</dd>
+          </dl>
+          <p>Valeurs d’exemple : la vitesse réelle dépend de l’appareil.</p>
+        </article>
+        <article class="case">
+          <h3>Tours d’atelier</h3>
+          <dl class="rows">
+            <dt>Lumière</dt><dd>certaines lampes pulsent 100 fois par seconde, le double des 50 Hz du secteur</dd>
+            <dt>Mandrin</dt><dd>4 mors × 25 tours par seconde (1500 tr/min) = 100 passages par seconde</dd>
+            <dt>Risque</dt><dd>le mandrin en rotation peut sembler arrêté</dd>
+            <dt>Règles</dt><dd class="fixed">les normes d’éclairage mettent en garde (HSE HSG38, EN 12464-1)</dd>
+          </dl>
+          <p>Les ballasts haute fréquence et les bons drivers LED suppriment l’essentiel de l’ondulation.</p>
+        </article>
+        <article class="case">
+          <h3>Capteurs dans les machines</h3>
+          <dl class="rows">
+            <dt>Signal</dt><dd>une vibration de 900 Hz</dd>
+            <dt>Échantillonnage</dt><dd>1000 lectures par seconde</dd>
+            <dt>Vu</dt><dd>une onde de 100 Hz, en opposition de phase</dd>
+            <dt>Solution</dt><dd class="fixed">filtre passe-bas d’abord, puis échantillonner 2,5 à 10 fois plus vite</dd>
+          </dl>
+          <p>Un codeur lu trop lentement se trompe de la même façon, et peut même compter à l’envers.</p>
+        </article>
+        <article class="case">
+          <h3>Stroboscopes, exprès</h3>
+          <dl class="rows">
+            <dt>Stroboscope</dt><dd>flashe à la vitesse de rotation, ou à une fraction entière de celle-ci</dd>
+            <dt>Lampe d’allumage</dt><dd>flashe à chaque allumage du cylindre 1, soit un tour de vilebrequin sur deux</dd>
+            <dt>Usage</dt><dd class="fixed">inspecter les machines rapides en marche</dd>
+          </dl>
+          <p>Légèrement décalée, la pièce semble tourner lentement.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== العربية ===================== -->
+  <div class="body" data-lang="ar" lang="ar" dir="rtl" hidden>
+    <section class="sect" aria-labelledby="h-ch-ar">
+      <div class="sect-h"><h2 id="h-ch-ar">الفصول</h2><span class="muted">اضغط على فصل للانتقال إليه</span></div>
+      <ol class="chapters">
+        <li><button type="button" data-i="0"><time>0:00</time><b>إلى الوراء؟</b><small>سيارة تتسارع حتى <span class="m">47 km/h</span>. العجلات مرسومة بسرعتها الحقيقية، لكنها تبدو وكأنها تتباطأ، ثم تتوقف، بل وتدور إلى الوراء.</small></button></li>
+        <li><button type="button" data-i="1"><time>0:18</time><b>التعرّج</b><small>الحلقة 02: لماذا تبدو العجلات وكأنها تدور إلى الوراء في الفيديو.</small></button></li>
+        <li><button type="button" data-i="2"><time>0:24</time><b>دفتر الصور</b><small>الفيديو 30 صورة ثابتة في كل ثانية. وبين صورتين، لا يُسجَّل شيء.</small></button></li>
+        <li><button type="button" data-i="3"><time>0:48</time><b>الخدعة</b><small>عند <span class="m">66°</span> لكل صورة، يتوقف كل شعاع قبل مكان الشعاع التالي بـ <span class="m">6°</span>، فتكون أقرب مطابقة إلى الوراء. وعند <span class="m">72°</span> تبدو كل الصور متطابقة.</small></button></li>
+        <li><button type="button" data-i="4"><time>1:26</time><b>القاعدة</b><small>تحت 15 مرة في الثانية يقول الفيديو الحقيقة، وفوق ذلك تتنكّر الحركة. خذ العينات بأكثر من ضعف السرعة.</small></button></li>
+        <li><button type="button" data-i="5"><time>2:06</time><b>المروحيات والمخارط</b><small>دوّار بخمس شفرات يدور 6 دورات في الثانية يبدو متجمّدًا في الفيديو. وتحت ضوء ينبض 100 مرة في الثانية، قد تبدو المخرطة متوقفة.</small></button></li>
+        <li><button type="button" data-i="6"><time>2:28</time><b>المستشعرات والوميض</b><small>اهتزاز بتردد <span class="m">900 Hz</span> يُقرأ 1000 مرة في الثانية يبدو كأنه <span class="m">100 Hz</span>، لذلك يُرشَّح أولًا. أما المصباح الوميضي فيستخدم التعرّج عمدًا.</small></button></li>
+        <li><button type="button" data-i="7"><time>2:50</time><b>الخلاصة</b><small>إذا التقطتم الصور ببطء أكثر مما يلزم، فقد تبدو الأشياء السريعة بطيئة، أو ساكنة، أو حتى تدور إلى الوراء.</small></button></li>
+      </ol>
+    </section>
+
+    <section class="sect" aria-labelledby="h-ly-ar">
+      <div class="sect-h"><h2 id="h-ly-ar">مدخلان</h2><span class="muted">واحد للجميع، وآخر للمهندسين</span></div>
+      <div class="layers">
+        <div class="layer">
+          <h3>شاهِد</h3>
+          <p class="lead">الفيديو كدفتر تُقلَّب صفحاته بسرعة: 30 صورة ثابتة في كل ثانية.</p>
+          <p class="muted">إذا دارت العجلة ما يقارب فجوة كاملة بين شعاعين بين صورتين، يتوقف كل شعاع قبل مكان جاره بقليل. فيربطه الدماغ بأقرب شعاع، فتبدو العجلة وكأنها تدور ببطء إلى الوراء. يسمّي المهندسون ذلك التعرّج (aliasing).</p>
+        </div>
+        <div class="layer">
+          <h3>افهَم</h3>
+          <p class="eq" aria-label="f a تساوي f ناقص f s في تقريب f على f s"><i>f</i><sub>a</sub> = <i class="mo">f</i> − <i>f</i><sub>s</sub>&#8201;round(<i class="mo">f</i>&#8201;/&#8201;<i>f</i><sub>s</sub>)</p>
+          <dl class="rows">
+            <dt>تردد الأشعة</dt><dd><span class="m"><i class="mo">f</i> = <i>N</i>&#8201;<i>f</i><sub>r</sub></span>: عدد <span class="m"><i>N</i></span> من الأشعة المتطابقة، و<span class="m"><i>f</i><sub>r</sub></span> دورة في الثانية</dd>
+            <dt>التردد المرئي</dt><dd>يبقى <span class="m"><i>f</i><sub>a</sub></span> بين <span class="m">−<i>f</i><sub>s</sub>/2</span> و<span class="m">+<i>f</i><sub>s</sub>/2</span>؛ وإذا كان سالبًا تبدو الحركة معكوسة</dd>
+            <dt>القاعدة</dt><dd><span class="key m"><i>f</i><sub>s</sub> &gt; 2&#8201;<i>f</i><sub>max</sub></span>: خذ العينات بأكثر من ضعف سرعة أسرع تغيّر (نيكويست-شانون)</dd>
+            <dt>في الفيلم</dt><dd><span class="m"><i>N</i> = 5</span>، نصف قطر الإطار <span class="m">0,33 m</span>، <span class="m"><i>f</i><sub>s</sub> = 30 Hz</span>. تتجمّد عند 6 دورات في الثانية (<span class="m">44,8 km/h</span>). وعند 5,5 دورة في الثانية: <span class="m">6°</span> إلى الوراء في كل صورة (<span class="m">41,1 km/h</span>)</dd>
+            <dt>لماذا ننخدع</dt><dd>تربط العين كل شعاع بأقرب شعاع إليه في الصورة التالية</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="sect" aria-labelledby="h-cs-ar">
+      <div class="sect-h"><h2 id="h-cs-ar">أين نصادفه</h2><span class="muted">مُراجَع وفق مصادر منشورة</span></div>
+      <div class="cases">
+        <article class="case">
+          <h3>دوّارات المروحيات</h3>
+          <dl class="rows">
+            <dt>الشرط</dt><dd>عدد مرور الشفرات في الثانية = عدد الصور في الثانية، أو مضاعف صحيح له</dd>
+            <dt>مثال</dt><dd>5 شفرات × 6 دورات في الثانية = 30 مرورًا في الثانية، بتصوير 30 صورة في الثانية</dd>
+            <dt>النتيجة</dt><dd>يبدو الدوّار متجمّدًا بينما تطير المروحية</dd>
+          </dl>
+          <p>قيم للتوضيح: السرعة الحقيقية تختلف من طائرة إلى أخرى.</p>
+        </article>
+        <article class="case">
+          <h3>مخارط الورشات</h3>
+          <dl class="rows">
+            <dt>الضوء</dt><dd>بعض المصابيح تنبض 100 مرة في الثانية، أي ضعف تردد الشبكة <span class="m">50 Hz</span></dd>
+            <dt>الظرف</dt><dd>4 فكوك × 25 دورة في الثانية (<span class="m">1500 rpm</span>) = 100 مرور في الثانية</dd>
+            <dt>الخطر</dt><dd>قد يبدو الظرف الدوّار متوقفًا</dd>
+            <dt>الإرشادات</dt><dd class="fixed">تحذّر قواعد الإنارة من ذلك (<span class="m">HSE HSG38، EN 12464-1</span>)</dd>
+          </dl>
+          <p>المُوازِنات عالية التردد ومشغّلات LED الجيدة تزيل معظم هذا التموّج.</p>
+        </article>
+        <article class="case">
+          <h3>المستشعرات في الآلات</h3>
+          <dl class="rows">
+            <dt>الإشارة</dt><dd>اهتزاز بتردد <span class="m">900 Hz</span></dd>
+            <dt>أخذ العينات</dt><dd>1000 قراءة في الثانية</dd>
+            <dt>ما يُرى</dt><dd>موجة بتردد <span class="m">100 Hz</span> بطور معكوس</dd>
+            <dt>الحل</dt><dd class="fixed">مرشّح تمرير منخفض أولًا، ثم أخذ العينات أسرع بنحو 2,5 إلى 10 مرات</dd>
+          </dl>
+          <p>المُرمِّز الذي يُقرأ ببطء شديد يخطئ في العدّ بالطريقة نفسها، بل قد يعدّ إلى الوراء.</p>
+        </article>
+        <article class="case">
+          <h3>الوميض، عن قصد</h3>
+          <dl class="rows">
+            <dt>المصباح الوميضي</dt><dd>يومض بسرعة الدوران، أو بجزء صحيح منها</dd>
+            <dt>مصباح التوقيت</dt><dd>يومض كلما اشتعلت الأسطوانة 1، أي مرة كل دورتين للعمود المرفقي</dd>
+            <dt>الاستخدام</dt><dd class="fixed">فحص الآلات السريعة أثناء عملها</dd>
+          </dl>
+          <p>إذا اختلفت السرعة قليلًا، تبدو القطعة وكأنها تدور ببطء.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== the Short (language follows the page) ===================== -->
+  <section class="sect" aria-labelledby="h-short">
+    <div class="sect-h"><h2 id="h-short" data-t="shortTitle">The Short</h2><span class="muted" data-t="shortSub">45 seconds, vertical, for phones</span></div>
+    <div class="short">
+      <div class="frame tall" dir="ltr">
+        <video id="short" controls playsinline preload="metadata" poster="hls/short_en/poster.jpg" aria-label="Aliasing, the 45-second Short"></video>
+      </div>
+      <div class="short-text">
+        <p class="lead" data-t="shortLead">The hook and the trick in 45 seconds.</p>
+        <p class="muted" data-t="shortBody">For Reels, TikTok and YouTube Shorts, in the same language as the film above. The wheel is drawn at its true rate, so the backwards creep happens on the phone screen itself.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p data-t="foot1">Every frame is drawn by code from the equations, so the real-speed wheels alias on your own screen. Watch at normal speed; TV motion smoothing can spoil the effect.</p>
+    <p data-h="foot2">Music and sound effects: synthesised by code, no recordings. Checked: no flashing (WCAG 2.3.1), loudness −14 LUFS. Full sources: <code>phenomena/02-aliasing/sources/README.md</code> in the project repository.</p>
+  </footer>
+</main>
+
+<script type="application/json" id="cues">__CUES__</script>
+<script>
+(function () {
+  var CH = [0, 18, 24, 48, 86, 126, 148, 170, 180];
+  var LANGS = ["en", "fr", "ar"];
+  var T = {
+    en: {
+      title: "Aliasing",
+      tag: "<span>The car speeds up.</span><span class=\"hi\">The wheel seems to go backwards.</span>",
+      facts: "<li><b>3 min 00 s</b></li><li>1080p · 30 fps</li><li>Versions <b>EN FR AR</b></li><li>Every frame drawn from the equations</li>",
+      versionLabel: "Version", subsLabel: "Subtitles", off: "Off",
+      note: "This browser could not stream the film here. Open this page in Chrome, Safari or Edge.",
+      film: "Aliasing, a film of 3 minutes", shortAria: "Aliasing, the 45-second Short",
+      strip: ["Backwards?", "Title", "Flip book", "The trick", "The rule", "Helicopters, lathes", "Sensors, strobes", "Takeaway"],
+      names: ["Backwards?", "Aliasing", "A flip book", "The trick", "The rule", "Helicopters and lathes", "Sensors and strobes", "The takeaway"],
+      shortTitle: "The Short", shortSub: "45 seconds, vertical, for phones",
+      shortLead: "The hook and the trick in 45 seconds.",
+      shortBody: "For Reels, TikTok and YouTube Shorts, in the same language as the film above. The wheel is drawn at its true rate, so the backwards creep happens on the phone screen itself.",
+      foot1: "Every frame is drawn by code from the equations, so the real-speed wheels alias on your own screen. Watch at normal speed; TV motion smoothing can spoil the effect.",
+      foot2: "Music and sound effects: synthesised by code, no recordings. Checked: no flashing (WCAG 2.3.1), loudness −14 LUFS. Full sources: <code>phenomena/02-aliasing/sources/README.md</code> in the project repository."
+    },
+    fr: {
+      title: "Aliasing",
+      tag: "<span>La voiture accélère.</span><span class=\"hi\">La roue semble tourner à l’envers.</span>",
+      facts: "<li><b>3 min 00 s</b></li><li>1080p · 30 images/s</li><li>Versions <b>EN FR AR</b></li><li>Chaque image calculée à partir des équations</li>",
+      versionLabel: "Version", subsLabel: "Sous-titres", off: "Aucun",
+      note: "Ce navigateur ne peut pas lire le film ici. Ouvrez cette page dans Chrome, Safari ou Edge.",
+      film: "Aliasing, un film de 3 minutes", shortAria: "Aliasing, le format court de 45 secondes",
+      strip: ["À l’envers ?", "Titre", "Folioscope", "L’astuce", "La règle", "Hélicos, tours", "Capteurs, strobos", "À retenir"],
+      names: ["À l’envers ?", "Aliasing", "Un folioscope", "L’astuce", "La règle", "Hélicoptères et tours", "Capteurs et stroboscopes", "À retenir"],
+      shortTitle: "Le format court", shortSub: "45 secondes, vertical, pour téléphone",
+      shortLead: "L’accroche et l’astuce en 45 secondes.",
+      shortBody: "Pour Reels, TikTok et YouTube Shorts, dans la même langue que le film ci-dessus. La roue est dessinée à sa vraie vitesse : le recul apparent se produit sur l’écran du téléphone lui-même.",
+      foot1: "Chaque image est dessinée par du code à partir des équations : les roues à vitesse réelle créent le repliement sur votre propre écran. Regardez à vitesse normale ; le lissage de mouvement des téléviseurs peut gâcher l’effet.",
+      foot2: "Musique et effets sonores : synthétisés par du code, sans enregistrement. Vérifié : aucun flash (WCAG 2.3.1), volume −14 LUFS. Sources complètes : <code>phenomena/02-aliasing/sources/README.md</code> dans le dépôt du projet."
+    },
+    ar: {
+      title: "التعرّج",
+      tag: "<span>السيارة تتسارع.</span><span class=\"hi\">والعجلة تبدو وكأنها تدور إلى الوراء.</span>",
+      facts: "<li><b>3 دقائق</b></li><li><span class=\"m\">1080p · 30 fps</span></li><li>النسخ <b><span class=\"m\">EN FR AR</span></b></li><li>كل صورة محسوبة من المعادلات</li>",
+      versionLabel: "النسخة", subsLabel: "الترجمة", off: "بدون",
+      note: "تعذّر على هذا المتصفح تشغيل الفيلم هنا. افتح هذه الصفحة في Chrome أو Safari أو Edge.",
+      film: "التعرّج، فيلم مدته 3 دقائق", shortAria: "التعرّج، النسخة القصيرة ومدتها 45 ثانية",
+      strip: ["إلى الوراء؟", "العنوان", "دفتر الصور", "الخدعة", "القاعدة", "مروحيات ومخارط", "مستشعرات ووميض", "الخلاصة"],
+      names: ["إلى الوراء؟", "التعرّج", "دفتر الصور", "الخدعة", "القاعدة", "المروحيات والمخارط", "المستشعرات والوميض", "الخلاصة"],
+      shortTitle: "النسخة القصيرة", shortSub: "45 ثانية، عمودية، للهاتف",
+      shortLead: "البداية والخدعة في 45 ثانية.",
+      shortBody: "لـ Reels و TikTok و YouTube Shorts، بلغة الفيلم نفسها أعلاه. العجلة مرسومة بسرعتها الحقيقية، لذا يحدث الدوران الظاهري إلى الوراء على شاشة الهاتف نفسها.",
+      foot1: "كل صورة مرسومة بالشيفرة انطلاقًا من المعادلات، لذا يحدث التعرّج في العجلات ذات السرعة الحقيقية على شاشتك أنت. شاهِد بالسرعة العادية؛ فميزة تنعيم الحركة في أجهزة التلفاز قد تُفسد التأثير.",
+      foot2: "الموسيقى والمؤثرات الصوتية: مُولَّدة بالشيفرة، دون تسجيلات. تم التحقق: لا وميض (<span class=\"m\">WCAG 2.3.1</span>)، ومستوى الصوت <span class=\"m\">−14 LUFS</span>. المصادر الكاملة: <code>phenomena/02-aliasing/sources/README.md</code> في مستودع المشروع."
+    }
+  };
+
+  var app = document.getElementById("app");
+  var film = document.getElementById("film");
+  var short = document.getElementById("short");
+  var note = document.getElementById("play-note");
+  var segs = Array.prototype.slice.call(document.querySelectorAll("#strip .seg"));
+  var fills = segs.map(function (s) { return s.querySelector("i"); });
+  var now = document.getElementById("now");
+  var lang = "en";
+
+  /* ---------- streaming: hls.js from the allowed CDNs, native HLS as a fallback ---------- */
+  var LIBS = ["https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js",
+              "https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js",
+              "https://unpkg.com/hls.js@1.5.13/dist/hls.min.js"];
+  var libPromise = null;
+  function loadLib() {
+    if (libPromise) return libPromise;
+    libPromise = new Promise(function (resolve, reject) {
+      (function tryLib(i) {
+        if (window.Hls) return resolve(window.Hls);
+        if (i >= LIBS.length) return reject(new Error("no player library"));
+        var s = document.createElement("script");
+        s.src = LIBS[i];
+        s.onload = function () { window.Hls ? resolve(window.Hls) : tryLib(i + 1); };
+        s.onerror = function () { tryLib(i + 1); };
+        document.head.appendChild(s);
+      })(0);
+    });
+    return libPromise;
+  }
+
+  function Player(video, dir, lazy, onFail) {
+    var hls = null, started = false;
+    /* the Short waits for its first play before downloading anything */
+    video.addEventListener("play", function () {
+      if (hls && !started) { started = true; hls.startLoad(video.currentTime > 0 ? video.currentTime : -1); }
+    });
+    function go(play) { if (play) { var p = video.play(); if (p && p.catch) p.catch(function () {}); } }
+    return function load(l) {
+      var t = video.currentTime || 0, play = !video.paused && !video.ended;
+      var src = "hls/" + dir + l + "/playlist.txt";
+      video.poster = "hls/" + dir + l + "/poster.jpg";
+      loadLib().then(function (Hls) {
+        if (!Hls.isSupported()) throw new Error("unsupported");
+        if (hls) hls.destroy();
+        started = !lazy || play || t > 0;
+        var h = hls = new Hls({ autoStartLoad: started, startPosition: t > 0 ? t : -1, maxBufferLength: 30,
+                                enableWebVTT: false, enableIMSC1: false, enableCEA708Captions: false });
+        var tries = 0, dead = false;
+        h.on(Hls.Events.ERROR, function (e, d) {
+          if (!d.fatal || dead) return;
+          if (d.type === Hls.ErrorTypes.NETWORK_ERROR && tries < 3) { tries++; h.startLoad(); }
+          else if (d.type === Hls.ErrorTypes.MEDIA_ERROR && tries < 3) { tries++; h.recoverMediaError(); }
+          else { dead = true; if (hls === h) hls = null; setTimeout(function () { h.destroy(); }, 0); onFail(); }
+        });
+        h.once(Hls.Events.MANIFEST_PARSED, function () { go(play); });
+        h.loadSource(src);
+        h.attachMedia(video);
+      }).catch(function () {
+        if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.addEventListener("error", onFail, { once: true });
+          video.src = src;
+          video.addEventListener("loadedmetadata", function once() {
+            video.removeEventListener("loadedmetadata", once);
+            if (t > 0) { try { video.currentTime = t; } catch (e) {} }
+            go(play);
+          });
+        } else onFail();
+      });
+    };
+  }
+  var loadFilm = Player(film, "", false, function () { note.hidden = false; });
+  var loadShort = Player(short, "short_", true, function () {});
+
+  /* ---------- subtitles: three tracks on each video, built from the cues in this page ---------- */
+  var CUES = JSON.parse(document.getElementById("cues").textContent);
+  var LABELS = { en: "English", fr: "Français", ar: "العربية" };
+  var Cue = window.VTTCue || window.TextTrackCue;
+  [[film, CUES.film], [short, CUES.short]].forEach(function (pair) {
+    LANGS.forEach(function (l) {
+      var tr = pair[0].addTextTrack("subtitles", LABELS[l], l);
+      tr.mode = "hidden";
+      pair[1][l].forEach(function (c) { try { tr.addCue(new Cue(c[0], c[1], c[2])); } catch (e) {} });
+      tr.mode = "disabled";
+    });
+  });
+  var subBtns = Array.prototype.slice.call(document.querySelectorAll("#subs button"));
+  function setSubs(l) {
+    [film, short].forEach(function (v) {
+      for (var i = 0; i < v.textTracks.length; i++) {
+        var tr = v.textTracks[i];
+        if (tr.kind === "subtitles" || tr.kind === "captions") tr.mode = (l && tr.language === l) ? "showing" : "disabled";
+      }
+    });
+    subBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.sub === l)); });
+    try { localStorage.setItem("aliasing-subs", l); } catch (e) {}
+  }
+  subBtns.forEach(function (b) { b.addEventListener("click", function () { setSubs(b.dataset.sub); }); });
+  film.textTracks.addEventListener && film.textTracks.addEventListener("change", function () {
+    var on = "";
+    for (var i = 0; i < film.textTracks.length; i++) if (film.textTracks[i].mode === "showing") on = film.textTracks[i].language;
+    subBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.sub === on)); });
+  });
+
+  /* ---------- chapters ---------- */
+  function fmt(t) { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
+  function chapterAt(t) { for (var i = CH.length - 2; i >= 0; i--) if (t >= CH[i]) return i; return 0; }
+  var last = -1;
+  function paint(force) {
+    var t = film.currentTime || 0;
+    var c = chapterAt(t);
+    for (var i = 0; i < fills.length; i++) {
+      var p = Math.min(1, Math.max(0, (t - CH[i]) / (CH[i + 1] - CH[i])));
+      fills[i].style.transform = "scaleX(" + p + ")";
+    }
+    if (c !== last || force) {
+      segs.forEach(function (s, i) { s.classList.toggle("on", i === c); });
+      document.querySelectorAll(".chapters button").forEach(function (b) {
+        var on = +b.dataset.i === c;
+        b.classList.toggle("on", on);
+        if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+      });
+      last = c;
+    }
+    now.innerHTML = "<span class=\"m\"><b>" + fmt(t) + "</b> / 3:00</span> · " + T[lang].names[c];
+  }
+  film.addEventListener("timeupdate", function () { paint(false); });
+  film.addEventListener("seeked", function () { paint(false); });
+
+  function seek(t) {
+    film.currentTime = t + 0.01;
+    paint(false);
+    var p = film.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  document.querySelectorAll(".chapters button").forEach(function (b) {
+    b.addEventListener("click", function () { seek(CH[+b.dataset.i]); });
+  });
+  segs.forEach(function (s) {
+    s.addEventListener("click", function (e) {
+      var i = +s.dataset.i, r = s.getBoundingClientRect();
+      var f = e.clientX && r.width ? Math.min(0.98, Math.max(0, (e.clientX - r.left) / r.width)) : 0;
+      seek(CH[i] + f * (CH[i + 1] - CH[i]));
+    });
+  });
+
+  /* ---------- language: film version, Short and page text switch together ---------- */
+  var langBtns = Array.prototype.slice.call(document.querySelectorAll("#langs button"));
+  function setLang(l, first) {
+    if (LANGS.indexOf(l) < 0) l = "en";
+    var changed = l !== lang || first;
+    lang = l;
+    var t = T[l];
+    app.lang = l;
+    app.dir = l === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-t]").forEach(function (el) { el.textContent = t[el.dataset.t]; });
+    document.querySelectorAll("[data-h]").forEach(function (el) { el.innerHTML = t[el.dataset.h]; });
+    document.querySelectorAll(".body").forEach(function (el) { el.hidden = el.dataset.lang !== l; });
+    segs.forEach(function (s, i) {
+      s.querySelector("span").textContent = t.strip[i];
+      s.setAttribute("aria-label", t.names[i] + ", " + fmt(CH[i]));
+      s.lang = l;
+    });
+    film.setAttribute("aria-label", t.film);
+    short.setAttribute("aria-label", t.shortAria);
+    langBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === l)); });
+    if (changed) { loadFilm(l); loadShort(l); }
+    paint(true);
+    try { localStorage.setItem("aliasing-lang", l); } catch (e) {}
+  }
+  langBtns.forEach(function (b) { b.addEventListener("click", function () { setLang(b.dataset.lang, false); }); });
+
+  var start = (location.hash || "").replace("#", "");
+  if (LANGS.indexOf(start) < 0) { try { start = localStorage.getItem("aliasing-lang") || "en"; } catch (e) { start = "en"; } }
+  setLang(start, true);
+  var savedSubs = "";
+  try { savedSubs = localStorage.getItem("aliasing-subs") || ""; } catch (e) {}
+  setSubs(savedSubs);
+})();
+</script>

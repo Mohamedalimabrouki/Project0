@@ -36,7 +36,7 @@ function args() {
   for (let i = 0; i < v.length; i++) {
     const k = v[i].replace(/^--/, '');
     const next = v[i + 1];
-    if (['contact', 'debug', 'encode', 'timeline', 'quiet', 'keep', 'stream'].includes(k)) a[k] = true;
+    if (['contact', 'debug', 'encode', 'timeline', 'quiet', 'keep', 'stream', 'no-captions', 'voice'].includes(k)) a[k] = true;
     else { a[k] = next; i++; }
   }
   for (const k of ['workers', 'every', 'cols', 'from', 'to', 'crf', 'scale', 'png-every']) if (a[k] != null) a[k] = Number(a[k]);
@@ -71,6 +71,8 @@ async function openStage(browser, base, o) {
   page.on('console', m => { if (m.type() === 'error') logs.push(`console: ${m.text()}`); });
   const q = new URLSearchParams({ comp: o.comp, lang: o.lang });
   if (o.debug) q.set('debug', '1');
+  if (o['no-captions']) q.set('captions', '0');
+  if (o.voice) q.set('voice', '1');
   if (o.scale) q.set('scale', String(o.scale));
   await page.goto(`${base}/phenomena/02-aliasing/code/engine/stage.html?${q}`);
   await page.waitForFunction(() => window.EP_ready || window.EP_failed, null, { timeout: 180000 });

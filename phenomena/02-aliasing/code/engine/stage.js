@@ -4,6 +4,8 @@
  *
  *   stage.html?comp=main&lang=en            normal use (render.mjs)
  *   stage.html?comp=main&lang=ar&debug=1    shows safe areas and timings
+ *   stage.html?comp=main&lang=en&captions=0 no caption band (for the narrated version)
+ *   stage.html?comp=short&lang=ar&voice=1   on-screen lines reworded for the voice (data/voice/short.json)
  *
  * Exposed to render.mjs:
  *   window.EP_ready           true when everything is loaded
@@ -15,6 +17,8 @@
 import * as EP from './ep.js';
 
 const params = new URLSearchParams(location.search);
+// captions=0 leaves the caption band out (the narrated version: the voice says the words)
+const BURN_CAPTIONS = params.get('captions') !== '0';
 const COMP = params.get('comp') || 'main';
 const LANG = params.get('lang') || 'en';
 const DEBUG = params.get('debug') === '1';
@@ -104,7 +108,7 @@ function renderSceneInto(ctx, a) {
   }
   ctx.restore();
   ctx.save();
-  drawCaptions(ctx, a.s, a.t, W > H ? BANDS.wide : BANDS.tall);
+  if (BURN_CAPTIONS) drawCaptions(ctx, a.s, a.t, W > H ? BANDS.wide : BANDS.tall);
   ctx.restore();
 }
 
@@ -185,6 +189,12 @@ async function boot() {
     start += frames;
   }
   state.total = start;
+
+  // narrated version: a few on-screen lines reworded to match the voice (data/voice/<comp>.json)
+  if (params.get('voice') === '1') {
+    const v = await loadJSON(`../data/voice/${COMP}.json`, true);
+    if (v) for (const [k, tr] of Object.entries(v)) if (!k.startsWith('_')) EP.I18N.strings[k] = { ...(EP.I18N.strings[k] || {}), ...tr };
+  }
 
   // one-off preparation: equations, precomputed tables
   const W = state.W, H = state.H;

@@ -1,0 +1,361 @@
+{
+ "_about": "The narration of 02 Aliasing. Line text = the caption of the same key (data/strings/), unless 'say' gives the spoken wording. Line times come from build/<comp>_timeline.json. Used by code/audio/voice.py.",
+ "sections": [
+  {
+   "first": 1,
+   "name": "The hook",
+   "tone": "Curious and light, like showing a friend something odd you have just noticed."
+  },
+  {
+   "first": 6,
+   "name": "The title",
+   "tone": "Clear and calm."
+  },
+  {
+   "first": 7,
+   "name": "A flip book",
+   "tone": "A friendly teacher. Unhurried."
+  },
+  {
+   "first": 12,
+   "name": "The trick",
+   "tone": "Slow and precise: this is the heart of the film. Let the key words land."
+  },
+  {
+   "first": 19,
+   "name": "The rule",
+   "tone": "Confident. Take your time on the numbers."
+  },
+  {
+   "first": 25,
+   "name": "Helicopters and lathes",
+   "tone": "Matter-of-fact, with a note of caution at the end."
+  },
+  {
+   "first": 29,
+   "name": "Sensors and strobes",
+   "tone": "Technical but warm. Numbers slowly and clearly."
+  },
+  {
+   "first": 33,
+   "name": "The takeaway",
+   "tone": "Slower, warm, final."
+  }
+ ],
+ "lines": [
+  {
+   "n": 1,
+   "key": "s01.c1",
+   "note": {
+    "en": "Easy and bright: we are just starting to watch."
+   }
+  },
+  {
+   "n": 2,
+   "key": "s01.c2",
+   "note": {
+    "en": "Point the viewer at the wheel."
+   }
+  },
+  {
+   "n": 3,
+   "key": "s01.c3",
+   "note": {
+    "en": "Surprised, not shouting."
+   }
+  },
+  {
+   "n": 4,
+   "key": "s01.c4",
+   "note": {
+    "en": "Puzzled."
+   }
+  },
+  {
+   "n": 5,
+   "key": "s01.c5",
+   "note": {
+    "en": "A real question: let it hang for a moment."
+   }
+  },
+  {
+   "n": 6,
+   "key": "s02.srt",
+   "say": {
+    "en": "Aliasing. Why wheels seem to spin backwards on video.",
+    "fr": "Aliasing. Pourquoi les roues semblent tourner à l’envers en vidéo.",
+    "ar": "التعرّج. لماذا تبدو العجلات وكأنها تدور إلى الوراء في الفيديو."
+   },
+   "note": {
+    "en": "The title. A short pause after the first word. Aliasing = AY-lee-uh-sing.",
+    "fr": "The title. A short pause after the first word. « Aliasing » à l’anglaise : é-li-a-sing.",
+    "ar": "The title. A short pause after the first word. التعرّج = at-ta‘arruj."
+   }
+  },
+  {
+   "n": 7,
+   "key": "s03.c1",
+   "note": {
+    "en": "Calm: now we explain."
+   }
+  },
+  {
+   "n": 8,
+   "key": "s03.c2",
+   "note": {
+    "en": "30 = thirty.",
+    "fr": "30 = trente.",
+    "ar": "30 = ثلاثون."
+   }
+  },
+  {
+   "n": 9,
+   "key": "s03.c3",
+   "note": {
+    "en": "Lean on \"nothing\".",
+    "fr": "Appuyer sur « rien ».",
+    "ar": "Stress لا يُسجَّل شيء."
+   }
+  },
+  {
+   "n": 10,
+   "key": "s03.c4",
+   "note": {
+    "en": "Keep your voice up at the end: the sentence goes on in the next line."
+   }
+  },
+  {
+   "n": 11,
+   "key": "s03.c5",
+   "note": {
+    "en": "Carry on the same sentence, as if there were no break."
+   }
+  },
+  {
+   "n": 12,
+   "key": "s04.c1",
+   "say": {
+    "ar": "لنُبطئ الحركة، ولنلوّن شعاعًا واحدًا بالأصفر."
+   },
+   "note": {
+    "en": "Playful."
+   }
+  },
+  {
+   "n": 13,
+   "key": "s04.c2",
+   "say": {
+    "fr": "Petite rotation entre deux images : la roue semble avancer. Exact !",
+    "ar": "دوران صغير بين صورتين: تبدو العجلة تتقدّم. وهذا صحيح!"
+   },
+   "note": {
+    "en": "\"Correct!\" with a smile.",
+    "fr": "« Exact ! » avec le sourire.",
+    "ar": "«وهذا صحيح!» with a smile."
+   }
+  },
+  {
+   "n": 14,
+   "key": "s04.c3",
+   "note": {
+    "en": "Lean on \"almost\".",
+    "fr": "Appuyer sur « presque ».",
+    "ar": "Stress ما يقارب."
+   }
+  },
+  {
+   "n": 15,
+   "key": "s04.c4",
+   "note": {
+    "en": "Lean on \"just short\". Voice up at the end: the sentence continues."
+   }
+  },
+  {
+   "n": 16,
+   "key": "s04.c5",
+   "note": {
+    "en": "Carry on the sentence and land on \"backwards\".",
+    "fr": "Carry on the sentence and land on « à l’envers ».",
+    "ar": "Carry on the sentence and land on إلى الوراء."
+   }
+  },
+  {
+   "n": 17,
+   "key": "s04.c6",
+   "say": {
+    "ar": "وبفجوة كاملة بالضبط بين كل صورتين، تبدو الصور كلها متطابقة."
+   },
+   "note": {
+    "en": "Lean on \"exactly\".",
+    "fr": "Appuyer sur « exactement ».",
+    "ar": "Stress بالضبط."
+   }
+  },
+  {
+   "n": 18,
+   "key": "s04.c7",
+   "note": {
+    "en": "A little wonder in the voice."
+   }
+  },
+  {
+   "n": 19,
+   "key": "s05.c1",
+   "say": {
+    "fr": "C’est le repliement de spectre, ou aliasing : un mouvement rapide sous un faux nom, un alias.",
+    "ar": "يسمّي المهندسون هذا التعرّج، أو aliasing: حركة سريعة تظهر باسم مستعار."
+   },
+   "note": {
+    "en": "The key word of the film. Slow down on \"a false name, an alias\".",
+    "fr": "The key word of the film. Ralentir sur « un faux nom, un alias ».",
+    "ar": "The key word of the film. aliasing = إيلياسينغ. Slow down on باسم مستعار."
+   }
+  },
+  {
+   "n": 20,
+   "key": "s05.c2",
+   "say": {
+    "ar": "تلتقط الكاميرا 30 صورة في الثانية، وتمرّ الأشعة f مرة في الثانية."
+   },
+   "note": {
+    "en": "30 = thirty. f = the letter \"eff\".",
+    "fr": "30 = trente. f = la lettre « èf ».",
+    "ar": "30 = ثلاثين. f = حرف «إف»."
+   }
+  },
+  {
+   "n": 21,
+   "key": "s05.c3",
+   "note": {
+    "en": "15 = fifteen. Small pause after \"truth\".",
+    "fr": "15 = quinze. Petite pause après « vérité ».",
+    "ar": "15 = خمسَ عشرةَ. Small pause after الحقيقة."
+   }
+  },
+  {
+   "n": 22,
+   "key": "s05.c4",
+   "say": {
+    "ar": "عند 30 أو 60 بالضبط تبدو العجلة متجمّدة، وأقل بقليل تبدو وكأنها تدور إلى الوراء."
+   },
+   "note": {
+    "en": "30 or 60 = thirty or sixty.",
+    "fr": "30 ou 60 = trente ou soixante.",
+    "ar": "30 أو 60 = ثلاثين أو ستين."
+   }
+  },
+  {
+   "n": 23,
+   "key": "s05.c5",
+   "note": {
+    "en": "The rule of the film. Small pause after \"The rule:\", lean on \"twice\".",
+    "fr": "La règle du film. Petite pause après « La règle : », appuyer sur « deux fois ».",
+    "ar": "The rule of the film. Small pause after القاعدة, stress ضعف."
+   }
+  },
+  {
+   "n": 24,
+   "key": "s05.c6",
+   "note": {
+    "en": "Nyquist = NYE-kwist. Shannon = SHAN-un.",
+    "fr": "Nyquist = ni-kouist. Shannon = cha-none.",
+    "ar": "نيكويست-شانون = Nyquist-Shannon."
+   }
+  },
+  {
+   "n": 25,
+   "key": "s06.c1",
+   "note": {
+    "en": "New topic: a fresh start."
+   }
+  },
+  {
+   "n": 26,
+   "key": "s06.c2",
+   "say": {
+    "en": "Between pictures, each blade moves exactly into the next one’s place."
+   },
+   "note": {
+    "en": "Lean on \"exactly\".",
+    "fr": "Appuyer sur « exactement ».",
+    "ar": "Stress بالضبط."
+   }
+  },
+  {
+   "n": 27,
+   "key": "s06.c3",
+   "say": {
+    "ar": "والأضواء الوامضة قد تُحدث الخدعة نفسها مع الآلات."
+   },
+   "note": {
+    "en": "Matter-of-fact."
+   }
+  },
+  {
+   "n": 28,
+   "key": "s06.c4",
+   "note": {
+    "en": "Lathe = LAYTH. The second sentence is about safety: serious.",
+    "fr": "La deuxième phrase parle de sécurité : sérieux.",
+    "ar": "The second sentence is about safety: serious."
+   }
+  },
+  {
+   "n": 29,
+   "key": "s07.c1",
+   "note": {
+    "en": "New topic: machines."
+   }
+  },
+  {
+   "n": 30,
+   "key": "s07.c2",
+   "say": {
+    "en": "A 900 Hz vibration, read 1000 times a second, looks like 100 Hz."
+   },
+   "note": {
+    "en": "900 Hz = nine hundred hertz. 1000 = a thousand. 100 Hz = a hundred hertz. Numbers slowly.",
+    "fr": "900 Hz = neuf cents hertz. 1000 = mille. 100 Hz = cent hertz. Les nombres lentement.",
+    "ar": "900 Hz = تسعمئة هرتز. 1000 = ألف. 100 Hz = مئة هرتز. Numbers slowly."
+   }
+  },
+  {
+   "n": 31,
+   "key": "s07.c3",
+   "say": {
+    "ar": "الحل: ترشيح الجزء السريع أولًا، ثم أخذ عينات أسرع من الضعف بكثير."
+   },
+   "note": {
+    "en": "A solution: confident."
+   }
+  },
+  {
+   "n": 32,
+   "key": "s07.c4",
+   "note": {
+    "en": "Strobe = STROHB. A little smile: engineers use the trick on purpose."
+   }
+  },
+  {
+   "n": 33,
+   "key": "s08.takeaway",
+   "only": "main",
+   "note": {
+    "en": "The last words of the film. Slower and warm, a small pause after the first comma."
+   }
+  },
+  {
+   "n": 34,
+   "key": "s08.takeaway",
+   "only": "short",
+   "say": {
+    "ar": "صوِّروا ببطء زائد، فيبدو السريع بطيئًا، أو ساكنًا، أو يدور إلى الوراء."
+   },
+   "note": {
+    "en": "The same last line, for the 45-second Short. A little quicker: aim for 6 seconds.",
+    "fr": "La même dernière phrase, pour le format court de 45 secondes. Un peu plus vite : viser 6 secondes.",
+    "ar": "A shorter last line for the 45-second Short. Aim for 5 to 6 seconds."
+   }
+  }
+ ]
+}

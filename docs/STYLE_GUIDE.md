@@ -71,6 +71,7 @@ Equation rules (the international convention):
 - **Length:** Short 30 to 60 s. Full video 2 to 4 min.
 - **Safe area:** keep text inside the central 90 % of the frame. On vertical videos, also keep the bottom 20 % and the right edge free (the app buttons cover them).
 - **Audio loudness:** about -14 LUFS, the level most streaming platforms normalise to.
+- **Narration:** a real person, recorded close and dry (never a synthetic voice). The voice sits about 12 to 15 dB above the music and effects; the music dips under it and rises in the pauses. A narrated full video carries no burned-in captions (subtitles go in a separate .srt); Shorts keep their captions, since many people watch them without sound.
 - **Export:** render an image sequence (PNG) first, then encode to MP4 (H.264). If Blender crashes at frame 800, you keep frames 1 to 799.
 
 ## 5. Blender settings
