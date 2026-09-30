@@ -150,7 +150,8 @@ def main():
     ap.add_argument("--step", type=int, default=1)
     ap.add_argument("--samples", type=int, default=8)
     ap.add_argument("--save-blend", default=None)
-    args = ap.parse_args([a for a in sys.argv[1:] if a != "--"])
+    # inside the Blender program ("blender -b -P script.py -- --render") only what follows "--" is ours
+    args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
 
     scene, pivot, dampers = build_scene()
     scene.cycles.samples = args.samples

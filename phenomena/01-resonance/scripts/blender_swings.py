@@ -224,7 +224,8 @@ def main():
     ap.add_argument("--step", type=int, default=1)
     ap.add_argument("--samples", type=int, default=None, help="default: 8 for the hook, 6 for the single swing")
     ap.add_argument("--save-blend", default=None)
-    args = ap.parse_args([a for a in sys.argv[1:] if a != "--"])
+    # inside the Blender program ("blender -b -P script.py -- --render") only what follows "--" is ours
+    args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
 
     n_frames = args.frames or (640 if args.shot == "hook" else 400)
     scene, pivots = build_scene()

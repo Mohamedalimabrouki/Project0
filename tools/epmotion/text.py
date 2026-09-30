@@ -4,13 +4,17 @@ and Skia glyph outlines, so text stays crisp and can be animated per letter.
 """
 
 import functools
+import os
 
 import skia
 import uharfbuzz as hb
 
 from .core import paint
 
-FONT_DIR = "/usr/share/fonts/opentype/inter"
+# Linux (fonts-inter, fonts-ibm-plex) by default; on macOS or Windows point these at the folders
+# holding Inter-*.otf / InterDisplay-*.otf and IBMPlexSansArabic-Medium.ttf
+FONT_DIR = os.environ.get("EP_FONT_DIR", "/usr/share/fonts/opentype/inter")
+ARABIC_FONT_DIR = os.environ.get("EP_ARABIC_FONT_DIR", "/usr/share/fonts/truetype/ibm-plex")
 FONTS = {
     "regular": f"{FONT_DIR}/Inter-Regular.otf",
     "medium": f"{FONT_DIR}/Inter-Medium.otf",
@@ -22,7 +26,7 @@ FONTS = {
     "display-bold": f"{FONT_DIR}/InterDisplay-Bold.otf",
     "display-light": f"{FONT_DIR}/InterDisplay-Light.otf",
     "display-medium": f"{FONT_DIR}/InterDisplay-Medium.otf",
-    "arabic": "/usr/share/fonts/truetype/ibm-plex/IBMPlexSansArabic-Medium.ttf",
+    "arabic": f"{ARABIC_FONT_DIR}/IBMPlexSansArabic-Medium.ttf",
 }
 
 

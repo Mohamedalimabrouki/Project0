@@ -8,7 +8,6 @@ SI units everywhere: m, kg, s, N, rad.
 """
 
 import numpy as np
-from scipy.integrate import solve_ivp
 
 G = 9.81          # m/s², gravitational acceleration
 FPS = 30          # frames per second of the video
@@ -32,6 +31,10 @@ PUSH_COUNT = 7
 
 
 def _pendulum(push_times, t_end, theta0=0.0, omega0=0.0, dt=1 / 240):
+    # imported here so that the Blender scenes, which only read cached results, also run in
+    # Blender's own Python (it has numpy but no scipy)
+    from scipy.integrate import solve_ivp
+
     push_times = np.asarray(sorted(push_times), dtype=float)
 
     def push(t):

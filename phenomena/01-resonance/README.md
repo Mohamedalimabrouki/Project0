@@ -188,3 +188,4 @@ Copy `01-resonance_16x9_en.mp4` into `video/` and the four `.blend` files into `
 | `scripts/` | Everything that builds the video (see the table above) |
 | `renders/` | `01-resonance_hero.png` (hero still, 3840 × 2160), `01-resonance_thumb.png` (thumbnail, 1280 × 720) |
 | `sources/` | References (links above) |
+| `web/` | `index.html`, the watch page (chapters, subtitles, both layers); how it is published: `docs/PRODUCTION_PLAYBOOK.md`, section 14.3 |

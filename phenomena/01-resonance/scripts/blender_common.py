@@ -43,6 +43,23 @@ def reset_scene():
 def render_settings(scene, samples=8, fps=30, width=1920, height=1080, motion_blur=True):
     scene.render.engine = "CYCLES"
     scene.cycles.device = "CPU"
+    # EP_DEVICE=OPTIX / CUDA / HIP / METAL / ONEAPI renders on the graphics card (much faster on a laptop
+    # with a good GPU); the default stays CPU, which is what the cloud sessions have
+    device = os.environ.get("EP_DEVICE", "CPU").upper()
+    if device != "CPU":
+        try:
+            prefs = bpy.context.preferences.addons["cycles"].preferences
+            prefs.compute_device_type = device
+            prefs.get_devices()
+            gpus = [d for d in prefs.devices if d.type == device]
+            if not gpus:
+                raise RuntimeError("no such graphics card found")
+            for d in prefs.devices:
+                d.use = d.type == device
+            scene.cycles.device = "GPU"
+            print(f"Cycles on the GPU: {', '.join(d.name for d in gpus)}", flush=True)
+        except Exception as e:  # unknown device type or no GPU: stay on the CPU
+            print(f"GPU {device} not available ({e}); rendering on the CPU", flush=True)
     scene.render.resolution_x = width
     scene.render.resolution_y = height
     scene.render.resolution_percentage = 100

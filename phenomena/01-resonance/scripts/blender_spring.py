@@ -205,7 +205,8 @@ def main():
     ap.add_argument("--still", default=None, help="render only --start as a still image to this path")
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
-    args = ap.parse_args([a for a in sys.argv[1:] if a != "--"])
+    # inside the Blender program ("blender -b -P script.py -- --render") only what follows "--" is ours
+    args = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
 
     scene, block, spring, mod, length_id = build_scene()
     scene.cycles.samples = args.samples

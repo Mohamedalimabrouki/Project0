@@ -1,0 +1,364 @@
+<title>Resonance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..800;1,14..32,400..600&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap">
+<style>
+/* Layout: a screening room. The film comes first, the chapter strip is its ruler, the notes sit below in the house's two layers (See it / Understand it). */
+:root {
+  /* colour: the house palette (assets/palette/palette.json); each colour keeps its meaning */
+  --ink: #12161C;        /* house background */
+  --surface: #181D25;    /* ink, one step up, blue-biased */
+  --rule: rgba(140, 150, 160, 0.22);
+  --paper: #F4F3EF;      /* text on dark */
+  --steel: #8C96A0;      /* secondary text, structures */
+  --look: #F0E442;       /* highlight: look here */
+  --force: #D55E00;      /* force */
+  --motion: #0072B2;     /* motion, displacement */
+  --balance: #009E73;    /* it works */
+  /* type: the house faces */
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --arabic: "IBM Plex Sans Arabic", "Noto Sans Arabic", "Geeza Pro", Tahoma, sans-serif;
+  --t-xs: 0.75rem; --t-s: 0.875rem; --t-m: 1rem; --t-l: 1.25rem; --t-xl: 1.75rem;
+  --t-hero: clamp(3.25rem, 9vw, 6.5rem);
+  --gutter: clamp(16px, 4vw, 48px);
+  color-scheme: dark;
+}
+body { background: var(--ink); color: var(--paper); font-family: var(--sans); font-size: var(--t-m); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: var(--gutter); padding-block: clamp(20px, 4vw, 44px) 56px; display: grid; gap: clamp(28px, 4vw, 44px); }
+.eyebrow { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--look); margin: 0; }
+.muted { color: var(--steel); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+
+/* title block */
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 32px; }
+.head .name { display: grid; gap: 10px; min-width: 0; }
+h1 { font-size: var(--t-hero); font-weight: 800; font-variation-settings: "opsz" 32; letter-spacing: -0.035em; line-height: 0.92; }
+.tag { margin: 0; font-size: var(--t-xl); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.tag span { display: block; }
+.tag .hi { color: var(--look); }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--t-s); color: var(--steel); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--paper); font-weight: 600; }
+
+/* the screen */
+.screen { display: grid; gap: 14px; }
+.frame { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 4px; overflow: hidden; box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--rule); }
+video { display: block; width: 100%; height: 100%; background: #000; }
+video::cue { font-family: var(--sans), var(--arabic); font-size: 0.9em; line-height: 1.35; color: var(--paper); background: rgba(18, 22, 28, 0.78); }
+.note { position: absolute; inset: auto 12px 12px 12px; margin: 0; padding: 10px 14px; background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; font-size: var(--t-s); }
+
+/* chapter strip: widths are the real chapter lengths */
+.strip { display: flex; gap: 3px; height: 34px; align-items: stretch; }
+.seg { position: relative; min-width: 6px; padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; align-items: flex-end; }
+.seg::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(140, 150, 160, 0.28); border-radius: 2px; transition: height 0.15s; }
+.seg i { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: var(--paper); border-radius: 2px; transform-origin: left center; transform: scaleX(0); transition: height 0.15s; }
+.seg:hover::before, .seg:hover i, .seg:focus-visible::before, .seg:focus-visible i { height: 8px; }
+.seg.on i { background: var(--look); }
+.seg:focus-visible { outline: 2px solid var(--look); outline-offset: 3px; border-radius: 2px; }
+.seg span { position: absolute; left: 0; bottom: 12px; font-size: 11px; color: var(--steel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-variant-numeric: tabular-nums; }
+.seg.on span { color: var(--look); }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; }
+.now { font-size: var(--t-s); color: var(--steel); margin: 0; font-variant-numeric: tabular-nums; min-width: 0; }
+.now b { color: var(--paper); font-weight: 600; }
+.subs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.subs > span { font-size: var(--t-xs); letter-spacing: 0.16em; text-transform: uppercase; color: var(--steel); }
+.seg-ctl { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg-ctl button { font: inherit; font-size: var(--t-s); color: var(--steel); background: transparent; border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.seg-ctl button:hover { color: var(--paper); }
+.seg-ctl button[aria-pressed="true"] { background: var(--paper); color: var(--ink); font-weight: 600; }
+.seg-ctl button:focus-visible { outline: 2px solid var(--look); outline-offset: 2px; }
+.seg-ctl [lang="ar"] { font-family: var(--arabic); }
+
+/* section headings */
+.sect { display: grid; gap: 18px; }
+.sect-h { display: flex; align-items: baseline; gap: 14px; border-top: 1px solid var(--rule); padding-top: 18px; }
+h2 { font-size: var(--t-l); font-weight: 700; letter-spacing: -0.01em; }
+
+/* chapters: nine, in film order */
+.chapters { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.chapters li { background: var(--ink); min-width: 0; }
+.chapters button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 3.2em minmax(0, 1fr); gap: 2px 12px; width: 100%; height: 100%; padding: 14px 16px; cursor: pointer; }
+.chapters button:hover { background: var(--surface); }
+.chapters button:focus-visible { outline: 2px solid var(--look); outline-offset: -2px; }
+.chapters time { font-size: var(--t-s); color: var(--steel); font-variant-numeric: tabular-nums; padding-top: 1px; }
+.chapters b { font-weight: 600; }
+.chapters small { grid-column: 2; font-size: var(--t-s); color: var(--steel); line-height: 1.45; }
+.chapters .on time, .chapters .on b { color: var(--look); }
+
+/* the two layers */
+.layers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); }
+.layer { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.layer h3 { font-size: var(--t-xs); letter-spacing: 0.2em; text-transform: uppercase; color: var(--steel); font-weight: 600; }
+.layer p { margin: 0; max-width: 62ch; }
+.lead { font-size: var(--t-l); line-height: 1.5; letter-spacing: -0.005em; }
+.eq { font-size: clamp(1.5rem, 3.4vw, 2rem); font-weight: 500; letter-spacing: 0.01em; padding: 16px 18px; background: var(--surface); border-radius: 4px; overflow-x: auto; white-space: nowrap; font-variation-settings: "opsz" 32; }
+.eq i { font-style: italic; }
+.mo { color: var(--motion); }
+.fo { color: var(--force); }
+dl.rows { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 18px; font-size: var(--t-s); }
+dl.rows dt { color: var(--steel); }
+dl.rows dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; }
+dl.rows i { font-style: italic; }
+.key { color: var(--look); font-weight: 600; }
+
+/* the real cases */
+.cases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.case { background: var(--surface); border-radius: 4px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.case h3 { font-size: var(--t-l); font-weight: 700; }
+.case p { margin: 0; color: var(--steel); font-size: var(--t-s); }
+.fixed { color: var(--balance); font-weight: 600; }
+
+footer { border-top: 1px solid var(--rule); padding-top: 18px; display: grid; gap: 6px; font-size: var(--t-s); color: var(--steel); }
+footer p { margin: 0; max-width: 80ch; }
+
+@media (max-width: 860px) {
+  .layers, .cases { grid-template-columns: minmax(0, 1fr); }
+  .chapters { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .seg span { display: none; }
+  .strip { height: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg::before, .seg i { transition: none; }
+}
+</style>
+
+<main class="wrap">
+  <header class="head">
+    <div class="name">
+      <p class="eyebrow">Engineering Phenomena · 01</p>
+      <h1>Resonance</h1>
+      <p class="tag"><span>Tiny pushes.</span><span class="hi">Huge movements.</span></p>
+    </div>
+    <ul class="facts" aria-label="About this film">
+      <li><b>2 min 58 s</b></li>
+      <li>1080p · 30 fps</li>
+      <li>Subtitles <b>EN FR AR</b></li>
+      <li>Physics computed, not animated by eye</li>
+    </ul>
+  </header>
+
+  <section class="screen" aria-label="The film">
+    <div class="frame">
+      <video id="film" controls playsinline preload="metadata" poster="hls/poster.jpg" aria-label="Resonance, a film of 2 minutes 58 seconds">
+      </video>
+      <p class="note" id="play-note" hidden>This browser could not stream the film here. Open this page in Chrome, Safari or Edge, or play the phone copy sent in the chat.</p>
+    </div>
+
+    <div class="strip" id="strip" aria-label="Chapters, drawn to length">
+      <button class="seg" style="flex: 20.792" data-i="0" aria-label="Two swings, 0:00"><i></i><span>Two swings</span></button>
+      <button class="seg" style="flex: 3.908" data-i="1" aria-label="Resonance, 0:20"><i></i><span>Title</span></button>
+      <button class="seg" style="flex: 12.197" data-i="2" aria-label="A natural rhythm, 0:24"><i></i><span>Rhythm</span></button>
+      <button class="seg" style="flex: 14.05" data-i="3" aria-label="The engineer's model, 0:36"><i></i><span>Model</span></button>
+      <button class="seg" style="flex: 32.425" data-i="4" aria-label="Pushing at every rhythm, 0:50"><i></i><span>Pushing at every rhythm</span></button>
+      <button class="seg" style="flex: 26.86" data-i="5" aria-label="Damping, 1:23"><i></i><span>Damping</span></button>
+      <button class="seg" style="flex: 34.054" data-i="6" aria-label="The Millennium Bridge, 1:50"><i></i><span>Millennium Bridge</span></button>
+      <button class="seg" style="flex: 23.289" data-i="7" aria-label="Taipei 101, 2:24"><i></i><span>Taipei 101</span></button>
+      <button class="seg" style="flex: 10.261" data-i="8" aria-label="The takeaway, 2:47"><i></i><span>Takeaway</span></button>
+    </div>
+
+    <div class="controls">
+      <p class="now" id="now"><b>0:00</b> / 2:58 · Two swings</p>
+      <div class="subs" role="group" aria-label="Subtitles">
+        <span>Subtitles</span>
+        <div class="seg-ctl">
+          <button type="button" id="sub-off" data-lang="" aria-pressed="true">Off</button>
+          <button type="button" id="sub-en" data-lang="en" aria-pressed="false">English</button>
+          <button type="button" id="sub-fr" data-lang="fr" aria-pressed="false" lang="fr">Français</button>
+          <button type="button" id="sub-ar" data-lang="ar" aria-pressed="false" lang="ar">العربية</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-chapters">
+    <div class="sect-h"><h2 id="h-chapters">Chapters</h2><span class="muted">Tap one to jump there</span></div>
+    <ol class="chapters" id="chapters">
+      <li><button type="button" data-i="0"><time>0:00</time><b>Two swings</b><small>Two identical swings, identical pushes. One is pushed at the same moment every time, the other at random moments.</small></button></li>
+      <li><button type="button" data-i="1"><time>0:20</time><b>Resonance</b><small>Same push, different timing, a very different result. This is resonance.</small></button></li>
+      <li><button type="button" data-i="2"><time>0:24</time><b>A natural rhythm</b><small>Anything that can wiggle keeps its own beat. A swing on 2 m chains: about one swing every 2.8 s.</small></button></li>
+      <li><button type="button" data-i="3"><time>0:36</time><b>The engineer's model</b><small>The simplest wiggler: a 2 kg steel block on a spring, at 1 Hz. A stiffer spring is faster, a heavier mass is slower.</small></button></li>
+      <li><button type="button" data-i="4"><time>0:50</time><b>Pushing at every rhythm</b><small>Slow pushes: it just follows. At its natural rhythm: 10 times bigger. Faster still: it barely moves.</small></button></li>
+      <li><button type="button" data-i="5"><time>1:23</time><b>Damping</b><small>Damping turns motion into heat. At 5 % the peak is 10 times; double the damping and the peak halves.</small></button></li>
+      <li><button type="button" data-i="6"><time>1:50</time><b>The Millennium Bridge</b><small>London, June 2000. Walkers' balance steps fed the sway. Closed two days later, reopened steady in 2002.</small></button></li>
+      <li><button type="button" data-i="7"><time>2:24</time><b>Taipei 101</b><small>A 660 t ball tuned to the tower swings a quarter of a beat behind it. Resonance, used to fight resonance.</small></button></li>
+      <li><button type="button" data-i="8"><time>2:47</time><b>The takeaway</b><small>Push something at its favourite rhythm, and tiny pushes make huge movements.</small></button></li>
+    </ol>
+  </section>
+
+  <section class="sect" aria-labelledby="h-layers">
+    <div class="sect-h"><h2 id="h-layers">Two ways in</h2><span class="muted">One for everyone, one for engineers</span></div>
+    <div class="layers">
+      <div class="layer">
+        <h3>See it</h3>
+        <p class="lead">When you push a swing at just the right moments, small pushes add up and the swing goes higher and higher.</p>
+        <p class="muted">Everything that can wiggle, from a swing to a bridge, has its own favourite rhythm. Push it at that rhythm and a tiny force can make a huge movement. That is resonance.</p>
+      </div>
+      <div class="layer">
+        <h3>Understand it</h3>
+        <p class="eq" aria-label="m x double dot plus c x dot plus k x equals F zero cos omega t"><i>m</i>&#8202;<i class="mo">ẍ</i> + <i>c</i>&#8202;<i class="mo">ẋ</i> + <i>k</i>&#8202;<i class="mo">x</i> = <span class="fo"><i>F</i><sub>0</sub> cos <i>ωt</i></span></p>
+        <dl class="rows">
+          <dt>Natural frequency</dt><dd><i>ω</i><sub>n</sub> = √(<i>k</i>/<i>m</i>)</dd>
+          <dt>Damping ratio</dt><dd><i>ζ</i> = <i>c</i> / (2√(<i>k</i><i>m</i>))</dd>
+          <dt>At resonance</dt><dd>amplitude = (<i>F</i><sub>0</sub>/<i>k</i>) × <span class="key">1/(2<i>ζ</i>)</span></dd>
+          <dt>Why it grows</dt><dd>the motion lags the push by 90°, so the push always works with the velocity: <i>P</i> = <i>F</i>·<i>v</i> ≥ 0</dd>
+          <dt>The model in the film</dt><dd><i>m</i> = 2 kg, <i>k</i> = 79 N/m, <i>f</i><sub>n</sub> = 1 Hz, <i>ζ</i> = 5 %, <i>F</i><sub>0</sub> = 0.5 N, so ±63 mm at resonance (10 × the 6.3 mm static stretch)</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect" aria-labelledby="h-cases">
+    <div class="sect-h"><h2 id="h-cases">The two real cases</h2><span class="muted">Checked against published sources</span></div>
+    <div class="cases">
+      <article class="case">
+        <h3>London Millennium Bridge</h3>
+        <dl class="rows">
+          <dt>Opened</dt><dd>10 June 2000, closed 12 June 2000</dd>
+          <dt>Sideways sway</dt><dd>up to about 70 mm</dd>
+          <dt>Cause</dt><dd>walkers shifting their feet for balance pushed in step with the deck's motion, like negative damping</dd>
+          <dt>Fix</dt><dd class="fixed">37 viscous dampers and about 60 tuned mass dampers</dd>
+          <dt>Reopened</dt><dd>22 February 2002</dd>
+        </dl>
+        <p>A popular myth says people marched in step. Research shows the balance behaviour alone is enough; falling into step came after the sway, not before it.</p>
+      </article>
+      <article class="case">
+        <h3>Taipei 101</h3>
+        <dl class="rows">
+          <dt>Tower</dt><dd>508 m, first sway rhythm about 0.15 Hz (6.8 s)</dd>
+          <dt>Damper</dt><dd>660 t steel sphere, 5.5 m wide, 8 cables, 8 hydraulic dampers</dd>
+          <dt>Trick</dt><dd>tuned to the tower's rhythm, it swings about 90° behind, so its pull always opposes the tower's motion</dd>
+          <dt>Effect</dt><dd class="fixed">up to about 40 % less sway (operator figure)</dd>
+          <dt>Largest swing</dt><dd>1 m, Typhoon Soudelor, 8 August 2015</dd>
+        </dl>
+        <p>It is designed for comfort in wind, not as earthquake protection.</p>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    <p>Every motion in the film is computed from the equations and driven into Blender and the 2D engine frame by frame. Any exaggeration is labelled on screen.</p>
+    <p>Voice: Kokoro-82M. Music: original score, played with the MuseScore General soundfont. Full sources: phenomena/01-resonance/README.md in the project repository.</p>
+  </footer>
+</main>
+
+<script type="application/json" id="cues">{"en":[[3.0,7.282,"Two identical swings. Every\npush is exactly the same size."],[7.632,11.267,"On the left, one push per swing,\nalways at the same moment."],[11.307,14.609,"On the right, the same\npushes, at random moments."],[16.759,20.343,"Same push. Different timing.\nA very different result."],[20.993,22.357,"This is resonance."],[25.2,27.714,"Anything that can wiggle\nhas a natural rhythm:"],[27.754,30.559,"the beat it keeps when\nyou pull it and let go."],[30.809,36.347,"A swing on 2-metre chains goes back\nand forth about once every 2.8 seconds."],[37.297,42.087,"Engineers study this with the simplest\nwiggler of all: a mass on a spring."],[43.237,46.045,"Its natural rhythm depends\non just two things."],[46.085,48.088,"A stiffer spring makes it faster."],[48.128,50.297,"A heavier mass makes it slower."],[51.247,54.331,"Now let's push it, gently,\nat a rhythm we choose."],[54.881,57.965,"Push slowly, and the mass\nsimply follows the push."],[58.715,63.381,"Push faster, closer to its natural\nrhythm, and the motion starts to grow."],[63.931,65.477,"Right at its natural rhythm,"],[65.517,69.164,"the motion is ten times bigger\nthan a slow push can make it."],[69.814,71.076,"Here is the secret:"],[71.116,75.874,"at resonance, every push goes the\nsame way the mass is already moving."],[75.914,77.946,"So every push adds energy."],[78.696,82.723,"Push faster still, and the mass\ncannot keep up. It barely moves."],[83.673,86.824,"So what stops the motion\ngrowing forever? Damping:"],[86.864,92.476,"anything that turns motion into heat, like\nfriction, or the oil in a shock absorber."],[92.826,95.33,"Damping sets the height of the peak."],[95.37,98.794,"With 5 % damping, the\nmotion is ten times bigger."],[98.834,101.622,"Double the damping, and the peak halves."],[101.662,104.456,"At 30 %, only a gentle bump is left."],[105.006,109.082,"That is why engineers add damping\nto anything that must not shake."],[110.232,111.494,"London, June 2000."],[111.534,116.483,"The Millennium Bridge opens, and\nthousands of people walk across."],[116.833,121.915,"Every step pushes the deck a tiny bit\nsideways: left, right, left, right."],[122.265,127.072,"Once the deck starts to sway, people\nshift their feet to keep their balance."],[127.112,131.408,"On average, those pushes go the\nsame way the deck is already moving,"],[131.448,133.547,"so every step feeds the sway."],[134.097,136.767,"Two days later, the bridge is closed."],[136.807,140.722,"Engineers fitted dampers\nthat turn the sway into heat."],[140.762,143.136,"In 2002, it reopened, steady."],[144.286,147.106,"Taipei 101 goes one step further."],[147.146,152.739,"Near the top of the 508-metre\ntower hangs a 660-tonne steel ball,"],[152.779,155.802,"tuned to the tower's own rhythm."],[156.252,160.882,"When the wind makes the tower sway, the\nball swings a quarter of a beat behind it,"],[160.922,163.28,"so its pull works against the motion."],[163.83,166.226,"Resonance, used to fight resonance."],[167.576,172.086,"Push something at its favourite rhythm,\nand tiny pushes make huge movements."]],"fr":[[3.0,7.282,"Deux balançoires identiques. Chaque\npoussée a exactement la même force."],[7.632,11.092,"À gauche, une poussée par\naller-retour, toujours au même moment."],[11.132,14.609,"À droite, les mêmes poussées,\nà des moments pris au hasard."],[16.759,20.343,"Même poussée. Moment différent.\nUn résultat très différent."],[20.993,22.357,"C'est la résonance."],[25.2,27.491,"Tout ce qui peut osciller\na un rythme naturel :"],[27.531,30.559,"celui qu'il garde quand on\nl'écarte puis qu'on le lâche."],[30.809,32.977,"Une balançoire aux chaînes de 2 mètres"],[33.017,36.347,"fait un aller-retour environ\ntoutes les 2,8 secondes."],[37.297,40.602,"Les ingénieurs l'étudient avec\nl'oscillateur le plus simple qui soit :"],[40.642,42.087,"une masse sur un ressort."],[43.237,45.711,"Son rythme naturel ne\ndépend que de deux choses."],[45.751,47.912,"Un ressort plus raide le rend plus rapide."],[47.952,50.297,"Une masse plus lourde le rend plus lent."],[51.247,54.331,"Maintenant, poussons-la doucement,\nau rythme que nous choisissons."],[54.881,57.965,"Si l'on pousse lentement, la\nmasse suit simplement la poussée."],[58.715,61.429,"Poussons plus vite, plus\nprès de son rythme naturel :"],[61.469,63.381,"le mouvement commence à grandir."],[63.931,65.347,"Pile à son rythme naturel,"],[65.387,69.164,"le mouvement est dix fois plus\ngrand qu'avec une poussée lente."],[69.814,70.829,"Voici le secret :"],[70.869,75.174,"à la résonance, chaque poussée va\ndans le sens où la masse bouge déjà."],[75.214,77.946,"Chaque poussée ajoute donc de l'énergie."],[78.696,82.723,"Encore plus vite, et la masse n'arrive\nplus à suivre. Elle bouge à peine."],[83.673,87.356,"Qu'est-ce qui empêche le mouvement de\ngrandir sans fin ? L'amortissement :"],[87.396,90.777,"tout ce qui transforme le mouvement\nen chaleur, comme le frottement,"],[90.817,92.476,"ou l'huile d'un amortisseur."],[92.826,95.039,"L'amortissement fixe la hauteur du pic."],[95.079,98.678,"Avec 5 % d'amortissement, le\nmouvement est dix fois plus grand."],[98.718,101.855,"Doublez l'amortissement, et\nle pic est divisé par deux."],[101.895,104.456,"À 30 %, il ne reste qu'une petite bosse."],[105.006,107.337,"C'est pourquoi les ingénieurs\najoutent de l'amortissement"],[107.377,109.082,"à tout ce qui ne doit pas trembler."],[110.232,111.332,"Londres, juin 2000."],[111.372,116.483,"Le Millennium Bridge ouvre au public, et\ndes milliers de personnes le traversent."],[116.833,119.979,"Chaque pas pousse le tablier\nun tout petit peu sur le côté :"],[120.019,121.915,"gauche, droite, gauche, droite."],[122.265,124.42,"Dès que le tablier commence à osciller,"],[124.46,127.516,"les gens déplacent leurs\npieds pour garder l'équilibre."],[127.556,131.4,"En moyenne, ces poussées vont dans\nle sens où le tablier bouge déjà :"],[131.44,133.547,"chaque pas nourrit l'oscillation."],[134.097,136.297,"Deux jours plus tard, le pont est fermé."],[136.337,141.167,"Les ingénieurs ont installé des amortisseurs\nqui transforment l'oscillation en chaleur."],[141.207,143.136,"En 2002, il a rouvert, stable."],[144.286,146.456,"Taipei 101 va encore plus loin."],[146.496,152.589,"Près du sommet de la tour de 508 mètres est\nsuspendue une boule d'acier de 660 tonnes,"],[152.629,155.802,"accordée sur le rythme propre de la tour."],[156.252,158.02,"Quand le vent fait osciller la tour,"],[158.06,160.68,"la boule se balance avec un\nquart de temps de retard,"],[160.72,163.28,"si bien que sa traction\ns'oppose au mouvement."],[163.83,166.226,"La résonance, utilisée pour\ncombattre la résonance."],[167.576,169.386,"Poussez quelque chose à son rythme préféré,"],[169.426,172.086,"et de toutes petites poussées\nfont d'énormes mouvements."]],"ar":[[3.0,7.282,"أرجوحتان متطابقتان. كل دفعة\nلها القوة نفسها تمامًا."],[7.632,11.436,"على اليسار، دفعة واحدة في كل ذهاب\nوإياب، دائمًا في اللحظة نفسها."],[11.476,14.609,"على اليمين، الدفعات نفسها،\nلكن في لحظات عشوائية."],[16.759,20.343,"الدفعة نفسها. توقيت\nمختلف. ونتيجة مختلفة جدًا."],[20.993,22.357,"هذا هو الرنين."],[25.2,27.395,"كل ما يمكنه أن يهتز له إيقاع طبيعي:"],[27.435,30.559,"الإيقاع الذي يحافظ عليه\nعندما تسحبه ثم تتركه."],[30.809,36.347,"أرجوحة بسلاسل طولها 2 متر تذهب\nوتعود مرة كل 2.8 ثانية تقريبًا."],[37.297,42.087,"يدرس المهندسون ذلك بأبسط جسم مهتز\nعلى الإطلاق: كتلة مربوطة بنابض."],[43.237,45.76,"إيقاعه الطبيعي يعتمد على شيئين فقط."],[45.8,50.297,"النابض الأكثر صلابة يجعله أسرع.\nوالكتلة الأثقل تجعله أبطأ."],[51.247,54.331,"لندفعها الآن بلطف، بالإيقاع الذي نختاره."],[54.881,57.965,"إذا دفعنا ببطء، تتبع\nالكتلة الدفعة ببساطة."],[58.715,63.381,"وإذا دفعنا أسرع، أقرب إلى إيقاعها\nالطبيعي، تبدأ الحركة في الازدياد."],[63.931,69.164,"عند إيقاعها الطبيعي تمامًا، تصبح الحركة\nأكبر بعشر مرات مما تحدثه دفعة بطيئة."],[69.814,70.798,"وهذا هو السر:"],[70.838,75.843,"عند الرنين، كل دفعة تكون في الاتجاه\nالذي تتحرك فيه الكتلة أصلًا."],[75.883,77.946,"لذلك تضيف كل دفعة طاقة."],[78.696,82.723,"وإذا دفعنا أسرع من ذلك، لا تستطيع\nالكتلة المواكبة. بالكاد تتحرك."],[83.673,87.478,"فما الذي يمنع الحركة من الازدياد\nإلى ما لا نهاية؟ التخميد:"],[87.518,92.476,"كل ما يحوّل الحركة إلى حرارة، مثل\nالاحتكاك، أو الزيت داخل ممتص الصدمات."],[92.826,98.351,"التخميد يحدد ارتفاع القمة. مع تخميد\n5%، تكون الحركة أكبر بعشر مرات."],[98.391,101.425,"ضاعف التخميد، فتنخفض القمة إلى النصف."],[101.465,104.456,"وعند 30%، لا تبقى إلا حدبة صغيرة."],[105.006,109.082,"لهذا يضيف المهندسون التخميد\nإلى كل ما يجب ألّا يهتز."],[110.232,116.483,"لندن، يونيو 2000. يُفتتح جسر\nالألفية، ويعبره آلاف الناس."],[116.833,119.68,"كل خطوة تدفع سطح الجسر\nقليلًا جدًا إلى الجانب:"],[119.72,121.915,"يسارًا، يمينًا، يسارًا، يمينًا."],[122.265,127.173,"وما إن يبدأ السطح في التمايل حتى يحرّك\nالناس أقدامهم ليحافظوا على توازنهم."],[127.213,130.182,"وفي المتوسط، تكون تلك\nالدفعات في الاتجاه الذي"],[130.222,133.547,"يتحرك فيه السطح أصلًا،\nفتغذّي كل خطوة التمايل."],[134.097,140.142,"بعد يومين، أُغلق الجسر. ركّب المهندسون\nمخمِّدات تحوّل التمايل إلى حرارة."],[140.182,143.136,"وفي 2002، أُعيد افتتاحه، ثابتًا."],[144.286,146.957,"برج تايبيه 101 يذهب أبعد من ذلك."],[146.997,151.107,"قرب قمة البرج البالغ\nارتفاعه 508 أمتار، تتدلى كرة"],[151.147,155.802,"فولاذية وزنها 660 طنًا،\nمضبوطة على إيقاع البرج نفسه."],[156.252,159.563,"عندما تجعل الرياح البرج\nيتمايل، تتأرجح الكرة"],[159.603,163.28,"متأخرة عنه بربع إيقاع،\nفيعمل شدّها ضد الحركة."],[163.83,166.226,"الرنين، يُستخدم لمحاربة الرنين."],[167.576,172.086,"ادفع أي شيء بإيقاعه المفضّل،\nفتصنع الدفعات الصغيرة حركات هائلة."]]}</script>
+<script>
+(function () {
+  var CH = [0, 20.792, 24.7, 36.897, 50.947, 83.372, 110.232, 144.286, 167.575, 177.836];
+  var NAMES = ["Two swings", "Resonance", "A natural rhythm", "The engineer's model", "Pushing at every rhythm",
+               "Damping", "The Millennium Bridge", "Taipei 101", "The takeaway"];
+  var SRC = "hls/playlist.txt";
+  var LIBS = ["https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js",
+              "https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js",
+              "https://unpkg.com/hls.js@1.5.13/dist/hls.min.js"];
+  var v = document.getElementById("film");
+  var note = document.getElementById("play-note");
+  var segs = Array.prototype.slice.call(document.querySelectorAll("#strip .seg"));
+  var fills = segs.map(function (s) { return s.querySelector("i"); });
+  var items = Array.prototype.slice.call(document.querySelectorAll("#chapters button"));
+  var now = document.getElementById("now");
+
+  function fail() { note.hidden = false; }
+
+  function loadLib(i) {
+    return new Promise(function (resolve, reject) {
+      if (window.Hls) return resolve(window.Hls);
+      if (i >= LIBS.length) return reject(new Error("no player library"));
+      var s = document.createElement("script");
+      s.src = LIBS[i];
+      s.onload = function () { window.Hls ? resolve(window.Hls) : loadLib(i + 1).then(resolve, reject); };
+      s.onerror = function () { loadLib(i + 1).then(resolve, reject); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function viaLibrary() {
+    loadLib(0).then(function (Hls) {
+      if (!Hls.isSupported()) return fail();
+      var hls = new Hls({ maxBufferLength: 30, enableWebVTT: false, enableIMSC1: false, enableCEA708Captions: false });
+      var recoveries = 0;
+      hls.on(Hls.Events.ERROR, function (e, d) {
+        if (!d.fatal) return;
+        if (d.type === Hls.ErrorTypes.NETWORK_ERROR && recoveries < 3) { recoveries++; hls.startLoad(); }
+        else if (d.type === Hls.ErrorTypes.MEDIA_ERROR && recoveries < 3) { recoveries++; hls.recoverMediaError(); }
+        else { hls.destroy(); fail(); }
+      });
+      hls.loadSource(SRC);
+      hls.attachMedia(v);
+    }, fail);
+  }
+
+  viaLibrary();
+
+  // the three subtitle tracks, built from the cues in this page
+  var CUES = JSON.parse(document.getElementById("cues").textContent);
+  var LABELS = { en: "English", fr: "Français", ar: "العربية" };
+  var Cue = window.VTTCue || window.TextTrackCue;
+  ["en", "fr", "ar"].forEach(function (lang) {
+    var tr = v.addTextTrack("subtitles", LABELS[lang], lang);
+    tr.mode = "hidden";
+    CUES[lang].forEach(function (c) { try { tr.addCue(new Cue(c[0], c[1], c[2])); } catch (e) {} });
+    tr.mode = "disabled";
+  });
+
+  function fmt(t) { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
+  function chapterAt(t) { for (var i = CH.length - 2; i >= 0; i--) if (t >= CH[i]) return i; return 0; }
+
+  var last = -1;
+  function paint() {
+    var t = v.currentTime || 0;
+    var c = chapterAt(t);
+    for (var i = 0; i < fills.length; i++) {
+      var p = Math.min(1, Math.max(0, (t - CH[i]) / (CH[i + 1] - CH[i])));
+      fills[i].style.transform = "scaleX(" + p + ")";
+    }
+    if (c !== last) {
+      segs.forEach(function (s, i) { s.classList.toggle("on", i === c); });
+      items.forEach(function (b, i) { b.classList.toggle("on", i === c); if (i === c) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
+      last = c;
+    }
+    now.innerHTML = "<b>" + fmt(t) + "</b> / 2:58 · " + NAMES[c];
+  }
+  v.addEventListener("timeupdate", paint);
+  v.addEventListener("seeked", paint);
+  paint();
+
+  function seek(t) {
+    v.currentTime = t + 0.01;
+    paint();
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  items.forEach(function (b) { b.addEventListener("click", function () { seek(CH[+b.dataset.i]); }); });
+  segs.forEach(function (s) {
+    s.addEventListener("click", function (e) {
+      var i = +s.dataset.i, r = s.getBoundingClientRect();
+      var f = e.clientX && r.width ? Math.min(0.98, Math.max(0, (e.clientX - r.left) / r.width)) : 0;
+      seek(CH[i] + f * (CH[i + 1] - CH[i]));
+    });
+  });
+
+  // subtitles: one choice at a time, remembered on this device
+  var subBtns = Array.prototype.slice.call(document.querySelectorAll(".seg-ctl button"));
+  function setSubs(lang) {
+    for (var i = 0; i < v.textTracks.length; i++) {
+      var tr = v.textTracks[i];
+      if (tr.kind === "subtitles" || tr.kind === "captions") tr.mode = (lang && tr.language === lang) ? "showing" : "disabled";
+    }
+    subBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === lang)); });
+    try { localStorage.setItem("resonance-subs", lang); } catch (e) {}
+  }
+  subBtns.forEach(function (b) { b.addEventListener("click", function () { setSubs(b.dataset.lang); }); });
+  // keep the buttons honest if the viewer switches subtitles in the player's own menu
+  v.textTracks.addEventListener && v.textTracks.addEventListener("change", function () {
+    var on = "";
+    for (var i = 0; i < v.textTracks.length; i++) if (v.textTracks[i].mode === "showing") on = v.textTracks[i].language;
+    subBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === on)); });
+  });
+  var saved = "";
+  try { saved = localStorage.getItem("resonance-subs") || ""; } catch (e) {}
+  setSubs(saved);
+})();
+</script>
