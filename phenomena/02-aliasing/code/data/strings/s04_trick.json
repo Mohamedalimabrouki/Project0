@@ -1,0 +1,82 @@
+{
+  "s04.c1": {
+    "en": "Let's slow it right down, and paint one spoke yellow.",
+    "fr": "Ralentissons tout, et peignons un rayon en jaune.",
+    "ar": "لنُبطئ الحركة كثيرًا، ولنلوّن شعاعًا واحدًا باللون الأصفر."
+  },
+  "s04.c2": {
+    "en": "A small turn between pictures: it looks like it turns forwards. Correct!",
+    "fr": "Petite rotation entre deux images\u00a0: la roue semble tourner dans\u00a0le\u00a0bon\u00a0sens. Exact\u00a0!",
+    "ar": "دوران صغير بين صورتين: تبدو العجلة وكأنها تدور إلى الأمام. وهذا صحيح!"
+  },
+  "s04.c3": {
+    "en": "Now it turns almost one spoke gap between pictures.",
+    "fr": "Maintenant, presque un écart entre rayons par image.",
+    "ar": "الآن تدور بين كل صورتين ما يقارب فجوة كاملة بين شعاعين."
+  },
+  "s04.c4": {
+    "en": "Every spoke lands just short of where the next one was...",
+    "fr": "Chaque rayon arrive juste avant la place qu’occupait le suivant…",
+    "ar": "كل شعاع يتوقف قبل مكان الشعاع\u00a0التالي\u00a0بقليل…"
+  },
+  "s04.c5": {
+    "en": "...so the closest match is backwards. The wheel seems to turn backwards!",
+    "fr": "…donc le lien le plus court va\u00a0vers\u00a0l’arrière. La\u00a0roue\u00a0semble\u00a0tourner\u00a0à\u00a0l’envers\u00a0!",
+    "ar": "…ولذلك تكون أقرب مطابقة إلى الوراء. تبدو العجلة وكأنها تدور إلى الوراء!"
+  },
+  "s04.c6": {
+    "en": "Turn exactly one gap per picture, and every picture looks the same.",
+    "fr": "Avec exactement un écart par image, toutes\u00a0les\u00a0images\u00a0sont\u00a0identiques.",
+    "ar": "وإذا دارت العجلة فجوة كاملة بالضبط بين كل صورتين، تبدو الصور كلها متطابقة."
+  },
+  "s04.c7": {
+    "en": "The wheel seems frozen, even though it is spinning fast.",
+    "fr": "La roue semble figée, alors qu’elle tourne à toute vitesse.",
+    "ar": "تبدو العجلة متجمّدة، رغم أنها تدور بسرعة كبيرة."
+  },
+  "s04.real": {
+    "en": "Real turn",
+    "fr": "Rotation réelle",
+    "ar": "الدوران الحقيقي"
+  },
+  "s04.seen": {
+    "en": "What we see",
+    "fr": "Ce qu’on voit",
+    "ar": "ما نراه"
+  },
+  "s04.gap": {
+    "en": "One spoke gap",
+    "fr": "Écart entre rayons",
+    "ar": "فجوة بين شعاعين"
+  },
+  "s04.forwards": {
+    "en": "Forwards",
+    "fr": "En avant",
+    "ar": "إلى الأمام"
+  },
+  "s04.backwards": {
+    "en": "Backwards",
+    "fr": "En arrière",
+    "ar": "إلى الوراء"
+  },
+  "s04.frozen": {
+    "en": "Frozen",
+    "fr": "Immobile",
+    "ar": "متجمّدة"
+  },
+  "s04.short": {
+    "en": "Just short",
+    "fr": "Il manque",
+    "ar": "ينقص"
+  },
+  "s04.perpic": {
+    "en": "per picture",
+    "fr": "par image",
+    "ar": "في كل صورة"
+  },
+  "s04.prev": {
+    "en": "Previous picture",
+    "fr": "Image précédente",
+    "ar": "الصورة السابقة"
+  }
+}

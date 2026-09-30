@@ -1,0 +1,46 @@
+1
+00:00:00,800 --> 00:00:03,600
+Cette voiture accélère.
+
+2
+00:00:04,000 --> 00:00:06,000
+Regardez bien la roue.
+
+3
+00:00:06,400 --> 00:00:09,000
+Elle semble tourner à l’envers !
+
+4
+00:00:09,400 --> 00:00:12,400
+Et là, elle semble immobile.
+
+5
+00:00:12,800 --> 00:00:15,900
+La voiture n’a jamais ralenti.
+Alors, que se passe-t-il ?
+
+6
+00:00:16,800 --> 00:00:21,200
+C’est un folioscope :
+30 images fixes par seconde.
+
+7
+00:00:21,600 --> 00:00:26,000
+Maintenant, presque un écart
+entre rayons par image.
+
+8
+00:00:26,400 --> 00:00:31,200
+Chaque rayon arrive juste avant
+la place qu’occupait le suivant…
+
+9
+00:00:31,600 --> 00:00:37,900
+…donc le lien le plus court va vers l’arrière.
+La roue semble tourner à l’envers !
+
+10
+00:00:38,600 --> 00:00:44,400
+Prenez des images trop lentement, et ce qui va vite
+peut sembler lent, à l’arrêt, voire à l’envers.
+

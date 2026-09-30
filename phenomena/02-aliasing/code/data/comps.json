@@ -1,0 +1,87 @@
+{
+  "main": {
+    "title": "02 Aliasing - full video, 16:9, 1920 x 1080, 30 fps",
+    "width": 1920,
+    "height": 1080,
+    "overlap": 15,
+    "scenes": [
+      {
+        "id": "s01_hook",
+        "dur": 18.5
+      },
+      {
+        "id": "s02_title",
+        "dur": 6.5
+      },
+      {
+        "id": "s03_snapshots",
+        "dur": 24.5
+      },
+      {
+        "id": "s04_trick",
+        "dur": 38.5
+      },
+      {
+        "id": "s05_rule",
+        "dur": 40.5
+      },
+      {
+        "id": "s06_helicopter_lathe",
+        "dur": 22.5
+      },
+      {
+        "id": "s07_sensors_strobe",
+        "dur": 22.5
+      },
+      {
+        "id": "s08_takeaway",
+        "dur": 10
+      }
+    ]
+  },
+  "short": {
+    "title": "02 Aliasing - Short, 9:16, 1080 x 1920, 30 fps",
+    "width": 1080,
+    "height": 1920,
+    "overlap": 15,
+    "scenes": [
+      {
+        "id": "short_hook",
+        "dur": 16.5
+      },
+      {
+        "id": "short_trick",
+        "dur": 22.5
+      },
+      {
+        "id": "short_end",
+        "dur": 7
+      }
+    ]
+  },
+  "hero": {
+    "title": "Hero still, 3840 x 2160",
+    "width": 1920,
+    "height": 1080,
+    "scale": 2,
+    "logo": false,
+    "scenes": [
+      {
+        "id": "still_hero",
+        "dur": 1
+      }
+    ]
+  },
+  "thumb": {
+    "title": "Thumbnail, 1280 x 720",
+    "width": 1280,
+    "height": 720,
+    "logo": false,
+    "scenes": [
+      {
+        "id": "still_thumb",
+        "dur": 1
+      }
+    ]
+  }
+}

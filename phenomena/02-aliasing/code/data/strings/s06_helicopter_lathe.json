@@ -1,0 +1,67 @@
+{
+  "s06.c1": {
+    "en": "Helicopter blades can look frozen on video.",
+    "fr": "En vidéo, des pales d’hélicoptère semblent figées.",
+    "ar": "قد تبدو شفرات المروحية متجمّدة في الفيديو."
+  },
+  "s06.c2": {
+    "en": "Between two pictures, each blade moves exactly into the next blade's place.",
+    "fr": "Entre deux images, chaque pale se place exactement là où était la suivante.",
+    "ar": "بين صورتين، تنتقل كل شفرة بالضبط إلى مكان الشفرة التالية."
+  },
+  "s06.c3": {
+    "en": "Flickering lights can play the same trick on machines.",
+    "fr": "Un éclairage qui scintille peut jouer le même tour aux machines.",
+    "ar": "الأضواء الوامضة قد تخدع الآلات بالحيلة نفسها."
+  },
+  "s06.c4": {
+    "en": "A spinning lathe can look stopped. That is why workshop lights should not flicker.",
+    "fr": "Un tour en marche peut sembler arrêté. L’éclairage d’atelier ne devrait donc pas scintiller.",
+    "ar": "قد تبدو المخرطة الدوّارة متوقفة. لهذا ينبغي ألا تومض أضواء الورشة."
+  },
+  "s06.blades": {
+    "en": "5 blades × 6 turns per second = 30 blade passes per second",
+    "fr": "5 pales × 6 tours par seconde = 30 passages de pale par seconde",
+    "ar": "5 شفرات × 6 دورات في الثانية = 30 شفرة تمرّ في الثانية"
+  },
+  "s06.match": {
+    "en": "= 30 pictures per second",
+    "fr": "= 30 images par seconde",
+    "ar": "= 30 صورة في الثانية"
+  },
+  "s06.jaws": {
+    "en": "4 jaws × 25 turns per second = 100 passes per second",
+    "fr": "4 mors × 25 tours par seconde = 100 passages par seconde",
+    "ar": "4 فكوك × 25 دورة في الثانية = 100 فك يمرّ في الثانية"
+  },
+  "s06.flicker": {
+    "en": "This lamp flickers 100 times per second (twice the 50 Hz mains)",
+    "fr": "Cette lampe scintille 100 fois par seconde (le double des 50 Hz du secteur)",
+    "ar": "هذا المصباح يومض 100 مرة في الثانية (ضعف تردد التيار الكهربائي ‎50 Hz)"
+  },
+  "s06.really": {
+    "en": "What it really does",
+    "fr": "En réalité",
+    "ar": "الحركة الحقيقية"
+  },
+  "s06.eye": {
+    "en": "What the eye sees",
+    "fr": "Ce que l’œil voit",
+    "ar": "ما تراه العين"
+  },
+  "s06.marker": {
+    "en": "Marked blade: it jumps {n}° every picture",
+    "fr": "Pale marquée : bond de {n}° à chaque image",
+    "ar": "الشفرة ذات العلامة: تقفز ‎{n}° في كل صورة"
+  },
+  "s06.steady": {
+    "en": "Steady light",
+    "fr": "Lumière fixe",
+    "ar": "إضاءة ثابتة"
+  },
+  "s06.rpm": {
+    "en": "rpm",
+    "fr": "tr/min",
+    "ar": "rpm"
+  }
+}

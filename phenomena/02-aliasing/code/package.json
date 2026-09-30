@@ -1,0 +1,14 @@
+{
+  "name": "ep-02-aliasing",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Engineering Phenomena 02 - Aliasing. Every frame is drawn by code from the equations.",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "mathjax": "3.2.2",
+    "playwright": "1.56.1"
+  }
+}

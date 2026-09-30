@@ -1,0 +1,42 @@
+{
+  "s01.c1": {
+    "en": "This car is speeding up.",
+    "fr": "Cette voiture accélère.",
+    "ar": "هذه السيارة تزيد سرعتها."
+  },
+  "s01.c2": {
+    "en": "Now watch the wheel.",
+    "fr": "Regardez bien la roue.",
+    "ar": "الآن، انظروا إلى العجلة."
+  },
+  "s01.c3": {
+    "en": "It seems to turn backwards!",
+    "fr": "Elle semble tourner à l’envers\u00a0!",
+    "ar": "تبدو وكأنها تدور إلى الوراء!"
+  },
+  "s01.c4": {
+    "en": "Now it seems to stand still.",
+    "fr": "Et là, elle semble immobile.",
+    "ar": "والآن تبدو ساكنة."
+  },
+  "s01.c5": {
+    "en": "The car never slowed down. So what is going on?",
+    "fr": "La voiture n’a jamais ralenti. Alors, que se passe-t-il\u00a0?",
+    "ar": "السيارة لم تُبطئ أبدًا. فماذا\u00a0يحدث\u00a0إذن؟"
+  },
+  "s01.speed": {
+    "en": "Speed",
+    "fr": "Vitesse",
+    "ar": "السرعة"
+  },
+  "s01.wheel": {
+    "en": "Real wheel speed",
+    "fr": "Rotation réelle",
+    "ar": "دوران العجلة الحقيقي"
+  },
+  "s01.fps": {
+    "en": "You are watching 30 pictures per second",
+    "fr": "Vous regardez 30\u00a0images par seconde",
+    "ar": "أنتم تشاهدون 30 صورة في الثانية"
+  }
+}

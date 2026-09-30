@@ -1,0 +1,77 @@
+{
+  "s07.c1": {
+    "en": "Machines sample too: their sensors are read many times per second.",
+    "fr": "Les machines aussi : leurs capteurs sont lus de nombreuses fois par seconde.",
+    "ar": "الآلات أيضًا تأخذ عينات: تُقرأ مستشعراتها مرات كثيرة في الثانية."
+  },
+  "s07.c2": {
+    "en": "A 900 Hz vibration read 1000 times per second looks like 100 Hz.",
+    "fr": "Une vibration de 900 Hz lue 1000 fois par seconde ressemble à du 100 Hz.",
+    "ar": "اهتزاز بتردد ‎900 Hz يُقرأ 1000 مرة في الثانية يبدو كأنه ‎100 Hz."
+  },
+  "s07.c3": {
+    "en": "The fix: filter out the fast part, then sample well over twice as fast.",
+    "fr": "La solution : filtrer d’abord, puis échantillonner à bien plus du double.",
+    "ar": "الحل: ترشيح الجزء السريع أولًا، ثم أخذ العينات بأكثر من ضعف السرعة بكثير."
+  },
+  "s07.c4": {
+    "en": "A strobe light uses aliasing on purpose, to inspect fast machines.",
+    "fr": "Le stroboscope exploite ce repliement pour inspecter les machines en marche.",
+    "ar": "أما المصباح الوميضي فيستخدم التعرّج عمدًا لفحص الآلات السريعة."
+  },
+  "s07.real": {
+    "en": "Real vibration: 900 Hz",
+    "fr": "Vibration réelle : 900 Hz",
+    "ar": "الاهتزاز الحقيقي: ‎900 Hz"
+  },
+  "s07.samples": {
+    "en": "Samples: 1000 per second",
+    "fr": "Échantillons : 1000 par seconde",
+    "ar": "العينات: 1000 في الثانية"
+  },
+  "s07.seen": {
+    "en": "What the controller sees: 100 Hz",
+    "fr": "Ce que voit le contrôleur : 100 Hz",
+    "ar": "ما يراه المتحكّم: ‎100 Hz"
+  },
+  "s07.sensor": {
+    "en": "Sensor",
+    "fr": "Capteur",
+    "ar": "مستشعر"
+  },
+  "s07.filter": {
+    "en": "Anti-aliasing filter",
+    "fr": "Filtre anti-repliement",
+    "ar": "مرشّح مضاد للتعرّج"
+  },
+  "s07.adc": {
+    "en": "Converter (ADC)",
+    "fr": "Convertisseur (CAN)",
+    "ar": "محوّل (ADC)"
+  },
+  "s07.controller": {
+    "en": "Controller",
+    "fr": "Contrôleur",
+    "ar": "متحكّم"
+  },
+  "s07.strobe": {
+    "en": "Strobe light",
+    "fr": "Stroboscope",
+    "ar": "مصباح وميضي"
+  },
+  "s07.normal": {
+    "en": "Normal light",
+    "fr": "Lumière fixe",
+    "ar": "إضاءة عادية"
+  },
+  "s07.realspeed": {
+    "en": "Real speed",
+    "fr": "Vitesse réelle",
+    "ar": "السرعة الحقيقية"
+  },
+  "s07.weesee": {
+    "en": "What we see",
+    "fr": "Ce qu’on voit",
+    "ar": "ما نراه"
+  }
+}

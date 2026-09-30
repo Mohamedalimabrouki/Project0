@@ -1,0 +1,22 @@
+{
+  "s08.takeaway": {
+    "en": "Take pictures too slowly, and fast things can look slow, stopped, or even backwards.",
+    "fr": "Prenez des images trop lentement, et ce qui va vite peut sembler lent, à\u00a0l’arrêt, voire à l’envers.",
+    "ar": "إذا التقطتم الصور ببطء أكثر مما يلزم، فقد تبدو الأشياء السريعة بطيئة، أو\u00a0ساكنة، أو\u00a0حتى\u00a0تدور\u00a0إلى\u00a0الوراء."
+  },
+  "s08.rule": {
+    "en": "Sample more than twice as fast as the fastest change.",
+    "fr": "Échantillonnez plus de deux fois plus vite que la variation la plus rapide.",
+    "ar": "أخذ العينات بسرعة تفوق ضعف سرعة أسرع تغيّر."
+  },
+  "s08.series": {
+    "en": "Engineering Phenomena · 02 · Aliasing",
+    "fr": "Engineering Phenomena · 02 · Aliasing",
+    "ar": "Engineering Phenomena · 02 · التعرّج"
+  },
+  "s08.spin": {
+    "en": "{n} turns per second",
+    "fr": "{n}\u00a0tours par seconde",
+    "ar": "{n} دورات في الثانية"
+  }
+}

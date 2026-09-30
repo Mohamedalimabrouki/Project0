@@ -1,0 +1,87 @@
+{
+  "s05.c1": {
+    "en": "Engineers call this aliasing: a fast motion that shows up under a false name, an alias.",
+    "fr": "On appelle cela le repliement de spectre (aliasing) : un mouvement rapide sous un faux nom, un alias.",
+    "ar": "يسمّي المهندسون هذا التعرّج (aliasing): حركة سريعة تظهر باسم مستعار."
+  },
+  "s05.c2": {
+    "en": "The camera takes 30 pictures per second. The spokes pass by f times per second.",
+    "fr": "La caméra prend 30 images par seconde. Les rayons passent f fois par seconde.",
+    "ar": "تلتقط الكاميرا 30 صورة في الثانية. وتمرّ أشعة العجلة f مرة في الثانية."
+  },
+  "s05.c3": {
+    "en": "Below 15 per second, the video tells the truth. Faster than that, the motion is disguised.",
+    "fr": "En dessous de 15 par seconde, la vidéo dit la vérité. Au-delà, le mouvement est déguisé.",
+    "ar": "أقل من 15 مرة في الثانية، يقول الفيديو الحقيقة. أما فوق ذلك، فتتنكّر الحركة."
+  },
+  "s05.c4": {
+    "en": "At exactly 30 or 60 per second the wheel looks frozen. Just below, it looks backwards.",
+    "fr": "À 30 ou 60 par seconde pile, la roue semble figée. Juste en dessous, elle semble tourner à l’envers.",
+    "ar": "عند 30 أو 60 مرة في الثانية بالضبط تبدو العجلة متجمّدة. وأقل من ذلك بقليل تبدو وكأنها تدور إلى الوراء."
+  },
+  "s05.c5": {
+    "en": "The rule: take samples more than twice as fast as the fastest change.",
+    "fr": "La règle : échantillonnez plus de deux fois plus vite que la variation la plus rapide.",
+    "ar": "القاعدة: أخذ العينات بسرعة تفوق ضعف سرعة أسرع تغيّر."
+  },
+  "s05.c6": {
+    "en": "Engineers call it the Nyquist-Shannon sampling theorem.",
+    "fr": "On l’appelle le théorème d’échantillonnage de Nyquist-Shannon.",
+    "ar": "ويسمّيها المهندسون مبرهنة نيكويست-شانون لأخذ العينات."
+  },
+  "s05.axis_x": {
+    "en": "Real spoke frequency",
+    "fr": "Fréquence réelle des rayons",
+    "ar": "تردد أشعة العجلة الحقيقي"
+  },
+  "s05.axis_y": {
+    "en": "Frequency seen on video",
+    "fr": "Fréquence vue sur la vidéo",
+    "ar": "التردد الظاهر في الفيديو"
+  },
+  "s05.truth": {
+    "en": "Truth",
+    "fr": "Vérité",
+    "ar": "الحقيقة"
+  },
+  "s05.alias": {
+    "en": "Alias",
+    "fr": "Alias",
+    "ar": "اسم مستعار"
+  },
+  "s05.nyquist": {
+    "en": "Nyquist limit",
+    "fr": "Limite de Nyquist",
+    "ar": "حدّ نيكويست"
+  },
+  "s05.frozen": {
+    "en": "Frozen",
+    "fr": "Immobile",
+    "ar": "متجمّدة"
+  },
+  "s05.backwards": {
+    "en": "Backwards",
+    "fr": "En arrière",
+    "ar": "إلى الوراء"
+  },
+  "s05.forwards": {
+    "en": "Forwards",
+    "fr": "En avant",
+    "ar": "إلى الأمام"
+  },
+  "s05.safe": {
+    "en": "The video tells the truth",
+    "fr": "La vidéo dit la vérité",
+    "ar": "الفيديو يقول الحقيقة"
+  },
+  "s05.spokes": {
+    "en": "spokes",
+    "fr": "rayons",
+    "ar": "أشعة العجلة"
+  },
+  "s05.theorem": {
+    "en": "Nyquist-Shannon sampling theorem",
+    "fr": "Théorème de Nyquist-Shannon",
+    "ar": "مبرهنة نيكويست-شانون لأخذ العينات"
+  }
+}
