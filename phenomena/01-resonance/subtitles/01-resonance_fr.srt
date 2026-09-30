@@ -1,0 +1,242 @@
+1
+00:00:03,000 --> 00:00:07,282
+Deux balançoires identiques. Chaque
+poussée a exactement la même force.
+
+2
+00:00:07,632 --> 00:00:11,092
+À gauche, une poussée par
+aller-retour, toujours au même moment.
+
+3
+00:00:11,132 --> 00:00:14,609
+À droite, les mêmes poussées,
+à des moments pris au hasard.
+
+4
+00:00:16,759 --> 00:00:20,343
+Même poussée. Moment différent.
+Un résultat très différent.
+
+5
+00:00:20,993 --> 00:00:22,357
+C'est la résonance.
+
+6
+00:00:25,200 --> 00:00:27,491
+Tout ce qui peut osciller
+a un rythme naturel :
+
+7
+00:00:27,531 --> 00:00:30,559
+celui qu'il garde quand on
+l'écarte puis qu'on le lâche.
+
+8
+00:00:30,809 --> 00:00:32,977
+Une balançoire aux chaînes de 2 mètres
+
+9
+00:00:33,017 --> 00:00:36,347
+fait un aller-retour environ
+toutes les 2,8 secondes.
+
+10
+00:00:37,297 --> 00:00:40,602
+Les ingénieurs l'étudient avec
+l'oscillateur le plus simple qui soit :
+
+11
+00:00:40,642 --> 00:00:42,087
+une masse sur un ressort.
+
+12
+00:00:43,237 --> 00:00:45,711
+Son rythme naturel ne
+dépend que de deux choses.
+
+13
+00:00:45,751 --> 00:00:47,912
+Un ressort plus raide le rend plus rapide.
+
+14
+00:00:47,952 --> 00:00:50,297
+Une masse plus lourde le rend plus lent.
+
+15
+00:00:51,247 --> 00:00:54,331
+Maintenant, poussons-la doucement,
+au rythme que nous choisissons.
+
+16
+00:00:54,881 --> 00:00:57,965
+Si l'on pousse lentement, la
+masse suit simplement la poussée.
+
+17
+00:00:58,715 --> 00:01:01,429
+Poussons plus vite, plus
+près de son rythme naturel :
+
+18
+00:01:01,469 --> 00:01:03,381
+le mouvement commence à grandir.
+
+19
+00:01:03,931 --> 00:01:05,347
+Pile à son rythme naturel,
+
+20
+00:01:05,387 --> 00:01:09,164
+le mouvement est dix fois plus
+grand qu'avec une poussée lente.
+
+21
+00:01:09,814 --> 00:01:10,829
+Voici le secret :
+
+22
+00:01:10,869 --> 00:01:15,174
+à la résonance, chaque poussée va
+dans le sens où la masse bouge déjà.
+
+23
+00:01:15,214 --> 00:01:17,946
+Chaque poussée ajoute donc de l'énergie.
+
+24
+00:01:18,696 --> 00:01:22,723
+Encore plus vite, et la masse n'arrive
+plus à suivre. Elle bouge à peine.
+
+25
+00:01:23,673 --> 00:01:27,356
+Qu'est-ce qui empêche le mouvement de
+grandir sans fin ? L'amortissement :
+
+26
+00:01:27,396 --> 00:01:30,777
+tout ce qui transforme le mouvement
+en chaleur, comme le frottement,
+
+27
+00:01:30,817 --> 00:01:32,476
+ou l'huile d'un amortisseur.
+
+28
+00:01:32,826 --> 00:01:35,039
+L'amortissement fixe la hauteur du pic.
+
+29
+00:01:35,079 --> 00:01:38,678
+Avec 5 % d'amortissement, le
+mouvement est dix fois plus grand.
+
+30
+00:01:38,718 --> 00:01:41,855
+Doublez l'amortissement, et
+le pic est divisé par deux.
+
+31
+00:01:41,895 --> 00:01:44,456
+À 30 %, il ne reste qu'une petite bosse.
+
+32
+00:01:45,006 --> 00:01:47,337
+C'est pourquoi les ingénieurs
+ajoutent de l'amortissement
+
+33
+00:01:47,377 --> 00:01:49,082
+à tout ce qui ne doit pas trembler.
+
+34
+00:01:50,232 --> 00:01:51,332
+Londres, juin 2000.
+
+35
+00:01:51,372 --> 00:01:56,483
+Le Millennium Bridge ouvre au public, et
+des milliers de personnes le traversent.
+
+36
+00:01:56,833 --> 00:01:59,979
+Chaque pas pousse le tablier
+un tout petit peu sur le côté :
+
+37
+00:02:00,019 --> 00:02:01,915
+gauche, droite, gauche, droite.
+
+38
+00:02:02,265 --> 00:02:04,420
+Dès que le tablier commence à osciller,
+
+39
+00:02:04,460 --> 00:02:07,516
+les gens déplacent leurs
+pieds pour garder l'équilibre.
+
+40
+00:02:07,556 --> 00:02:11,400
+En moyenne, ces poussées vont dans
+le sens où le tablier bouge déjà :
+
+41
+00:02:11,440 --> 00:02:13,547
+chaque pas nourrit l'oscillation.
+
+42
+00:02:14,097 --> 00:02:16,297
+Deux jours plus tard, le pont est fermé.
+
+43
+00:02:16,337 --> 00:02:21,167
+Les ingénieurs ont installé des amortisseurs
+qui transforment l'oscillation en chaleur.
+
+44
+00:02:21,207 --> 00:02:23,136
+En 2002, il a rouvert, stable.
+
+45
+00:02:24,286 --> 00:02:26,456
+Taipei 101 va encore plus loin.
+
+46
+00:02:26,496 --> 00:02:32,589
+Près du sommet de la tour de 508 mètres est
+suspendue une boule d'acier de 660 tonnes,
+
+47
+00:02:32,629 --> 00:02:35,802
+accordée sur le rythme propre de la tour.
+
+48
+00:02:36,252 --> 00:02:38,020
+Quand le vent fait osciller la tour,
+
+49
+00:02:38,060 --> 00:02:40,680
+la boule se balance avec un
+quart de temps de retard,
+
+50
+00:02:40,720 --> 00:02:43,280
+si bien que sa traction
+s'oppose au mouvement.
+
+51
+00:02:43,830 --> 00:02:46,226
+La résonance, utilisée pour
+combattre la résonance.
+
+52
+00:02:47,576 --> 00:02:49,386
+Poussez quelque chose à son rythme préféré,
+
+53
+00:02:49,426 --> 00:02:52,086
+et de toutes petites poussées
+font d'énormes mouvements.
+

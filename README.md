@@ -21,7 +21,7 @@ The rule that makes it professional: **beautiful, but never wrong.** Every anima
 
 | # | Phenomenon | Field | Status |
 |---|---|---|---|
-| 01 | [Resonance](phenomena/01-resonance/) | Vibrations | Script written, storyboard drafted, art not started |
+| 01 | [Resonance](phenomena/01-resonance/) | Vibrations | Video v1 done (2 min 58 s, subtitles EN / FR / AR), hero still and thumbnail done; next: the 9:16 Short |
 
 The full list of planned subjects is in the [backlog](docs/BACKLOG.md).
 
@@ -39,11 +39,12 @@ engineering-phenomena/
 │       ├── renders/        still images (PNG)
 │       ├── video/          final videos (MP4)
 │       ├── subtitles/      en.srt, fr.srt, ar.srt
+│       ├── scripts/        the code that builds the piece (physics, Blender scenes, graphics, sound)
 │       └── sources/        references, sketches, datasheets
 ├── assets/                 shared by every piece
 │   ├── brand/              banner, logo
 │   └── palette/            the house colours (Blender, Inkscape, GIMP, Krita)
-├── tools/                  helper scripts (for example the Blender palette loader)
+├── tools/                  helper scripts: the Blender palette loader, and epmotion (the 2D motion graphics engine)
 └── docs/
     ├── STYLE_GUIDE.md      colours, fonts, formats, accuracy rules
     ├── WORKFLOW.md         step by step: from idea to published piece

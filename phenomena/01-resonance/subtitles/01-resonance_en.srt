@@ -1,0 +1,203 @@
+1
+00:00:03,000 --> 00:00:07,282
+Two identical swings. Every
+push is exactly the same size.
+
+2
+00:00:07,632 --> 00:00:11,267
+On the left, one push per swing,
+always at the same moment.
+
+3
+00:00:11,307 --> 00:00:14,609
+On the right, the same
+pushes, at random moments.
+
+4
+00:00:16,759 --> 00:00:20,343
+Same push. Different timing.
+A very different result.
+
+5
+00:00:20,993 --> 00:00:22,357
+This is resonance.
+
+6
+00:00:25,200 --> 00:00:27,714
+Anything that can wiggle
+has a natural rhythm:
+
+7
+00:00:27,754 --> 00:00:30,559
+the beat it keeps when
+you pull it and let go.
+
+8
+00:00:30,809 --> 00:00:36,347
+A swing on 2-metre chains goes back
+and forth about once every 2.8 seconds.
+
+9
+00:00:37,297 --> 00:00:42,087
+Engineers study this with the simplest
+wiggler of all: a mass on a spring.
+
+10
+00:00:43,237 --> 00:00:46,045
+Its natural rhythm depends
+on just two things.
+
+11
+00:00:46,085 --> 00:00:48,088
+A stiffer spring makes it faster.
+
+12
+00:00:48,128 --> 00:00:50,297
+A heavier mass makes it slower.
+
+13
+00:00:51,247 --> 00:00:54,331
+Now let's push it, gently,
+at a rhythm we choose.
+
+14
+00:00:54,881 --> 00:00:57,965
+Push slowly, and the mass
+simply follows the push.
+
+15
+00:00:58,715 --> 00:01:03,381
+Push faster, closer to its natural
+rhythm, and the motion starts to grow.
+
+16
+00:01:03,931 --> 00:01:05,477
+Right at its natural rhythm,
+
+17
+00:01:05,517 --> 00:01:09,164
+the motion is ten times bigger
+than a slow push can make it.
+
+18
+00:01:09,814 --> 00:01:11,076
+Here is the secret:
+
+19
+00:01:11,116 --> 00:01:15,874
+at resonance, every push goes the
+same way the mass is already moving.
+
+20
+00:01:15,914 --> 00:01:17,946
+So every push adds energy.
+
+21
+00:01:18,696 --> 00:01:22,723
+Push faster still, and the mass
+cannot keep up. It barely moves.
+
+22
+00:01:23,673 --> 00:01:26,824
+So what stops the motion
+growing forever? Damping:
+
+23
+00:01:26,864 --> 00:01:32,476
+anything that turns motion into heat, like
+friction, or the oil in a shock absorber.
+
+24
+00:01:32,826 --> 00:01:35,330
+Damping sets the height of the peak.
+
+25
+00:01:35,370 --> 00:01:38,794
+With 5 % damping, the
+motion is ten times bigger.
+
+26
+00:01:38,834 --> 00:01:41,622
+Double the damping, and the peak halves.
+
+27
+00:01:41,662 --> 00:01:44,456
+At 30 %, only a gentle bump is left.
+
+28
+00:01:45,006 --> 00:01:49,082
+That is why engineers add damping
+to anything that must not shake.
+
+29
+00:01:50,232 --> 00:01:51,494
+London, June 2000.
+
+30
+00:01:51,534 --> 00:01:56,483
+The Millennium Bridge opens, and
+thousands of people walk across.
+
+31
+00:01:56,833 --> 00:02:01,915
+Every step pushes the deck a tiny bit
+sideways: left, right, left, right.
+
+32
+00:02:02,265 --> 00:02:07,072
+Once the deck starts to sway, people
+shift their feet to keep their balance.
+
+33
+00:02:07,112 --> 00:02:11,408
+On average, those pushes go the
+same way the deck is already moving,
+
+34
+00:02:11,448 --> 00:02:13,547
+so every step feeds the sway.
+
+35
+00:02:14,097 --> 00:02:16,767
+Two days later, the bridge is closed.
+
+36
+00:02:16,807 --> 00:02:20,722
+Engineers fitted dampers
+that turn the sway into heat.
+
+37
+00:02:20,762 --> 00:02:23,136
+In 2002, it reopened, steady.
+
+38
+00:02:24,286 --> 00:02:27,106
+Taipei 101 goes one step further.
+
+39
+00:02:27,146 --> 00:02:32,739
+Near the top of the 508-metre
+tower hangs a 660-tonne steel ball,
+
+40
+00:02:32,779 --> 00:02:35,802
+tuned to the tower's own rhythm.
+
+41
+00:02:36,252 --> 00:02:40,882
+When the wind makes the tower sway, the
+ball swings a quarter of a beat behind it,
+
+42
+00:02:40,922 --> 00:02:43,280
+so its pull works against the motion.
+
+43
+00:02:43,830 --> 00:02:46,226
+Resonance, used to fight resonance.
+
+44
+00:02:47,576 --> 00:02:52,086
+Push something at its favourite rhythm,
+and tiny pushes make huge movements.
+

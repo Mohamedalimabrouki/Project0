@@ -5,6 +5,9 @@
 # Rendered frame sequences: only the final video goes to GitHub
 frames/
 
+# Build folders (renders, audio stems, intermediate video)
+build/
+
 # Caches
 blendcache_*/
 __pycache__/
